@@ -13,6 +13,7 @@ end
 if length(data_in) == size(cortex.Vertices, 1)
     data = data_in;
 else
+    % find Atlas with the same number of ROIs
     for iatl = 1:length(cortex.Atlas)
         if length(data_in) == length(cortex.Atlas(iatl).Scouts)
             data = nan*ones(size(cortex.Vertices, 1), 1);

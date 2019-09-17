@@ -97,7 +97,7 @@ function [conn, nlags] = data2spwctrgc(data, fres, nlags, cond, nboot, maxfreq, 
     
     % crossspectrum using multitapers
     if ~isempty(intersect(output, {'CS'}))
-      disp(['computing cross-spectrum'])
+      disp(['Computing cross-spectrum...'])
       CS = tsdata_to_cpsd(data, fres, 'MT');
       CS = CS(:, :, 1:maxfreq);
       CS = permute(CS, [3, 1, 2]);

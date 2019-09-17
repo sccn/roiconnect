@@ -3,7 +3,7 @@
 
 % 'morder' model order for the spectral/connectivity analysis
 
-function S = roi_connectivity_process(EEG, varargin)
+function EEG = roi_connectivity_process(EEG, varargin)
 
 if nargin < 2
     help roi_connectivity_process;
@@ -13,51 +13,55 @@ end
 % decode input parameters
 % -----------------------
 g = finputcheck(varargin, { ...
-    'leadfield'  'string'  { }             '';
-    'cortexfile' 'string'  { }             '';
+    'leadfield'  {'struct' 'string'}  {{} {}}             '';
+    'sourcemodel' 'string'  { }             '';
+    'sourcemodel2mni' 'real'    { }         [];
+    'sourcemodelatlas' 'string'    { }      '';
     'morder'     'integer' { }              20;
     'eloretareg' 'real'    { }              0.05;
     'nPCA'       'integer' { }              3;
     'naccu'       'integer' { }             1;
-    'outputdir'  'string'  { }              'analysis_output' }, 'roi_connectivity_process');
+    'trgc'       'string' { 'on' 'off' }    'on';
+    'crossspec'  'string' { 'on' 'off' }    'on';
+    'outputdir'  'string'  { }              '' }, 'roi_connectivity_process');
 if ischar(g), error(g); end
 if isempty(g.leadfield), error('Leadfield is mandatory parameter'); end
-
+if isempty(g.naccu), g.naccu = 1; end
+     
 % GO TO BRAINSTORM-MASTER3 folder AND START BRAINSTORM
-addpath('libs/Daniele_ARMA');
-addpath('libs/export_fig');
-addpath('libs/haufe');
-addpath('libs/mvgc_v1.0');
-addpath('libs/mvgc_v1.0/core');
-addpath('libs/mvgc_v1.0/stats');
-addpath('libs/mvgc_v1.0/utils');
-addpath('libs/nolte');
-addpath('libs/ssgc_v1.0');
-addpath('libs/brainstorm');
-
-leadfieldFlag = 'brainstrom';
-leadfieldFlag = 'fieldtrip';
-
-% colormap
-load cm17;
+p = fileparts(which('roi_connectivity_process'));
+addpath(fullfile(p, 'libs/Daniele_ARMA'));
+addpath(fullfile(p, 'libs/export_fig'));
+addpath(fullfile(p, 'libs/haufe'));
+addpath(fullfile(p, 'libs/mvgc_v1.0'));
+addpath(fullfile(p, 'libs/mvgc_v1.0/core'));
+addpath(fullfile(p, 'libs/mvgc_v1.0/stats'));
+addpath(fullfile(p, 'libs/mvgc_v1.0/utils'));
+addpath(fullfile(p, 'libs/nolte'));
+addpath(fullfile(p, 'libs/ssgc_v1.0'));
+addpath(fullfile(p, 'libs/brainstorm'));
 
 %%% Creating result folder
-mkdir(fullfile( g.outputdir, 'data'));
+if ~isempty(g.outputdir)
+    mkdir(fullfile( g.outputdir, 'data'));
+end
 
 % Cortex mesh
 % -----------
-cortex = load(g.cortexfile);
+cortex = load(g.sourcemodel);
 if isfield(cortex, 'Faces')
     % make brainstorm coordinate system consistent with MNI coordinates for
     % plotting (in terms of axis directions)
-    disp('Brainstorm cortex mesh detected - transforming MNI coordinates');
-    cortex.Vertices = cortex.Vertices(:, [2 1 3]);
-    cortex.Vertices(:, 1) = -cortex.Vertices(:, 1);
+    disp('Brainstorm cortex mesh detected - transforming to MNI coordinates');
+    tf = traditionaldipfit(g.sourcemodel2mni);
+    pos      = tf*[cortex.Vertices ones(size(cortex.Vertices,1),1)]';
+    pos      = pos';
+    cortex.Vertices = pos(:,1:3);
 elseif isfield(cortex, 'cortex') && isfield(cortex, 'atlas')
     hm = cortex;
     clear cortex;
     % align with MNI coordinates
-    tf = traditionaldipfit([0.0000000000 -26.6046230000 -46.0000000000 0.1234625600 0.0000000000 -1.5707963000 1000.0000000000 1000.0000000000 1000.0000000000]);
+    tf = traditionaldipfit(g.sourcemodel2mni);
     pos      = tf*[hm.cortex.vertices ones(size(hm.cortex.vertices,1),1)]';
     pos      = pos';
     cortex.Vertices = pos(:,1:3);
@@ -65,11 +69,11 @@ elseif isfield(cortex, 'cortex') && isfield(cortex, 'atlas')
     
     % make Alejandro Atlas definition compatible with Brainstrom one
     nROI = length(hm.atlas.label);
-    cortex.Atlas(3).Name = 'Desikan-Killiany';
+    cortex.Atlas(1).Name = g.sourcemodelatlas;
     for iROI = 1:nROI
         indVertices = find(hm.atlas.colorTable == iROI);
-        cortex.Atlas(3).Scouts(iROI).Label    = hm.atlas.label{iROI};
-        cortex.Atlas(3).Scouts(iROI).Vertices = indVertices;
+        cortex.Atlas(1).Scouts(iROI).Label    = hm.atlas.label{iROI};
+        cortex.Atlas(1).Scouts(iROI).Vertices = indVertices;
     end
 else
     % code below is functional to load a mesh
@@ -80,9 +84,27 @@ else
     error('Unknown mesh format')
 end
  
+% Select Atlas
+% ------------
+found = false;
+for iAtlas = 1:length(cortex.Atlas)
+    if strcmpi(cortex.Atlas(iAtlas).Name, g.sourcemodelatlas)
+        cortex.Atlas = cortex.Atlas(iAtlas);
+        found = true;
+        break
+    end
+end
+if ~found
+    error('Atlas not found');
+end
+
 % leadfield matrix (Brainstorm or Fieldtrip)
 % ------------------------------------------
-leadfield = load(g.leadfield, '-mat');
+if ~isstruct(g.leadfield)
+    leadfield = load(g.leadfield, '-mat');
+else
+    leadfield = g.leadfield;
+end
 if isstruct(leadfield) && isfield(leadfield, 'Gain') % brainstorm
     % make format compatible with Stefan's routines
     leadfield = permute(reshape(leadfield.Gain, [], 3, nvox), [1 3 2]);
@@ -90,6 +112,8 @@ elseif isstruct(leadfield) && isfield(leadfield, 'leadfield') % fieldtrip
     leadfield.gain = reshape( [ leadfield.leadfield{:} ], [length(leadfield.label) 3 length(leadfield.leadfield)]);
     leadfield.gain = permute(leadfield.gain, [1 3 2]);
     leadfield = leadfield.gain;
+else
+    disp('Warning: unknown leadfield matrix format, assuming array of gain values');
 end
 
 nvox = size(cortex.Vertices, 1);
@@ -120,15 +144,15 @@ P_eloreta = mkfilt_eloreta_v2(leadfield, g.eloretareg);
 source_voxel_data = reshape(EEG.data(:, :)'*P_eloreta(:, :), EEG.pnts*EEG.trials, nvox, 3);
 
 % number of ROIs in the Desikan-Killiany Atlas
-nROI = length(cortex.Atlas(3).Scouts);
+nROI = length(cortex.Atlas.Scouts);
 
 % ROI labels
-labels = {cortex.Atlas(3).Scouts.Label};
+labels = {cortex.Atlas.Scouts.Label};
 
 % keep only the first nPCA strongest components for each ROI
 source_roi_data = [];
 for iROI = 1:nROI
-    ind_roi = cortex.Atlas(3).Scouts(iROI).Vertices;
+    ind_roi = cortex.Atlas.Scouts(iROI).Vertices;
     data_  = source_voxel_data(:, ind_roi, :);
     source_roi_power(iROI) = sum(var(data_(:, :)))';
     source_roi_power_norm(iROI) = source_roi_power(iROI)/length(ind_roi);
@@ -158,7 +182,7 @@ for iroi = 1:nROI
     end
 end
 
-if 0
+if strcmpi(g.trgc, 'off')
     TRGC    = [];
     TRGCnet = [];
     TRGCmat = [];
@@ -183,18 +207,22 @@ else
 end
 
 % compute cross-spectrum, takes a while
-conn = data2spwctrgc(source_roi_data, fres, g.morder, 0, g.naccu, [], {'CS'});
+if strcmpi(g.crossspec, 'on')
+    conn = data2spwctrgc(source_roi_data, fres, g.morder, 0, g.naccu, [], {'CS'});
+else
+    conn.CS = [];
+end
 
 % Output paramters
-S.cortex  = cortex;
-S.source_voxel_data     = source_voxel_data;
-S.source_roi_data       = source_roi_data;
-S.source_roi_power_norm = source_roi_power_norm; % used for cross-sprectum
-S.freqs   = frqs;
-S.TRGCmat = TRGCmat;
-S.CS      = conn.CS;
-S.nPCA    = g.nPCA;
-S.nROI    = nROI;
-S.atlas   = cortex.Atlas(3);
-S.srate   = EEG.srate;
+EEG.roiconnect.cortex  = cortex;
+EEG.roiconnect.source_voxel_data     = source_voxel_data;
+EEG.roiconnect.source_roi_data       = source_roi_data;
+EEG.roiconnect.source_roi_power_norm = source_roi_power_norm; % used for cross-sprectum
+EEG.roiconnect.freqs   = frqs;
+EEG.roiconnect.TRGCmat = TRGCmat;
+EEG.roiconnect.CS      = conn.CS;
+EEG.roiconnect.nPCA    = g.nPCA;
+EEG.roiconnect.nROI    = nROI;
+EEG.roiconnect.atlas   = cortex.Atlas;
+EEG.roiconnect.srate   = EEG.srate;
 

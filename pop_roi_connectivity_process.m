@@ -3,244 +3,169 @@
 
 % 'morder' model order for the spectral/connectivity analysis
 
-function S = pop_roi_connectivity_process(EEG, varargin)
+function [EEG,com] = pop_roi_connectivity_process(EEG, varargin)
 
+com = '';
 if nargin < 1
     help pop_roi_connectivity_process;
     return
 end
 
-% Source model and ROI
-%   - Select file
-%   - Select atlas in file
-%   - Transformation to align source and leadfield matrix (plot both on top of each other)
-% Select leadfield matrix
-%   - Use leadfield Matrix from DIPFIT
-%   - Use custom leadfield matrix
-% Model order
-% Bootstrap
-
-S = roi_connectivity_process(EEG, 'leadfield', 'leadfield_tmp.mat', 'cortexfile', cortexfile);
-
-
-if nargin < 1
-    roi(1).label = 'Use Desikan-Kilianny ROI in Colin27 template';
-    roi(1).file  = 'head_modelColin27_5003_Standard-10-5-Cap339.mat';
+if nargin < 2
+    
+    dipfitOK = strcmpi(EEG.dipfit.coordformat, 'MNI');
+    
+    leadfield = [];
+    if ~dipfitOK
+        res = questdlg2( strvcat('You may use the DIPFIT MNI head model for ROI', ...
+                           'connectivity analysis. However, you need to go back', ...
+                           'to the DIPFIT settings to align it with your montage.', ...
+                           'To continue, you must have a custom Leadfield matrix.'), 'Use DIPFIT Leadfield matrix', 'Continue', 'Go back', 'Go back');
+        if strcmpi(res, 'Go back'), return; end
+    else
+        leadfield(1).label = 'Leadfield matrix: Use DIPFIT head model in MNI space';
+        leadfield(1).file  = EEG.dipfit.hdmfile;
+        leadfield(1).align = EEG.dipfit.coord_transform;
+        leadfield(1).enable = 'off';
+    end
+    leadfield(end+1).label = 'Leadfield matrix: Use custom head model in MNI or Brainstrom space';
+    leadfield(end).file  = '';
+    leadfield(end).align = [];
+    leadfield(end).enable = 'on';
+    
+    p  = fileparts(which('eeglab.m'));
+    roi(1).label = 'ROI: Use Desikan-Kilianny in Colin27 template';
+    roi(1).file  = fullfile( p, 'functions', 'supportfiles', 'head_modelColin27_5003_Standard-10-5-Cap339.mat');
     roi(1).align = [0 -26.6046230000 -46 0.1234625600 0 -1.5707963000 1000 1000 1000];
     roi(1).enable = 'off';
+    roi(1).atlasliststr = { 'Desikan-Kiliany (68 ROIs)' };
+    roi(1).atlaslist    = { 'Desikan-Kiliany' };
+    roi(1).atlasind  = 1;
     
-    roi(2).label = 'Use Desikan-Kilianny ROI in ICBM152 template (Brainstrom)';
-    roi(2).file  = 'tess_cortex_mid_low_2000V.mat';
-    roi(2).align = [0 0 0 0 0 -1.5707963000 1 1 1];
+    p  = fileparts(which('pop_roi_connectivity_process.m'));
+    roi(2).label = 'ROI: Use Desikan-Kilianny in ICBM152 template (Brainstrom)';
+    roi(2).file  = fullfile(p, 'Brainstorm', 'ChildMindICBM152', 'anat', '@default_subject', 'tess_cortex_mid_low_2000V.mat');
+    roi(2).align = [0 0 0 0 0 -1.5707963000 1000 1000 1000];
     roi(2).enable = 'off';
-    
-    uigeom = { [1 1] [1 1] 1 [0.3 1.1 1 1] };
-    uilist = {{ 'style' 'text' 'string' 'ROI connectivity analysis' 'fontweight' 'bold'} ...
-              { 'style' 'popupmenu' 'string' { roi.label } } ...
-              {} { 'style' 'text' 'string' '' 'tag' 'strfile' } ...
-              {} { 'style' 'text' 'string' '' 'tag' 'transform' } ...
-              { 'style' 'popupmenu' 'string' {'Use DIPFIT Leadfield matrix' 'Use custom Leadfield matrix' } 'tag' 'selection' } ...
-              {} 
-              { 'style' 'text' 'string' 'Model order for AR model' } ...
-              { 'style' 'edit' 'string' '20' } ...
-              {} ...
-              { 'style' 'text' 'string' 'Bootstrap if any (n)' } ...
-              { 'style' 'edit' 'string' '' } ...
-              {} ...
-              { 'style' 'checkbox' 'string' 'Compute TRGC' 'tag' 'trgc' 'value' 1 } ...
-              { 'style' 'checkbox' 'string' 'Compute cross-spectrum' 'tag' 'spec' 'value' 1 } ...
-              };
+    [ roi(2).atlasliststr, roi(2).atlaslist] = getatlaslist(roi(2).file);
+    roi(2).atlasind  = 2;
+
+    cb_select1 = [ 'usrdat = get(gcf, ''userdata'');' ...
+                  'usrdat = usrdat{1}(get(findobj(gcf, ''tag'', ''selection1''), ''value''));' ...
+                  'set(findobj(gcf, ''tag'', ''push1''), ''enable'', usrdat.enable);' ...
+                  'set(findobj(gcf, ''tag'', ''strfile1'')  , ''string'', usrdat.file, ''enable'', usrdat.enable);' ...
+                  'set(findobj(gcf, ''tag'', ''transform1''), ''string'', num2str(usrdat.align), ''enable'', usrdat.enable );' ...
+                  'clear usrdat;' ];
+    cb_select2 = [ 'usrdat = get(gcf, ''userdata'');' ...
+                  'usrdat = usrdat{2}(get(findobj(gcf, ''tag'', ''selection2''), ''value''));' ...
+                  'set(findobj(gcf, ''tag'', ''push2''), ''enable'', usrdat.enable);' ...
+                  'set(findobj(gcf, ''tag'', ''strfile2'')  , ''string'', usrdat.file, ''enable'', usrdat.enable);' ...
+                  'set(findobj(gcf, ''tag'', ''transform2''), ''string'', num2str(usrdat.align), ''enable'', usrdat.enable );' ...
+                  'set(findobj(gcf, ''tag'', ''atlas'')     , ''string'', usrdat.atlasliststr, ''value'', usrdat.atlasind, ''enable'', ''on'' );' ...
+                  'clear usrdat;' ];
               
-    [result,~,~,outs] = inputgui('geometry', uigeom, 'uilist', uilist, 'helpcom', 'pophelp(''pop_loadbv'')', ...
-        'title', 'Load a Brain Vision Data Exchange format dataset', 'userdata', splot, 'eval', cb_select);
+    cb_load1 = [ '[tmpfilename, tmpfilepath] = uigetfile(''*'', ''Select a text file'');' ...
+                 'if tmpfilename(1) ~=0, set(findobj(''parent'', gcbf, ''tag'', ''strfile''), ''string'', fullfile(tmpfilepath,tmpfilename)); end;' ...
+                 'clear tmpfilename tmpfilepath;' ];   
+             
+    cb_load2 = [ '[tmpfilename, tmpfilepath] = uigetfile(''*'', ''Select a text file'');' ...
+                 'if tmpfilename(1) ~=0, set(findobj(''parent'', gcbf, ''tag'', ''strfile2''), ''string'', fullfile(tmpfilepath,tmpfilename)); end;' ...
+                 'clear tmpfilename tmpfilepath;' ];    
+                
+    rowg = [0.1 0.6 1 0.2];
+    uigeom = { 1 1 rowg rowg 1 rowg rowg rowg 1 [0.5 1 0.35 0.5] [0.5 1 0.35 0.5] [1] [0.2 1 1.5] };
+    uilist = { { 'style' 'text' 'string' 'Region Of Interest (ROI) connectivity analysis' 'fontweight' 'bold'} ...
+              { 'style' 'popupmenu' 'string' { leadfield.label } 'tag' 'selection1' 'callback' cb_select1 }  ...
+              {} { 'style' 'text' 'string' 'File name' } { 'style' 'edit' 'string' EEG.dipfit.hdmfile 'tag' 'strfile1' 'enable'  'off' } { 'style' 'pushbutton' 'string' '...' 'tag' 'push1' 'enable' 'off' 'callback' cb_load1 }  ...
+              {} { 'style' 'text' 'string' 'Elec to MNI transfrom' } { 'style' 'edit' 'string' num2str(EEG.dipfit.coord_transform) 'tag' 'transform1' 'enable'  'off'  } {} ...
+              { 'style' 'popupmenu' 'string' { roi.label }  'tag' 'selection2' 'callback' cb_select2 } ...
+              {} { 'style' 'text' 'string' 'File name' } { 'style' 'edit' 'string' 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' 'tag' 'strfile2' } { 'style' 'pushbutton' 'string' '...' 'tag' 'push2' 'callback' cb_load2 }  ...
+              {} { 'style' 'text' 'string' 'File to MNI transfrom' } { 'style' 'edit' 'string' 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' 'tag' 'transform2' } {}  ...
+              {} { 'style' 'text' 'string' 'Use this Atlas/ROI' } { 'style' 'popupmenu' 'string' 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' 'tag' 'atlas' } {}  ...
+              {} ...
+              {} { 'style' 'text' 'string' 'Model order for AR model' } { 'style' 'edit' 'string' '20' 'tag' 'morder' } { } ...
+              {} { 'style' 'text' 'string' 'Bootstrap if any (n)' } { 'style' 'edit' 'string' '' 'tag' 'naccu' } { } ...
+              {} ...
+              {} { 'style' 'checkbox' 'string' 'Compute TRGC' 'tag' 'trgc' 'value' 1 } ...
+              { 'style' 'checkbox' 'string' 'Compute cross-spectrum' 'tag' 'crossspec' 'value' 1 } ...
+              };
+    [result,~,~,out] = inputgui('geometry', uigeom, 'uilist', uilist, 'helpcom', 'pophelp(''pop_loadbv'')', ...
+        'title', 'Load a Brain Vision Data Exchange format dataset', 'userdata', {leadfield roi}, 'eval', [cb_select1 cb_select2 ]);
     if isempty(result), return, end
 
+    if ~out.trgc && ~out.crossspec
+        error('Nothing to compute')
+    end
+    
+    options = {};
+    options = { 'headmodel' out.strfile1 ...
+                'elec2mni' str2num(out.transform1) ...
+                'sourcemodel' out.strfile2 ...
+                'sourcemodel2mni' str2num(out.transform2) ...
+                'sourcemodelatlas' roi(out.selection2).atlaslist{out.atlas} ...
+                'morder' str2num(out.morder) ...
+                'naccu' str2num(out.naccu) ...
+                'trgc'  fastif(out.trgc, 'on', 'off') ...
+                'crossspec' fastif(out.crossspec, 'on', 'off') ...
+                }; 
+else 
+    options = varargin;
+end
 
-% decode input parameters
-% -----------------------
-g = finputcheck(varargin, { ...
-    'leadfield'  'string'  { }             '';
-    'cortexfile' 'string'  { }             '';
-    'morder'     'integer' { }              20;
-    'eloretareg' 'real'    { }              0.05;
-    'nPCA'       'integer' { }              3;
-    'naccu'       'integer' { }             1;
-    'outputdir'  'string'  { }              'analysis_output' }, 'roi_connectivity_process');
+[g, moreargs] = finputcheck(options, { ...
+    'headmodel'       'string'  { }             '';
+    'elec2mni'        'real'    { }             [];
+    'sourcemodel'     'string'  { }             '';
+    'sourcemodel2mni' 'real'    { }             [] }, 'pop_roi_connectivity_process', 'ignore');
 if ischar(g), error(g); end
-if isempty(g.leadfield), error('Leadfield is mandatory parameter'); end
 
-% GO TO BRAINSTORM-MASTER3 folder AND START BRAINSTORM
-addpath('libs/Daniele_ARMA');
-addpath('libs/export_fig');
-addpath('libs/haufe');
-addpath('libs/mvgc_v1.0');
-addpath('libs/mvgc_v1.0/core');
-addpath('libs/mvgc_v1.0/stats');
-addpath('libs/mvgc_v1.0/utils');
-addpath('libs/nolte');
-addpath('libs/ssgc_v1.0');
-addpath('libs/brainstorm');
-
-leadfieldFlag = 'brainstrom';
-leadfieldFlag = 'fieldtrip';
-
-% colormap
-load cm17;
-
-%%% Creating result folder
-mkdir(fullfile( g.outputdir, 'data'));
-
-% Cortex mesh
-% -----------
-cortex = load(g.cortexfile);
-if isfield(cortex, 'Faces')
-    % make brainstorm coordinate system consistent with MNI coordinates for
-    % plotting (in terms of axis directions)
-    disp('Brainstorm cortex mesh detected - transforming MNI coordinates');
-    cortex.Vertices = cortex.Vertices(:, [2 1 3]);
-    cortex.Vertices(:, 1) = -cortex.Vertices(:, 1);
-elseif isfield(cortex, 'cortex') && isfield(cortex, 'atlas')
-    hm = cortex;
-    clear cortex;
-    % align with MNI coordinates
-    tf = traditionaldipfit([0.0000000000 -26.6046230000 -46.0000000000 0.1234625600 0.0000000000 -1.5707963000 1000.0000000000 1000.0000000000 1000.0000000000]);
-    pos      = tf*[hm.cortex.vertices ones(size(hm.cortex.vertices,1),1)]';
-    pos      = pos';
-    cortex.Vertices = pos(:,1:3);
-    cortex.Faces = hm.cortex.faces;
+% Prepare the liedfield matrix
+headmodel = load('-mat', g.headmodel);
+EEG.dipfit.coord_transform = g.elec2mni;
+dataPre = eeglab2fieldtrip(EEG, 'preprocessing', 'dipfit'); % does the transformation
+ftPath = fileparts(which('ft_defaults'));
     
-    % make Alejandro Atlas definition compatible with Brainstrom one
-    nROI = length(hm.atlas.label);
-    cortex.Atlas(3).Name = 'Desikan-Killiany';
-    for iROI = 1:nROI
-        indVertices = find(hm.atlas.colorTable == iROI);
-        cortex.Atlas(3).Scouts(iROI).Label    = hm.atlas.label{iROI};
-        cortex.Atlas(3).Scouts(iROI).Vertices = indVertices;
-    end
-else
-    % code below is functional to load a mesh
-    % However, need to align with an Atlas
-    % This can be achieve with Fieldtrip functions
-    sourcemodelOriOld = ft_read_headshape(fullfile(ftPath, 'template', 'sourcemodel', 'cortex_20484.surf.gii'));
-    
-    error('Unknown mesh format')
-end
- 
-% leadfield matrix (Brainstorm or Fieldtrip)
-% ------------------------------------------
-leadfield = load(g.leadfield, '-mat');
-if isstruct(leadfield) && isfield(leadfield, 'Gain') % brainstorm
-    % make format compatible with Stefan's routines
-    leadfield = permute(reshape(leadfield.Gain, [], 3, nvox), [1 3 2]);
-elseif isstruct(leadfield) && isfield(leadfield, 'leadfield') % fieldtrip
-    leadfield.gain = reshape( [ leadfield.leadfield{:} ], [length(leadfield.label) 3 length(leadfield.leadfield)]);
-    leadfield.gain = permute(leadfield.gain, [1 3 2]);
-    leadfield = leadfield.gain;
-end
-
-nvox = size(cortex.Vertices, 1);
-nvox2 = size(leadfield,2);
-if ~isequal(nvox, nvox2)
-    error('There must be the same number of vertices/voxels in the leadfield and cortex mesh');
-end
-
-% use frequency resolution of 0.5 Hz
-fres = EEG.srate;
-
-% from the MVGC toolbox, compute frequencies in Hz for a
-frqs = sfreqs(fres, EEG.srate);
-
-%% source reconstruction
-
-% common average reference transform
-H = eye(EEG.nbchan) - ones(EEG.nbchan) ./ EEG.nbchan;
-
-% apply to data and leadfield
-EEG.data = reshape(H*EEG.data(:, :), EEG.nbchan, EEG.pnts, EEG.trials);
-leadfield = reshape(H*leadfield(:, :), EEG.nbchan, nvox, 3);
-
-% eLORETA inverse projection kernel
-P_eloreta = mkfilt_eloreta_v2(leadfield, g.eloretareg);
-
-% project to source space
-source_voxel_data = reshape(EEG.data(:, :)'*P_eloreta(:, :), EEG.pnts*EEG.trials, nvox, 3);
-
-% number of ROIs in the Desikan-Killiany Atlas
-nROI = length(cortex.Atlas(3).Scouts);
-
-% ROI labels
-labels = {cortex.Atlas(3).Scouts.Label};
-
-% keep only the first nPCA strongest components for each ROI
-source_roi_data = [];
-for iROI = 1:nROI
-    ind_roi = cortex.Atlas(3).Scouts(iROI).Vertices;
-    data_  = source_voxel_data(:, ind_roi, :);
-    source_roi_power(iROI) = sum(var(data_(:, :)))';
-    source_roi_power_norm(iROI) = source_roi_power(iROI)/length(ind_roi);
-    
-    % optional z-scoring, this makes the PCA independent of the power in each
-    % voxel, and favors to find components that are consistently expressed in
-    % many voxels rather than only in a few voxels with strong power (which
-    % may leak from a neighboring region)
-    data_(:, :) = zscore(data_(:, :));
-    [data_, ~, ~] = svd(data_(:, :), 'econ');
-    source_roi_data(:, :, iROI) = data_(:, 1:g.nPCA);
-end
-
-% version with nPCA components
-source_roi_data = permute(reshape(source_roi_data, EEG.pnts, EEG.trials, []), [3 1 2]);
-
-%% spectral and connectivity analysis
-
-% to test TRGC between ROIs (that is, pairs of nPCA-dimensional spaces), we
-% need to compute these indices
-inds = {}; ninds = 0;
-for iroi = 1:nROI
-    for jroi = (iroi+1):nROI
-        inds{ninds+1} = {(iroi-1)*g.nPCA + [1:g.nPCA], (jroi-1)*g.nPCA + [1:g.nPCA]};
-        inds{ninds+2} = {(jroi-1)*g.nPCA + [1:g.nPCA], (iroi-1)*g.nPCA + [1:g.nPCA]};
-        ninds = ninds + 2;
+sourcemodelOri = load('-mat', g.sourcemodel);
+if ~isempty(g.sourcemodel2mni)
+    if isfield(sourcemodelOri, 'cortex')
+        tf = traditionaldipfit(g.sourcemodel2mni);
+        sourcemodelOri.pos      = tf*[sourcemodelOri.cortex.vertices ones(size(sourcemodelOri.cortex.vertices,1),1)]';
+        sourcemodelOri.pos      = sourcemodelOri.pos';
+        sourcemodelOri.pos(:,4) = [];
+        sourcemodelOri.tri = sourcemodelOri.cortex.faces;
+        sourcemodelOri.unit = 'mm';
+    else
+        tf = traditionaldipfit(g.sourcemodel2mni);
+        pos      = tf*[sourcemodelOri.Vertices ones(size(sourcemodelOri.Vertices,1),1)]';
+        pos      = pos';
+        sourcemodelOri.pos = pos(:,1:3);
+        sourcemodelOri.tri  = sourcemodelOri.Faces;
     end
 end
+    
+cfg         = [];
+cfg.elec            = dataPre.elec;
+%     cfg.grid    = sourcemodelOri;   % source points
+cfg.headmodel = headmodel.vol;   % volume conduction model
+cfg.sourcemodel.inside = ones(size(sourcemodelOri.pos,1),1) > 0;
+cfg.sourcemodel.pos    = sourcemodelOri.pos;
+cfg.sourcemodel.tri    = sourcemodelOri.tri;
+cfg.singleshell.batchsize = 5000; % speeds up the computation
+sourcemodel = ft_prepare_leadfield(cfg);
 
-if 0
-    TRGC    = [];
-    TRGCnet = [];
-    TRGCmat = [];
-else
-    % compute time reversed spectral Granger causality between all pairs of ROIs
-    TRGC = data2sctrgc(source_roi_data, fres, g.morder, 0, g.naccu, [], inds);
-    
-    % calculation of net TRGC scores (i->j minus j->i), recommended procedure
-    TRGCnet = TRGC(:, 1:2:end)-TRGC(:, 2:2:end);
-    
-    % create a ROI x ROI connectivity matrix, if needed
-    % TRGCmat(f, ii, jj) is net TRGC from jj to ii
-    TRGCmat = [];
-    iinds = 0;
-    for iroi = 1:nROI
-        for jroi = (iroi+1):nROI
-            iinds = iinds + 1;
-            TRGCmat(:, iroi, jroi) = -TRGCnet(:, iinds);
-            TRGCmat(:, jroi, iroi) = TRGCnet(:, iinds);
-        end
-    end
+% remove vertices not modeled (no longer necessary - makes holes in model)
+%     indRm = find(sourcemodel.inside == 0);
+%     rowRm = [];
+%     for ind = 1:length(indRm)
+%         sourcemodel.tri(sourcemodel.tri(:,1) == indRm(ind),:) = [];
+%         sourcemodel.tri(sourcemodel.tri(:,2) == indRm(ind),:) = [];
+%         sourcemodel.tri(sourcemodel.tri(:,3) == indRm(ind),:) = [];
+%         sourcemodel.tri(sourcemodel.tri(:) > indRm(ind)) = sourcemodel.tri(sourcemodel.tri(:) > indRm(ind)) - 1;
+%     end
+%     sourcemodel.pos(indRm,:) = [];
+%     sourcemodel.leadfield(indRm) = [];
+
+EEG = roi_connectivity_process(EEG, 'leadfield', sourcemodel, 'sourcemodel', g.sourcemodel, 'sourcemodel2mni', g.sourcemodel2mni, moreargs{:});
+if nargin > 1
+    com = sprintf( 'EEG = pop_roi_connectivity_process(EEG, %s);', vararg2str( options ));
 end
-
-% compute cross-spectrum, takes a while
-conn = data2spwctrgc(source_roi_data, fres, g.morder, 0, g.naccu, [], {'CS'});
-
-% Output paramters
-S.cortex  = cortex;
-S.source_voxel_data     = source_voxel_data;
-S.source_roi_data       = source_roi_data;
-S.source_roi_power_norm = source_roi_power_norm; % used for cross-sprectum
-S.freqs   = frqs;
-S.TRGCmat = TRGCmat;
-S.CS      = conn.CS;
-S.nPCA    = g.nPCA;
-S.nROI    = nROI;
-S.atlas   = cortex.Atlas(3);
-S.srate   = EEG.srate;
-

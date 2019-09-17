@@ -1,8 +1,13 @@
-function pop_roi_connectivity(S, varargin)
+function com = pop_roi_connectivity_plot(EEG, varargin)
 
+com = '';
 if nargin < 1
-    help pop_roi_connectivity;
+    help pop_roi_connectivity_plot;
     return
+end
+
+if ~isfield(EEG, 'roiconnect')
+    error('Compute connectivity first');
 end
 
 % if ~isfield(EEG.dipfit, 'hdmfile')
@@ -72,7 +77,7 @@ if nargin < 2
               };
               
     [result,~,~,outs] = inputgui('geometry', uigeom, 'uilist', uilist, 'helpcom', 'pophelp(''pop_loadbv'')', ...
-        'title', 'Load a Brain Vision Data Exchange format dataset', 'userdata', splot, 'eval', cb_select);
+        'title', 'ROI connectivity', 'userdata', splot, 'eval', cb_select);
     if isempty(result), return, end
     
     options = {};
@@ -94,6 +99,7 @@ g = finputcheck(options,  { 'measure'    'string'  {splot.acronym}  '';
                             'plotmatrix' 'string'  { 'on' 'off' }   'off';
                             'plotpsd'    'string'  { 'on' 'off' }   'off' }, 'pop_roi_connectivity');
 if ischar(g), error(g); end
+S = EEG.roiconnect;
 
 % colormap
 load cm17;
@@ -195,4 +201,6 @@ switch lower(g.measure)
         
 end
 
-        
+if nargin < 2
+    com = sprintf('pop_roi_connectivity_plot(EEG, %s);', vararg2str( options ));
+end
