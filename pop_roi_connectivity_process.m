@@ -1,7 +1,37 @@
-% (C) Stefan Haufe 2018
-% Modification to use the standar Desikan-Kiliany atlas
-
-% 'morder' model order for the spectral/connectivity analysis
+% pop_roi_connectivity_process - call roi_connectivity_process to compute
+%                                connectivity between ROIs
+% Usage:
+%  EEG = pop_roi_connectivity_process(EEG, 'key', 'val', ...);
+%
+% Inputs:
+%  EEG - EEGLAB dataset
+%
+% Required inputs:
+%  'headmodel'   - [string] head model file in MNI space
+%  'sourcemodel' - [string] source model file
+% 
+% Optional inputs:
+%  'elec2mni'    - [9x float] homogeneous transformation matrix to convert
+%                  electrode locations to MNI space.
+%  'sourcemodel2mni' - [9x float] homogeneous transformation matrix to convert
+%                  sourcemodel to MNI space.
+%
+% Output:
+%  EEG - EEGLAB dataset with field 'roiconnect' containing connectivity info.
+%
+% Note: Optional inputs to roi_connectivity_process() are also accepted.
+%
+% Author: Arnaud Delorme, UCSD, 2019
+%
+% Example
+%   p = fileparts(which('eeglab')); % path
+%   EEG = pop_roi_connectivity_process(EEG, 'headmodel', ...
+%   EEG.dipfit.hdmfile, 'elec2mni', EEG.dipfit.coord_transform, ...
+%   'sourcemodel', fullfile(p, 'functions', 'supportfiles', ...
+%   'head_modelColin27_5003_Standard-10-5-Cap339.mat'), 'sourcemodel2mni', ...
+%   [0 -26.6046230000 -46 0.1234625600 0 -1.5707963000 1000 1000 1000]);
+%
+% Use pop_roi_connectivity_plot(EEG) to plot the results.
 
 function [EEG,com] = pop_roi_connectivity_process(EEG, varargin)
 

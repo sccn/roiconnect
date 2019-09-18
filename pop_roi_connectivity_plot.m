@@ -1,3 +1,35 @@
+% pop_roi_connectivity_plot - plot results of connectivity analysis computed
+%                             by roi_connectivity_process.
+% Usage:
+%  pop_roi_connectivity_plot(EEG, 'key', 'val', ...);
+%
+% Inputs:
+%  EEG - EEGLAB dataset
+%
+% Required inputs:
+%  'headmodel'   - [string] head model file in MNI space
+%  'sourcemodel' - [string] source model file
+% 
+% Optional inputs:
+%  'measure'    - ['psd'|'roipsd'|'trgc'|'crossspecimag'|'crossspecpow']
+%                   'psd'   : Source power spectrum
+%                   'psdroi': ROI based power spectrum
+%                   'trgc'  : Time-reversed granger causality
+%                   'crossspecimag': Imaginary part of coherence from cross-spectrum
+%                   'crossspecpow' : Average cross-spectrum power for each ROI
+%  'freqrange'  - [min max] frequency range in Hz. Default is to plot
+%                 broadband power.
+%  'smooth'     - [float] smoothing factor for cortex surface plotting
+%  'plotcortex' - ['on'|'off'] plot results on smooth cortex. Default is 'on'
+%  'plotmatrix' - ['on'|'off'] plot results on smooth cortex. Default is 'off'
+%  'plotpsd'    - ['on'|'off'] plot PSD (for 'crossspecpow' only). Default is 'off'
+%
+% Author: Stefan Haufe and Arnaud Delorme, 2019
+%
+% Example:
+%   % Requires prior call to pop_roi_connectivity_process
+%   EEG = pop_roi_connectivity_plot(EEG, 'measure', 'psd');
+
 function com = pop_roi_connectivity_plot(EEG, varargin)
 
 com = '';

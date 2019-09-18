@@ -1,7 +1,42 @@
-% (C) Stefan Haufe 2018
-% Modification to use the standar Desikan-Kiliany atlas
-
-% 'morder' model order for the spectral/connectivity analysis
+% pop_roi_connectivity_process - call roi_connectivity_process to compute
+%                                connectivity between ROIs
+% Usage:
+%  EEG = pop_roi_connectivity_process(EEG, 'key', 'val', ...);
+%
+% Inputs:
+%  EEG - EEGLAB dataset
+%
+% Required inputs:
+%  'leadfield'   - [string or struct] leadfield structure (Fieldtrip)
+%                  or file containing Fieldtrip or Brainstrom leadfield
+%                  matrix.
+%  'sourcemodel' - [string] source model file also containing Atlas info.
+% 
+% Optional inputs:
+%  'sourcemodel2mni' - [9x float] homogeneous transformation matrix to convert
+%                  sourcemodel to MNI space.
+%  'sourcemodelatlas' - [string] name of Atlas to use (must be contained
+%                       in Atlas field of the sourcemodel file.
+%  'morder'    - [interger] Autoregressive model order (default is 20)
+%  'nPCA'      - [interger] Number of PCA component for each ROI. Each ROI
+%                is made of many voxel. Instead of averaging their activity,
+%                this function takes the x first PCA components, then use
+%                these to compute connectivity (default is 3)
+%  'naccu'     - [interger] For bootstrap, number of accumulation. Default is 
+%                none.
+%  'eloretareg' - [float] regularization term for eLoreta. Default is 0.05.
+%  'trgc'      - ['on'|'off'] compute time-reverse Granger Causality. Default
+%                is 'on'.
+%  'crossspec' - ['on'|'off'] compute cross-spectrum from which coherence can
+%                be derived. Default is 'on'.
+%
+% Output:
+%  EEG - EEGLAB dataset with field 'roiconnect' containing connectivity info.
+%
+% Author: Stefan Haufe and Arnaud Delorme
+%
+% Example: call pop_roi_connectivity_process instead because it will
+% compute the leadfield matrix automatically using Dipfit information.
 
 function EEG = roi_connectivity_process(EEG, varargin)
 
