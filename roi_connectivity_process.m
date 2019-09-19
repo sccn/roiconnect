@@ -49,6 +49,7 @@ end
 % -----------------------
 g = finputcheck(varargin, { ...
     'leadfield'  {'struct' 'string'}  {{} {}}             '';
+    'headmodel'   'string'  { }             ''; % sometimes useful when loading volume to see which voxels are inside/outside
     'sourcemodel' 'string'  { }             '';
     'sourcemodel2mni' 'real'    { }         [];
     'sourcemodelatlas' 'string'    { }      '';
@@ -81,44 +82,59 @@ if ~isempty(g.outputdir)
     mkdir(fullfile( g.outputdir, 'data'));
 end
 
-% Cortex mesh
-% -----------
-cortex = load(g.sourcemodel);
-if isfield(cortex, 'Faces')
-    % make brainstorm coordinate system consistent with MNI coordinates for
-    % plotting (in terms of axis directions)
-    disp('Brainstorm cortex mesh detected - transforming to MNI coordinates');
-    tf = traditionaldipfit(g.sourcemodel2mni);
-    pos      = tf*[cortex.Vertices ones(size(cortex.Vertices,1),1)]';
-    pos      = pos';
-    cortex.Vertices = pos(:,1:3);
-elseif isfield(cortex, 'cortex') && isfield(cortex, 'atlas')
-    hm = cortex;
-    clear cortex;
-    % align with MNI coordinates
-    tf = traditionaldipfit(g.sourcemodel2mni);
-    pos      = tf*[hm.cortex.vertices ones(size(hm.cortex.vertices,1),1)]';
-    pos      = pos';
-    cortex.Vertices = pos(:,1:3);
-    cortex.Faces = hm.cortex.faces;
-    
-    % make Alejandro Atlas definition compatible with Brainstrom one
-    nROI = length(hm.atlas.label);
+% Cortex mesh or volume
+% ---------------------
+[~,~,ext] = fileparts(g.sourcemodel);
+
+if strcmpi(ext, '.head')
+    [~, grid, labels, strlabels ] = load_afni_atlas(g.sourcemodel, g.headmodel, g.sourcemodel2mni);
+    uniqueROIs = unique(labels);
+    nROI = length(uniqueROIs);
     cortex.Atlas(1).Name = g.sourcemodelatlas;
     for iROI = 1:nROI
-        indVertices = find(hm.atlas.colorTable == iROI);
-        cortex.Atlas(1).Scouts(iROI).Label    = hm.atlas.label{iROI};
+        indVertices = find(labels == uniqueROIs(iROI));
+        cortex.Atlas(1).Scouts(iROI).Label    = strlabels{iROI};
         cortex.Atlas(1).Scouts(iROI).Vertices = indVertices;
     end
+    cortex.Vertices = grid;
 else
-    % code below is functional to load a mesh
-    % However, need to align with an Atlas
-    % This can be achieve with Fieldtrip functions
-    sourcemodelOriOld = ft_read_headshape(fullfile(ftPath, 'template', 'sourcemodel', 'cortex_20484.surf.gii'));
-    
-    error('Unknown mesh format')
+    cortex = load(g.sourcemodel);
+    if isfield(cortex, 'Faces')
+        % make brainstorm coordinate system consistent with MNI coordinates for
+        % plotting (in terms of axis directions)
+        disp('Brainstorm cortex mesh detected - transforming to MNI coordinates');
+        tf = traditionaldipfit(g.sourcemodel2mni);
+        pos      = tf*[cortex.Vertices ones(size(cortex.Vertices,1),1)]';
+        pos      = pos';
+        cortex.Vertices = pos(:,1:3);
+    elseif isfield(cortex, 'cortex') && isfield(cortex, 'atlas')
+        hm = cortex;
+        clear cortex;
+        % align with MNI coordinates
+        tf = traditionaldipfit(g.sourcemodel2mni);
+        pos      = tf*[hm.cortex.vertices ones(size(hm.cortex.vertices,1),1)]';
+        pos      = pos';
+        cortex.Vertices = pos(:,1:3);
+        cortex.Faces = hm.cortex.faces;
+
+        % make Alejandro Atlas definition compatible with Brainstrom one
+        nROI = length(hm.atlas.label);
+        cortex.Atlas(1).Name = g.sourcemodelatlas;
+        for iROI = 1:nROI
+            indVertices = find(hm.atlas.colorTable == iROI);
+            cortex.Atlas(1).Scouts(iROI).Label    = hm.atlas.label{iROI};
+            cortex.Atlas(1).Scouts(iROI).Vertices = indVertices;
+        end
+    else
+        % code below is functional to load a mesh
+        % However, need to align with an Atlas
+        % This can be achieve with Fieldtrip functions
+        sourcemodelOriOld = ft_read_headshape(fullfile(ftPath, 'template', 'sourcemodel', 'cortex_20484.surf.gii'));
+
+        error('Unknown mesh format')
+    end
 end
- 
+
 % Select Atlas
 % ------------
 found = false;
@@ -173,6 +189,7 @@ EEG.data = reshape(H*EEG.data(:, :), EEG.nbchan, EEG.pnts, EEG.trials);
 leadfield = reshape(H*leadfield(:, :), EEG.nbchan, nvox, 3);
 
 % eLORETA inverse projection kernel
+disp('Computing eLoreta...');
 P_eloreta = mkfilt_eloreta_v2(leadfield, g.eloretareg);
 
 % project to source space
@@ -185,6 +202,7 @@ nROI = length(cortex.Atlas.Scouts);
 labels = {cortex.Atlas.Scouts.Label};
 
 % keep only the first nPCA strongest components for each ROI
+disp('Computing ROI activity...');
 source_roi_data = [];
 for iROI = 1:nROI
     ind_roi = cortex.Atlas.Scouts(iROI).Vertices;
@@ -197,7 +215,7 @@ for iROI = 1:nROI
     % many voxels rather than only in a few voxels with strong power (which
     % may leak from a neighboring region)
     data_(:, :) = zscore(data_(:, :));
-    [data_, ~, ~] = svd(data_(:, :), 'econ');
+    [data_, ~, ~] = svd(data_(:, :), 'econ'); % WARNING SHOULD USE SVDS for SPEED
     source_roi_data(:, :, iROI) = data_(:, 1:g.nPCA);
 end
 

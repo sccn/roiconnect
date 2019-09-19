@@ -5,7 +5,35 @@ if isempty(filename)
 end
 
 if ischar(filename)
-    f = load('-mat', filename);
+    [~,~,ext] = fileparts(filename);
+    if strcmpi(ext, '.nii')
+        atlas = ft_read_atlas(filename);
+        mri = sum(atlas.tissue(:,:,:,:),4) > 0;
+        [r,c,v] = ind2sub(size(mri),find(mri));
+        xyz = [r c v ones(length(r),1)];
+        xyz = atlas.transform*xyz';
+        if nargin > 1 && ~isempty(transform)
+            xyz = traditionaldipfit(transform)*xyz;
+        end
+        plot3(xyz(1,:),xyz(2,:),xyz(3,:), '.');
+        return
+    elseif strcmpi(ext, '.head')
+        afni = ft_read_atlas(filename);
+        mri = sum(afni.brick0(:,:,:,:),4) > 0;
+        mri = afni.brick1(:,:,:,1);
+        [r,c,v] = ind2sub(size(mri),find(mri));
+        xyz = [r c v ones(length(r),1)];
+        xyz = afni.transform*xyz';
+        if nargin > 1 && ~isempty(transform)
+            xyz = traditionaldipfit(transform)*xyz;
+        end
+        plot3(xyz(1,:),xyz(2,:),xyz(3,:), '.');
+        return
+    elseif strcmpi(ext, '.mat')
+        f = load('-mat', filename);
+    else
+        error('Unknown file format');
+    end
 else
     f = filename;
 end

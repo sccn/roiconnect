@@ -83,6 +83,14 @@ if nargin < 2
     [ roi(2).atlasliststr, roi(2).atlaslist] = getatlaslist(roi(2).file);
     roi(2).atlasind  = 2;
 
+    roi(3).label = 'ROI: Custom atlas';
+    roi(3).file  = '';
+    roi(3).align = [];
+    roi(3).enable = 'on';
+    roi(3).atlasliststr = { '' };
+    roi(3).atlaslist    = { '' };
+    roi(3).atlasind     = 1;
+    
     cb_select1 = [ 'usrdat = get(gcf, ''userdata'');' ...
                   'usrdat = usrdat{1}(get(findobj(gcf, ''tag'', ''selection1''), ''value''));' ...
                   'set(findobj(gcf, ''tag'', ''push1''), ''enable'', usrdat.enable);' ...
@@ -170,32 +178,50 @@ headmodel = load('-mat', g.headmodel);
 EEG.dipfit.coord_transform = g.elec2mni;
 dataPre = eeglab2fieldtrip(EEG, 'preprocessing', 'dipfit'); % does the transformation
 ftPath = fileparts(which('ft_defaults'));
-    
-sourcemodelOri = load('-mat', g.sourcemodel);
-if ~isempty(g.sourcemodel2mni)
-    if isfield(sourcemodelOri, 'cortex')
-        tf = traditionaldipfit(g.sourcemodel2mni);
-        sourcemodelOri.pos      = tf*[sourcemodelOri.cortex.vertices ones(size(sourcemodelOri.cortex.vertices,1),1)]';
-        sourcemodelOri.pos      = sourcemodelOri.pos';
-        sourcemodelOri.pos(:,4) = [];
-        sourcemodelOri.tri = sourcemodelOri.cortex.faces;
-        sourcemodelOri.unit = 'mm';
-    else
-        tf = traditionaldipfit(g.sourcemodel2mni);
-        pos      = tf*[sourcemodelOri.Vertices ones(size(sourcemodelOri.Vertices,1),1)]';
-        pos      = pos';
-        sourcemodelOri.pos = pos(:,1:3);
-        sourcemodelOri.tri  = sourcemodelOri.Faces;
+
+
+[~,~,ext] = fileparts(g.sourcemodel);
+if strcmpi(ext, '.nii')
+    atlas = ft_read_atlas(g.sourcemodel);
+    mri = sum(atlas.tissue(:,:,:,:),4) > 0;
+    [r,c,v] = ind2sub(size(mri),find(mri));
+    xyz = [r c v ones(length(r),1)];
+    xyz = atlas.transform*xyz';
+    if nargin > 1 && ~isempty(transform)
+        xyz = traditionaldipfit(transform)*xyz;
+    end
+elseif strcmpi(ext, '.head')
+    [~, sourcemodelOri.pos, ~ ] = load_afni_atlas(g.sourcemodel, g.headmodel, g.sourcemodel2mni);
+elseif strcmpi(ext, '.mat')
+    sourcemodelOri = load('-mat', g.sourcemodel);
+    if ~isempty(g.sourcemodel2mni)
+        if isfield(sourcemodelOri, 'cortex') % alejandro
+            tf = traditionaldipfit(g.sourcemodel2mni);
+            sourcemodelOri.pos      = tf*[sourcemodelOri.cortex.vertices ones(size(sourcemodelOri.cortex.vertices,1),1)]';
+            sourcemodelOri.pos      = sourcemodelOri.pos';
+            sourcemodelOri.pos(:,4) = [];
+            sourcemodelOri.tri = sourcemodelOri.cortex.faces;
+            sourcemodelOri.unit = 'mm';
+        else
+            % brainstrom
+            tf = traditionaldipfit(g.sourcemodel2mni);
+            pos      = tf*[sourcemodelOri.Vertices ones(size(sourcemodelOri.Vertices,1),1)]';
+            pos      = pos';
+            sourcemodelOri.pos = pos(:,1:3);
+            sourcemodelOri.tri  = sourcemodelOri.Faces;
+        end
     end
 end
-    
-cfg         = [];
-cfg.elec            = dataPre.elec;
+
+cfg      = [];
+cfg.elec = dataPre.elec;
 %     cfg.grid    = sourcemodelOri;   % source points
 cfg.headmodel = headmodel.vol;   % volume conduction model
 cfg.sourcemodel.inside = ones(size(sourcemodelOri.pos,1),1) > 0;
 cfg.sourcemodel.pos    = sourcemodelOri.pos;
-cfg.sourcemodel.tri    = sourcemodelOri.tri;
+if isfield(sourcemodelOri, 'tri')
+    cfg.sourcemodel.tri    = sourcemodelOri.tri;
+end
 cfg.singleshell.batchsize = 5000; % speeds up the computation
 sourcemodel = ft_prepare_leadfield(cfg);
 
@@ -211,7 +237,7 @@ sourcemodel = ft_prepare_leadfield(cfg);
 %     sourcemodel.pos(indRm,:) = [];
 %     sourcemodel.leadfield(indRm) = [];
 
-EEG = roi_connectivity_process(EEG, 'leadfield', sourcemodel, 'sourcemodel', g.sourcemodel, 'sourcemodel2mni', g.sourcemodel2mni, moreargs{:});
+EEG = roi_connectivity_process(EEG, 'leadfield', sourcemodel, 'headmodel', g.headmodel, 'sourcemodel', g.sourcemodel, 'sourcemodel2mni', g.sourcemodel2mni, moreargs{:});
 if nargout > 1
     com = sprintf( 'EEG = pop_roi_connectivity_process(EEG, %s);', vararg2str( options ));
 end
