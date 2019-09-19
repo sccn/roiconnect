@@ -24,7 +24,7 @@ tool_m = findobj(fig, 'tag', 'tools');
 % command to check that the '.source' is present in the EEG structure
 % -------------------------------------------------------------------
 cb_process     = [ 'try, [EEG, LASTCOM] = pop_roi_connectivity_process(EEG);' catchstrs.new_and_hist ]; 
-cb_plot        = [ 'try, LASTCOM = pop_roi_connectivity_plot(EEG);'      catchstrs.new_and_hist ]; 
+cb_plot        = [ 'try, LASTCOM = pop_roi_connectivity_plot(EEG);'           catchstrs.add_to_hist  ]; 
 
 roi_m = uimenu( tool_m, 'label', 'ROI connectivity analysis');
 uimenu( roi_m, 'Label', 'Compute ROI connectivity', 'CallBack', cb_process);
