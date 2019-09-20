@@ -33,11 +33,38 @@
 %
 % Use pop_roi_connectivity_plot(EEG) to plot the results.
 
+% TO DO - Arno
+% - Centralize reading head mesh and Atlas (there might be a function in
+% Fieldtrip to do that) ft_read_volume ft_read_mesh
+% - Make compatible with all Fieldtrip and FSL Atlases
+% - Downsampling of Atlas - check bug submitted to Fieldtrip
+% - Plot inside(blue) vs outside(red) voxels for source volume
+
 function [EEG,com] = pop_roi_connectivity_process(EEG, varargin)
 
 com = '';
 if nargin < 1
     help pop_roi_connectivity_process;
+    return
+end
+
+% special callback for custom source models
+if ~isstruct(EEG)
+    res = inputgui('uilist', { {'style', 'text', 'string' ['Volumetric atlases often have million of voxels and ' 10 ...
+                                                          'require to be downsampled to a few thousand voxels' 10 ...
+                                                          'to be used as source models. Cancel not to downsample.' 10 ...
+                                                          'This message box does not apply to surface atlases.' ]} ...
+                                                {'style', 'text', 'string' 'Downsample (with 4, 1M -> ~15k)' } ...
+                                                {'style', 'edit', 'string' '4' }}, ...
+                                                'geomvert', [3 1], 'geometry', {1 [3 1]});
+    if ~isempty(res)
+        set(findobj(EEG, 'tag', 'down'), 'string', sprintf('Scale/%s', res{1}));
+    else
+        set(findobj(EEG, 'tag', 'down'), 'string', '');
+    end
+    userdata = get(EEG, 'userdata');
+    userdata{3} = str2num(res{1});
+    set(EEG, 'userdata', userdata);
     return
 end
 
@@ -111,7 +138,7 @@ if nargin < 2
              
     cb_load2 = [ '[tmpfilename, tmpfilepath] = uigetfile(''*'', ''Select a text file'');' ...
                  'if tmpfilename(1) ~=0, set(findobj(''parent'', gcbf, ''tag'', ''strfile2''), ''string'', fullfile(tmpfilepath,tmpfilename)); end;' ...
-                 'clear tmpfilename tmpfilepath;' ];
+                 'clear tmpfilename tmpfilepath; pop_roi_connectivity_process(gcbf);' ];
              
     cb_selectcoreg1 = [ 'tmpmodel = get( findobj(gcbf, ''tag'', ''strfile1''), ''string'');' ...
                        'tmptransf = get( findobj(gcbf, ''tag'', ''transform1''), ''string'');' ...
@@ -119,15 +146,16 @@ if nargin < 2
                        'clear tmpmodel tmptransf;' ];
     cb_selectcoreg2 = [ 'tmpmodel1 = get( findobj(gcbf, ''tag'', ''strfile1''), ''string'');' ...
                         'tmpmodel2 = get( findobj(gcbf, ''tag'', ''strfile2''), ''string'');' ...
-                        'tmptransf = get( findobj(gcbf, ''tag'', ''transform2''), ''string'');' ...
+                        'tmptransf = str2num(get( findobj(gcbf, ''tag'', ''transform2''), ''string''));' ...
                         'figure; plot3dmeshalign(tmpmodel1);' ...
-                        'hold on; plot3dmeshalign(tmpmodel2, str2num(tmptransf), [1 0 0]);' ...
+                        '[tmpmodel2,tmptransf] = transform_move_inward(tmpmodel2, tmpmodel1, tmptransf);' ...
+                        'hold on; plot3dmeshalign(tmpmodel2, tmptransf, [1 0 0]);' ...
                         'hlegend = legend({''Head model'' ''ROI source model'' });' ...
                         'set(hlegend, ''position'', [0.7473 0.7935 0.2304 0.0774]);' ...
                         'clear hlegend tmpmodel1 tmpmodel2 tmptransf;' ];
-                
+   
     rowg = [0.1 0.6 1 0.2];
-    uigeom = { 1 1 rowg rowg 1 rowg rowg rowg 1 [0.5 1 0.35 0.5] [0.5 1 0.35 0.5] [1] [0.2 1 1.5] };
+    uigeom = { 1 1 rowg rowg 1 rowg rowg [0.1 0.6 0.9 0.3] 1 [0.5 1 0.35 0.5] [0.5 1 0.35 0.5] [1] [0.2 1 1.5] };
     uilist = { { 'style' 'text' 'string' 'Region Of Interest (ROI) connectivity analysis' 'fontweight' 'bold'} ...
               { 'style' 'popupmenu' 'string' { leadfield.label } 'tag' 'selection1' 'callback' cb_select1 }  ...
               {} { 'style' 'text' 'string' 'File name' } { 'style' 'edit' 'string' 'xxxxxxxxxxxxxxxxxxxx' 'tag' 'strfile1' 'enable'  'off' } { 'style' 'pushbutton' 'string' '...' 'tag' 'push1' 'callback' cb_load1 }  ...
@@ -135,7 +163,7 @@ if nargin < 2
               { 'style' 'popupmenu' 'string' { roi.label }  'tag' 'selection2' 'callback' cb_select2 } ...
               {} { 'style' 'text' 'string' 'File name' } { 'style' 'edit' 'string' 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' 'tag' 'strfile2' } { 'style' 'pushbutton' 'string' '...' 'tag' 'push2' 'callback' cb_load2 }  ...
               {} { 'style' 'text' 'string' 'File to MNI transfrom' } { 'style' 'edit' 'string' 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' 'tag' 'transform2' } { 'style' 'pushbutton' 'string' '...' 'callback' cb_selectcoreg2 }  ...
-              {} { 'style' 'text' 'string' 'Use this Atlas/ROI' } { 'style' 'popupmenu' 'string' 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' 'tag' 'atlas' } {}  ...
+              {} { 'style' 'text' 'string' 'Use this Atlas/ROI' } { 'style' 'popupmenu' 'string' 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' 'tag' 'atlas' } { 'style' 'text' 'string' 'Scale/2' 'tag' 'down' }  ...
               {} ...
               {} { 'style' 'text' 'string' 'Model order for AR model' } { 'style' 'edit' 'string' '20' 'tag' 'morder' } { } ...
               {} { 'style' 'text' 'string' 'Bootstrap if any (n)' } { 'style' 'edit' 'string' '' 'tag' 'naccu' } { } ...
@@ -143,20 +171,21 @@ if nargin < 2
               {} { 'style' 'checkbox' 'string' 'Compute TRGC' 'tag' 'trgc' 'value' 1 } ...
               { 'style' 'checkbox' 'string' 'Compute cross-spectrum' 'tag' 'crossspec' 'value' 1 } ...
               };
-    [result,~,~,out] = inputgui('geometry', uigeom, 'uilist', uilist, 'helpcom', 'pophelp(''pop_loadbv'')', ...
-        'title', 'Load a Brain Vision Data Exchange format dataset', 'userdata', {leadfield roi}, 'eval', [cb_select1 cb_select2 ]);
+    [result,usrdat,~,out] = inputgui('geometry', uigeom, 'uilist', uilist, 'helpcom', 'pophelp(''pop_loadbv'')', ...
+        'title', 'Load a Brain Vision Data Exchange format dataset', 'userdata', {leadfield roi []}, 'eval', [cb_select1 cb_select2 'set(findobj(gcf, ''tag'', ''down''), ''string'', '''');' ]);
     if isempty(result), return, end
 
     if ~out.trgc && ~out.crossspec
         error('Nothing to compute')
     end
-    
+    if isempty(usrdat{3}), usrdat{3} = 1; end
     options = {};
     options = { 'headmodel' out.strfile1 ...
                 'elec2mni' str2num(out.transform1) ...
                 'sourcemodel' out.strfile2 ...
                 'sourcemodel2mni' str2num(out.transform2) ...
                 'sourcemodelatlas' roi(out.selection2).atlaslist{out.atlas} ...
+                'downsample' usrdat{3} ...
                 'morder' str2num(out.morder) ...
                 'naccu' str2num(out.naccu) ...
                 'trgc'  fastif(out.trgc, 'on', 'off') ...
@@ -169,6 +198,7 @@ end
 [g, moreargs] = finputcheck(options, { ...
     'headmodel'       'string'  { }             '';
     'elec2mni'        'real'    { }             [];
+    'downsample'      'integer'  { }             4; % volume only
     'sourcemodel'     'string'  { }             '';
     'sourcemodel2mni' 'real'    { }             [] }, 'pop_roi_connectivity_process', 'ignore');
 if ischar(g), error(g); end
@@ -178,7 +208,6 @@ headmodel = load('-mat', g.headmodel);
 EEG.dipfit.coord_transform = g.elec2mni;
 dataPre = eeglab2fieldtrip(EEG, 'preprocessing', 'dipfit'); % does the transformation
 ftPath = fileparts(which('ft_defaults'));
-
 
 [~,~,ext] = fileparts(g.sourcemodel);
 if strcmpi(ext, '.nii')
@@ -190,40 +219,28 @@ if strcmpi(ext, '.nii')
     if nargin > 1 && ~isempty(transform)
         xyz = traditionaldipfit(transform)*xyz;
     end
+    disp('DOWNSAMPLING NOT IMPLEMENTED FOR THIS TYPE OF ATLAS');
 elseif strcmpi(ext, '.head')
-    [~, sourcemodelOri.pos, ~ ] = load_afni_atlas(g.sourcemodel, g.headmodel, g.sourcemodel2mni);
+    [~, sourcemodelOri.pos, ~ ] = load_afni_atlas(g.sourcemodel, g.headmodel, g.sourcemodel2mni, g.downsample);
 elseif strcmpi(ext, '.mat')
-    sourcemodelOri = load('-mat', g.sourcemodel);
-    if ~isempty(g.sourcemodel2mni)
-        if isfield(sourcemodelOri, 'cortex') % alejandro
-            tf = traditionaldipfit(g.sourcemodel2mni);
-            sourcemodelOri.pos      = tf*[sourcemodelOri.cortex.vertices ones(size(sourcemodelOri.cortex.vertices,1),1)]';
-            sourcemodelOri.pos      = sourcemodelOri.pos';
-            sourcemodelOri.pos(:,4) = [];
-            sourcemodelOri.tri = sourcemodelOri.cortex.faces;
-            sourcemodelOri.unit = 'mm';
-        else
-            % brainstrom
-            tf = traditionaldipfit(g.sourcemodel2mni);
-            pos      = tf*[sourcemodelOri.Vertices ones(size(sourcemodelOri.Vertices,1),1)]';
-            pos      = pos';
-            sourcemodelOri.pos = pos(:,1:3);
-            sourcemodelOri.tri  = sourcemodelOri.Faces;
-        end
-    end
+    sourcemodelOri = transform_move_inward(g.sourcemodel, g.headmodel,g.sourcemodel2mni);
 end
 
-cfg      = [];
-cfg.elec = dataPre.elec;
-%     cfg.grid    = sourcemodelOri;   % source points
-cfg.headmodel = headmodel.vol;   % volume conduction model
-cfg.sourcemodel.inside = ones(size(sourcemodelOri.pos,1),1) > 0;
-cfg.sourcemodel.pos    = sourcemodelOri.pos;
-if isfield(sourcemodelOri, 'tri')
-    cfg.sourcemodel.tri    = sourcemodelOri.tri;
+if isfield(headmodel, 'vol')
+    cfg      = [];
+    cfg.elec = dataPre.elec;
+    %     cfg.grid    = sourcemodelOri;   % source points
+    cfg.headmodel = headmodel.vol;   % volume conduction model
+    cfg.sourcemodel.inside = ones(size(sourcemodelOri.pos,1),1) > 0;
+    cfg.sourcemodel.pos    = sourcemodelOri.pos;
+    if isfield(sourcemodelOri, 'tri')
+        cfg.sourcemodel.tri    = sourcemodelOri.tri;
+    end
+    cfg.singleshell.batchsize = 5000; % speeds up the computation
+    sourcemodel = ft_prepare_leadfield(cfg);
+else
+    sourcemodel = g.headmodel;
 end
-cfg.singleshell.batchsize = 5000; % speeds up the computation
-sourcemodel = ft_prepare_leadfield(cfg);
 
 % remove vertices not modeled (no longer necessary - makes holes in model)
 %     indRm = find(sourcemodel.inside == 0);

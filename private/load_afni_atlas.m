@@ -1,38 +1,39 @@
-function [newBrick, xyz, labels, labelsstr ] = load_afni_atlas(sourcemodel, headmodel, sourcemodel2mni)
+function [newVol, xyz, labels, labelsstr ] = load_afni_atlas(sourcemodel, headmodel, sourcemodel2mni, downsample)
 
     afni = ft_read_atlas(sourcemodel);
-    mri = afni.brick1(:,:,:,1);
+    vol = afni.brick1(:,:,:,1);
     labelsstr = afni.brick1label;
-    [r,c,v] = ind2sub(size(mri),find(mri));
     
-    sub = 4; % Subsample by 4
-    newBrickCell = cell(ceil(size(mri)/sub));
-    for iDip = 1:length(r)
-        newBrickCell{round(r(iDip)/sub), round(c(iDip)/sub), round(v(iDip)/sub)} = [ newBrickCell{round(r(iDip)/sub), round(c(iDip)/sub), round(v(iDip)/sub)} mri(r(iDip),c(iDip),v(iDip)) ];
-    end
-    
-    % get dominating label for voxel
-    newBrick = zeros(ceil(size(mri)/sub));
-    for iDip = 1:length(newBrickCell(:))
-        if ~isempty(newBrickCell{iDip})
-            uniq = unique(newBrickCell{iDip});
-            if length(uniq) > 1
-                count = histc(newBrickCell{iDip}, uniq);
-                [~,indMax] = max(count);
-                newBrick(iDip) = uniq(indMax);
-            else
-                newBrick(iDip) = uniq;
+    sub = downsample; % Subsample by 4
+    newVolCell = cell(ceil(size(vol)/sub));
+    for x = 1:size(vol,1)
+        for y = 1:size(vol,2)
+            for z = 1:size(vol,3)
+                newVolCell{ceil(x/sub), ceil(y/sub), ceil(z/sub)} = [ newVolCell{ceil(x/sub), ceil(y/sub), ceil(z/sub)} vol(x,y,z) ];
             end
         end
     end
     
+    % get dominating label for voxel
+    newVol = zeros(size(newVolCell));
+    for iVol = 1:prod(size(newVolCell))
+        uniq = unique(newVolCell{iVol});
+        if length(uniq) > 1
+            count = histc(newVolCell{iVol}, uniq);
+            [~,indMax] = max(count);
+            newVol(iVol) = uniq(indMax);
+        else
+            newVol(iVol) = uniq;
+        end
+    end
+    
     % recompute coordinates
-    inds = find(newBrick);
-    [r,c,v] = ind2sub(size(newBrick),find(newBrick));
-    r = (r-1)*4 + 2.5;
-    c = (c-1)*4 + 2.5;
-    v = (v-1)*4 + 2.5;
-    labels = newBrick(inds);
+    inds = find(newVol);
+    [r,c,v] = ind2sub(size(newVol),find(newVol));
+    r = (r-1)*downsample + (downsample-1)/2+1;
+    c = (c-1)*downsample + (downsample-1)/2+1;
+    v = (v-1)*downsample + (downsample-1)/2+1;
+    labels = newVol(inds);
     
     % transform coordinates
     xyz = [r c v ones(length(r),1)];
