@@ -152,7 +152,7 @@ switch lower(g.measure)
             freqRatio = g.freqrange/max(S.freqs);
             [B,A] = butter(5,freqRatio); % sampling rate is 1 so divide by 2 as in S.freqs
             disp('Filtering...');
-            X = filtfilt(B, A, S.source_voxel_data);
+            X = filtfilt(B, A, double(S.source_voxel_data));
             
             disp('Applying hilbert transform...');
             Xhilbert = hilbert(X);
