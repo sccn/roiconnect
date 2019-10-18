@@ -1,3 +1,5 @@
+Open questions
+
 1. For Brainstorm, did you use Freesurfer on the selected subject and extract 
 the head model for this specific subject? How did you align the electrodes 
 to the head model. I do not believe the scanned location of the electrodes 
