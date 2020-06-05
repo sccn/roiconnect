@@ -54,9 +54,12 @@ g = finputcheck(varargin, { ...
     'sourcemodel2mni' 'real'    { }         [];
     'sourcemodelatlas' 'string'    { }      '';
     'morder'     'integer' { }              20;
-    'eloretareg' 'real'    { }              0.05;
+    'sourceparams'   'cell'    { }          { 0.05 };
+    'sourceanalysis' 'string'    { 'fieldtrip' 'roiconnect' } 'fieldtrip';
+    'sourcemethod'   'string'    { }        'eloreta';
     'nPCA'       'integer' { }              3;
     'naccu'       'integer' { }             1;
+    'downsample' 'integer' { }              1;
     'trgc'       'string' { 'on' 'off' }    'on';
     'crossspec'  'string' { 'on' 'off' }    'on';
     'outputdir'  'string'  { }              '' }, 'roi_connectivity_process');
@@ -87,7 +90,7 @@ end
 [~,~,ext] = fileparts(g.sourcemodel);
 
 if strcmpi(ext, '.head')
-    [~, grid, labels, strlabels ] = load_afni_atlas(g.sourcemodel, g.headmodel, g.sourcemodel2mni);
+    [~, grid, labels, strlabels ] = load_afni_atlas(g.sourcemodel, g.headmodel, g.sourcemodel2mni, g.downsample);
     uniqueROIs = unique(labels);
     nROI = length(uniqueROIs);
     cortex.Atlas(1).Name = g.sourcemodelatlas;
@@ -125,7 +128,13 @@ else
             cortex.Atlas(1).Scouts(iROI).Label    = hm.atlas.label{iROI};
             cortex.Atlas(1).Scouts(iROI).Vertices = indVertices;
         end
-    else
+    elseif isnumeric(cortex) && mod(size(cortex,1),3) == 0 && size(cortex,2) == 6
+        % NFT matrix
+        cortextmp = cortex;
+        clear cortex;
+        cortex.Vertices = cortextmp(:,1:3);
+        cortex.Atlas(1).Name = g.sourcemodelatlas;
+    elseif ~isfield(cortex, 'Vertices')
         % code below is functional to load a mesh
         % However, need to align with an Atlas
         % This can be achieve with Fieldtrip functions
@@ -156,13 +165,19 @@ if ~isstruct(g.leadfield)
 else
     leadfield = g.leadfield;
 end
-if isstruct(leadfield) && isfield(leadfield, 'Gain') % brainstorm
+if isstruct(leadfield) && isfield(leadfield, 'Gain') 
+    % brainstorm
     % make format compatible with Stefan's routines
     leadfield = permute(reshape(leadfield.Gain, [], 3, nvox), [1 3 2]);
-elseif isstruct(leadfield) && isfield(leadfield, 'leadfield') % fieldtrip
+elseif isstruct(leadfield) && isfield(leadfield, 'leadfield') 
+    % fieldtrip
+    oldLeadfield = leadfield;
     leadfield.gain = reshape( [ leadfield.leadfield{:} ], [length(leadfield.label) 3 length(leadfield.leadfield)]);
     leadfield.gain = permute(leadfield.gain, [1 3 2]);
     leadfield = leadfield.gain;
+elseif isfield(leadfield, 'LFM')
+    % NFT
+    leadfield = leadfield.LFM;
 else
     disp('Warning: unknown leadfield matrix format, assuming array of gain values');
 end
@@ -170,7 +185,10 @@ end
 nvox = size(cortex.Vertices, 1);
 nvox2 = size(leadfield,2);
 if ~isequal(nvox, nvox2)
-    error('There must be the same number of vertices/voxels in the leadfield and cortex mesh');
+    error('There must be the same number of vertices/voxels in the leadfield and source model');
+end
+if ~isequal(size(leadfield,1), EEG.nbchan)
+    error('There must be the same number of channels in the leadfield and in the dataset');
 end
 
 % use frequency resolution of 0.5 Hz
@@ -180,21 +198,56 @@ fres = EEG.srate;
 frqs = sfreqs(fres, EEG.srate);
 
 %% source reconstruction
+if strcmpi(g.sourceanalysis, 'roiconnect')
+    % common average reference transform
+    H = eye(EEG.nbchan) - ones(EEG.nbchan) ./ EEG.nbchan;
 
-% common average reference transform
-H = eye(EEG.nbchan) - ones(EEG.nbchan) ./ EEG.nbchan;
+    % apply to data and leadfield
+    EEG.data = reshape(H*EEG.data(:, :), EEG.nbchan, EEG.pnts, EEG.trials);
+    leadfield = reshape(H*leadfield(:, :), EEG.nbchan, nvox, 3);
 
-% apply to data and leadfield
-EEG.data = reshape(H*EEG.data(:, :), EEG.nbchan, EEG.pnts, EEG.trials);
-leadfield = reshape(H*leadfield(:, :), EEG.nbchan, nvox, 3);
+    % eLORETA inverse projection kernel
+    disp('Computing eLoreta...');
+    P_eloreta = mkfilt_eloreta_v2(leadfield, g.sourceparams{:});
+    
+    % project to source space
+    source_voxel_data = reshape(EEG.data(:, :)'*P_eloreta(:, :), EEG.pnts*EEG.trials, nvox, 3);
 
-% eLORETA inverse projection kernel
-disp('Computing eLoreta...');
-P_eloreta = mkfilt_eloreta_v2(leadfield, g.eloretareg);
+else
+    % transform the data to continuous so we can get an estimate for each sample
+    EEG2 = EEG;
+    EEG2.data = EEG2.data(:,:);
+    EEG2.pnts = size(EEG2.data,2);
+    EEG2.trials = 1;
+    EEG2 = eeg_checkset(EEG2);
+    dataPre = eeglab2fieldtrip(EEG2, 'preprocessing', 'dipfit');  
+    
+    % prepare data
+    cfg = [];
+    cfg.channel = {'all', '-EOG1'};
+    cfg.reref = 'yes';
+    cfg.refchannel = {'all', '-EOG1'};
+    dataPre = ft_preprocessing(cfg, dataPre);
 
-% project to source space
-source_voxel_data = reshape(EEG.data(:, :)'*P_eloreta(:, :), EEG.pnts*EEG.trials, nvox, 3);
+    % load head model and prepare leadfield matrix
+    vol = load('-mat', g.headmodel);
 
+    % source reconstruction
+    cfg             = [];
+    cfg.method      = g.sourcemethod;
+    try
+        cfg.(g.sourcemethod) = struct(g.sourceparams{:});
+    catch, end
+    cfg.sourcemodel = oldLeadfield;
+    cfg.headmodel   = vol.vol;
+    cfg.keeptrials  = 'yes';
+    source          = ft_sourceanalysis(cfg, dataPre);  % compute the source
+    
+    % reformat for ROI analysis below
+    source_voxel_data = reshape([ source.avg.mom{:} ], 3, size(source.avg.mom{1},2), length(source.avg.mom));
+    source_voxel_data = permute(source_voxel_data, [2 3 1]);
+end
+    
 % number of ROIs in the Desikan-Killiany Atlas
 nROI = length(cortex.Atlas.Scouts);
 
@@ -267,15 +320,22 @@ else
 end
 
 % Output paramters
-EEG.roiconnect.cortex  = cortex;
+EEG.roiconnect.cortex    = cortex;
+EEG.roiconnect.atlas     = cortex.Atlas.Scouts;
 EEG.roiconnect.source_voxel_data     = source_voxel_data;
 EEG.roiconnect.source_roi_data       = source_roi_data;
 EEG.roiconnect.source_roi_power_norm = source_roi_power_norm; % used for cross-sprectum
-EEG.roiconnect.freqs   = frqs;
-EEG.roiconnect.TRGCmat = TRGCmat;
-EEG.roiconnect.CS      = conn.CS;
-EEG.roiconnect.nPCA    = g.nPCA;
-EEG.roiconnect.nROI    = nROI;
-EEG.roiconnect.atlas   = cortex.Atlas;
-EEG.roiconnect.srate   = EEG.srate;
+EEG.roiconnect.freqs     = frqs;
+EEG.roiconnect.TRGCmat   = TRGCmat;
+EEG.roiconnect.CS        = conn.CS;
+EEG.roiconnect.nPCA      = g.nPCA;
+EEG.roiconnect.nROI      = nROI;
+EEG.roiconnect.atlas     = cortex.Atlas;
+EEG.roiconnect.srate     = EEG.srate;
+EEG.roiconnect.leadfield = leadfield;
+EEG.roiconnect.headmodel = g.headmodel;
+EEG.roiconnect.parameters = varargin;
+if exist('P_eloreta', 'var')
+    EEG.roiconnect.P_eloreta = P_eloreta;
+end
 

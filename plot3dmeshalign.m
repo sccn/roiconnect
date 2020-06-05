@@ -1,4 +1,4 @@
-function plot3dmeshalign(filename1, filename2, transform, color1, color2)
+function plot3dmeshalign(filename1, filename2, transform, color1, color2, region)
 
 if isempty(filename1)
     return;
@@ -12,14 +12,23 @@ end
 if nargin < 5
     color2  = [1 0 0];
 end
+if nargin < 6
+    region = [];
+end
 
 fig = figure;
 ax = axes('unit', 'normalized', 'position', [ 0.05 0.05 0.9 0.9]);
 [pos1,tri1] = loadmeshdata(filename1);
 [pos2,tri2] = loadmeshdata(filename2, transform);
 if isempty(pos2)
-    pos2 = loadvolumedata(filename2, transform);
-    title('Vertices falling outside the brain mesh will be automatically removed');
+    [~,~,ext] = fileparts(filename2);
+    if ~strcmpi(ext, '.dip')
+        pos2 = loadvolumedata(filename2, transform, region);
+        title('Vertices falling outside the brain mesh will be automatically removed');
+    else
+        pos2 = importdata(filename2);
+        pos2 = pos2(1:end/3,1:3);
+    end
 else
     title('Vertices falling outside the brain mesh will automatically be moved inside the mesh');
 end
@@ -42,7 +51,7 @@ if ~isempty(tri2)
     colors = pairwiseDist(:,4)*color2;
     patch('Faces',tri2,'Vertices',pos2, 'FaceVertexCdata',colors,'facecolor','interp','edgecolor','none', 'facealpha', 0.5);
 else
-    plot3(pos2(:,1),pos2(:,2),pos2(:,3), '.', 'color', color2);
+    h = plot3(pos2(:,1),pos2(:,2),pos2(:,3), '.', 'color', color2);
 end
 
 axisBrain = gca;
@@ -97,10 +106,12 @@ end
 if isfield(f, 'pos')
     pos = f.pos;
     tri = f.tri;
-elseif isfield(f, 'Vertices')
+elseif isfield(f, 'Vertices') && isfield(f, 'Faces') 
     pos = f.Vertices;
     tri = f.Faces;
-elseif isfield(f, 'vertices')
+elseif isfield(f, 'Vertices') && ~isfield(f, 'Faces') 
+    pos = f.Vertices;
+elseif isfield(f, 'vertices') && isfield(f, 'faces') 
     pos = f.vertices;
     tri = f.faces;
 elseif isfield(f, 'vol')
@@ -122,7 +133,7 @@ end
 % ---------------------
 % function to load mesh
 % ---------------------
-function [pos] = loadvolumedata(filename, transform)
+function [pos] = loadvolumedata(filename, transform, regions)
 
 if ischar(filename)
     atlas = ft_read_atlas(filename);
@@ -131,10 +142,31 @@ else
 end
 
 if isfield(atlas, 'tissue')
-    mri = sum(atlas.tissue(:,:,:,:),4) > 0;
+    if isempty(regions)
+        mri = sum(atlas.tissue(:,:,:,:),4) > 0;
+    else
+        for iRegion = 1:length(regions)
+            if iRegion == 1
+                mri = sum(atlas.tissue(:,:,:,:),4) == regions(iRegion);
+            else
+                mri = mri | (sum(atlas.tissue(:,:,:,:),4) == regions(iRegion));
+            end
+        end
+    end
 elseif isfield(atlas, 'brick0')
-    mri = sum(atlas.brick0(:,:,:,:),4) > 0;
-    mri = atlas.brick1(:,:,:,1);
+    if isempty(regions)
+        mri = sum(atlas.brick0(:,:,:,:),4) > 0;
+    else
+        for iRegion = 1:length(regions)
+            if iRegion == 1
+                mri = sum(atlas.brick0(:,:,:,:),4) == regions(iRegion);
+            else
+                mri = mri | (sum(atlas.brick0(:,:,:,:),4) == regions(iRegion));
+            end
+        end
+    end
+%     mri = sum(atlas.brick0(:,:,:,:),4) == region;
+%     mri = atlas.brick1(:,:,:,1);
     transform2 = atlas.transform;
 else
     error('Unknown MRI file/structure format');

@@ -22,9 +22,12 @@ if ischar(sourcemodel)
 end
     
 newsourcemodel = [];
-if isfield(sourcemodel, 'Vertices')
+if isfield(sourcemodel, 'Vertices') && isfield(sourcemodel, 'Faces')
     newsourcemodel.pos = sourcemodel.Vertices;
     newsourcemodel.tri = sourcemodel.Faces;
+elseif isfield(sourcemodel, 'Vertices')
+    newsourcemodel.pos = sourcemodel.Vertices;
+    newsourcemodel.tri = [];
 elseif isfield(sourcemodel, 'vertices')
     newsourcemodel.pos = sourcemodel.vertices;
     newsourcemodel.tri = sourcemodel.faces;
@@ -37,6 +40,8 @@ cfg = [];
 pos = [newsourcemodel.pos ones(size(newsourcemodel.pos,1),1) ];
 if ~isempty(transform)
     pos = traditionaldipfit(transform)*pos';
+else
+    pos = pos';
 end
 pos(4,:) = [];
 cfg.sourcemodel.pos = pos';
