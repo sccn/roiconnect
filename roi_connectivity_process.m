@@ -57,12 +57,13 @@ g = finputcheck(varargin, { ...
     'sourceparams'   'cell'    { }          { 0.05 };
     'sourceanalysis' 'string'    { 'fieldtrip' 'roiconnect' } 'fieldtrip';
     'sourcemethod'   'string'    { }        'eloreta';
-    'nPCA'       'integer' { }              3;
+    'nPCA'        'integer' { }              3;
     'naccu'       'integer' { }             1;
-    'downsample' 'integer' { }              1;
-    'trgc'       'string' { 'on' 'off' }    'on';
-    'crossspec'  'string' { 'on' 'off' }    'on';
-    'outputdir'  'string'  { }              '' }, 'roi_connectivity_process');
+    'downsample'  'integer' { }              1;
+    'trgc'        'string' { 'on' 'off' }    'on';
+    'crossspec'   'string' { 'on' 'off' }    'on';
+    'roiactivity' 'string' { 'on' 'off' }    'on';
+    'outputdir'   'string'  { }              '' }, 'roi_connectivity_process');
 if ischar(g), error(g); end
 if isempty(g.leadfield), error('Leadfield is mandatory parameter'); end
 if isempty(g.naccu), g.naccu = 1; end
@@ -165,7 +166,9 @@ if ~isstruct(g.leadfield)
 else
     leadfield = g.leadfield;
 end
-if isstruct(leadfield) && isfield(leadfield, 'Gain') 
+if isstruct(leadfield) && isfield(leadfield, 'roiconnectleadfield') 
+    leadfield = leadfield.roiconnectleadfield;
+elseif isstruct(leadfield) && isfield(leadfield, 'Gain') 
     % brainstorm
     % make format compatible with Stefan's routines
     leadfield = permute(reshape(leadfield.Gain, [], 3, nvox), [1 3 2]);
@@ -255,44 +258,43 @@ nROI = length(cortex.Atlas.Scouts);
 labels = {cortex.Atlas.Scouts.Label};
 
 % keep only the first nPCA strongest components for each ROI
-disp('Computing ROI activity...');
-source_roi_data = [];
-for iROI = 1:nROI
-    ind_roi = cortex.Atlas.Scouts(iROI).Vertices;
-    data_  = source_voxel_data(:, ind_roi, :);
-    source_roi_power(iROI) = sum(var(data_(:, :)))';
-    source_roi_power_norm(iROI) = source_roi_power(iROI)/length(ind_roi);
+if strcmpi(g.roiactivity, 'on')
+    disp('Computing ROI activity...');
+    source_roi_data = [];
     
-    % optional z-scoring, this makes the PCA independent of the power in each
-    % voxel, and favors to find components that are consistently expressed in
-    % many voxels rather than only in a few voxels with strong power (which
-    % may leak from a neighboring region)
-    data_(:, :) = zscore(data_(:, :));
-    [data_, ~, ~] = svd(data_(:, :), 'econ'); % WARNING SHOULD USE SVDS for SPEED
-    source_roi_data(:, :, iROI) = data_(:, 1:g.nPCA);
-end
+    for iROI = 1:nROI
+        ind_roi = cortex.Atlas.Scouts(iROI).Vertices;
+        [source_roi_power(iROI), source_roi_power_norm(iROI)] = roi_power(source_voxel_data, ind_roi);
+        source_roi_data(:, :, iROI) = roi_act(source_voxel_data, ind_roi, g.nPCA);
+    end
 
-% version with nPCA components
-source_roi_data = permute(reshape(source_roi_data, EEG.pnts, EEG.trials, []), [3 1 2]);
+    % version with nPCA components
+    source_roi_data = permute(reshape(source_roi_data, EEG.pnts, EEG.trials, []), [3 1 2]);
+else
+    source_roi_data = [];
+    source_roi_power_norm = [];
+    g.trgc = 'off';
+    g.crossspec = 'off';
+end
 
 %% spectral and connectivity analysis
-
-% to test TRGC between ROIs (that is, pairs of nPCA-dimensional spaces), we
-% need to compute these indices
-inds = {}; ninds = 0;
-for iroi = 1:nROI
-    for jroi = (iroi+1):nROI
-        inds{ninds+1} = {(iroi-1)*g.nPCA + [1:g.nPCA], (jroi-1)*g.nPCA + [1:g.nPCA]};
-        inds{ninds+2} = {(jroi-1)*g.nPCA + [1:g.nPCA], (iroi-1)*g.nPCA + [1:g.nPCA]};
-        ninds = ninds + 2;
-    end
-end
 
 if strcmpi(g.trgc, 'off')
     TRGC    = [];
     TRGCnet = [];
     TRGCmat = [];
 else
+    % to test TRGC between ROIs (that is, pairs of nPCA-dimensional spaces), we
+    % need to compute these indices
+    inds = {}; ninds = 0;
+    for iroi = 1:nROI
+        for jroi = (iroi+1):nROI
+            inds{ninds+1} = {(iroi-1)*g.nPCA + [1:g.nPCA], (jroi-1)*g.nPCA + [1:g.nPCA]};
+            inds{ninds+2} = {(jroi-1)*g.nPCA + [1:g.nPCA], (iroi-1)*g.nPCA + [1:g.nPCA]};
+            ninds = ninds + 2;
+        end
+    end
+    
     % compute time reversed spectral Granger causality between all pairs of ROIs
     TRGC = data2sctrgc(source_roi_data, fres, g.morder, 0, g.naccu, [], inds);
     
@@ -332,7 +334,7 @@ EEG.roiconnect.nPCA      = g.nPCA;
 EEG.roiconnect.nROI      = nROI;
 EEG.roiconnect.atlas     = cortex.Atlas;
 EEG.roiconnect.srate     = EEG.srate;
-EEG.roiconnect.leadfield = leadfield;
+EEG.roiconnect.leadfield = g.leadfield;
 EEG.roiconnect.headmodel = g.headmodel;
 EEG.roiconnect.parameters = varargin;
 if exist('P_eloreta', 'var')

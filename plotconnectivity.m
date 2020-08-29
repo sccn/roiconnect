@@ -5,11 +5,24 @@ function plotconnectivity(array, varargin)
 radius = 0.5;
 linewidth = 1;
 
+g = finputcheck(varargin, { ...
+    'labels'      'cell'      { }             {};
+    'axis'        ''          {}              [];
+    'threshold'   'real'      {}              0.25;
+    }, 'roi_network');
+if isstr(g)
+    error(g);
+end
+
+if g.threshold > 0
+    array(array < g.threshold) = 0;
+end
+
 if size(array,1) ~= size(array,2)
     error('Input array must be square');
 end
 
-anglesInit = linspace(0,2*pi,size(array,1)+1);
+anglesInit = linspace(0,2*pi,size(array,1)+1) + pi/size(array,1);
 x = sin(anglesInit)*radius;
 y = cos(anglesInit)*radius;
 
@@ -26,13 +39,26 @@ y = cos(anglesInit)*radius;
 
 % find channel coordinates
 % ------------------------
-for iPnt = 1:length(anglesInit)
-    labls{iPnt} = sprintf('  Area %d', iPnt);
+if isempty(g.labels)
+    for iPnt = 1:length(anglesInit)
+        g.labels{iPnt} = sprintf('  Area %d', iPnt);
+    end
+elseif length(anglesInit)-1 ~= length(g.labels)
+    error('Wrong number of labels');
+else
+    for iPnt = 1:length(g.labels)
+        g.labels{iPnt} = strrep(g.labels{iPnt}, 'Brodmann area', 'BA');
+        g.labels{iPnt} = [ ' ' g.labels{iPnt} ];
+    end
 end
 
 % make lines between pairs of electrodes
 % --------------------------------------
-figure; hold on;
+if isempty(g.axis)
+    figure; hold on;
+else
+    axes(g.axis); hold on;
+end
 axis equal;
 axis off;
 
@@ -76,7 +102,7 @@ for ind1 = 1:size(array,1)
             end
         end
     end
-    h = text( x(ind1), y(ind1), 0, labls{ind1});
+    h = text( x(ind1), y(ind1), 0, g.labels{ind1});
     set(h, 'HorizontalAlignment','left', 'rotation', 90-anglesInit(ind1)/pi*180);
     0;
 end

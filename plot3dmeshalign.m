@@ -158,10 +158,16 @@ elseif isfield(atlas, 'brick0')
         mri = sum(atlas.brick0(:,:,:,:),4) > 0;
     else
         for iRegion = 1:length(regions)
-            if iRegion == 1
-                mri = sum(atlas.brick0(:,:,:,:),4) == regions(iRegion);
+            if isnumeric(regions)
+                indRegion = regions(iRegion);
             else
-                mri = mri | (sum(atlas.brick0(:,:,:,:),4) == regions(iRegion));
+                indRegion = strmatch(regions{iRegion}, atlas.brick0label);
+                if isempty(indRegion), error('Region not found'); end
+            end
+            if iRegion == 1
+                mri = sum(atlas.brick0(:,:,:,:),4) == indRegion;
+            else
+                mri = mri | (sum(atlas.brick0(:,:,:,:),4) == indRegion);
             end
         end
     end

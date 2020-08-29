@@ -20,6 +20,11 @@ if ischar(sourcemodel)
         sourcemodel = sourcemodel.cortex;
     end
 end
+if isfield(sourcemodel, 'inside')
+    pos = sourcemodel.transform * [sourcemodel.pos(logical(sourcemodel.inside),:) ones(sum(sourcemodel.inside),1) ]';
+    sourcemodel = [];
+    sourcemodel.pos = pos(1:3,:)';
+end
     
 newsourcemodel = [];
 if isfield(sourcemodel, 'Vertices') && isfield(sourcemodel, 'Faces')
@@ -33,7 +38,11 @@ elseif isfield(sourcemodel, 'vertices')
     newsourcemodel.tri = sourcemodel.faces;
 else
     newsourcemodel.pos = sourcemodel.pos;
-    newsourcemodel.tri = sourcemodel.tri;
+    if isfield(newsourcemodel, 'tri')
+        newsourcemodel.tri = sourcemodel.tri;
+    else
+        newsourcemodel.tri = [];
+    end
 end
 
 cfg = [];

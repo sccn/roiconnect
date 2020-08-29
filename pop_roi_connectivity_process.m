@@ -235,15 +235,6 @@ if nargin < 2
     [ roi(2).atlasliststr, roi(2).atlaslist] = getatlaslist(roi(2).file);
     roi(2).atlasind  = 2;
     
-    p  = fileparts(which('pop_roi_connectivity_process.m'));
-    roi(2).label = 'Source model ROI: Use Desikan-Kilianny in ICBM152 template (Brainstrom)';
-    roi(2).file  = fullfile(p, 'tess_cortex_mid_low_2000V.mat');
-    roi(2).align = [0 -24 -45 0 0 -1.5707963000 1000 1000 1000];
-    roi(2).enable = 'off';
-    roi(2).scale  = 1;
-    [ roi(2).atlasliststr, roi(2).atlaslist] = getatlaslist(roi(2).file);
-    roi(2).atlasind  = 2;
-    
     roi(3).label = 'Source model ROI: LORETA-KEY';
     roi(3).file  = fullfile(p, 'LORETA-Talairach-BAs.mat');
     roi(3).align = [];
@@ -355,7 +346,7 @@ if isempty(g.leadfield)
         disp('DOWNSAMPLING NOT IMPLEMENTED FOR THIS TYPE OF ATLAS');
     elseif strcmpi(ext, '.head')
         [~, sourcemodelOri.pos, ~ ] = load_afni_atlas(g.sourcemodel, g.headmodel, g.sourcemodel2mni, g.downsample);
-    elseif strcmpi(ext, '.mat')
+    elseif strcmpi(ext, '.mat') % && isfield(g.sourcemodel, 'tri')
         sourcemodelOri = transform_move_inward(g.sourcemodel, g.headmodel,g.sourcemodel2mni);
     end
 
@@ -376,6 +367,9 @@ if isempty(g.leadfield)
     leadfield = ft_prepare_leadfield(cfg);
 else
     leadfield = g.leadfield;
+    if isstr(leadfield)
+        leadfield = load('-mat', leadfield);
+    end
 end
 
 % remove vertices not modeled (no longer necessary - makes holes in model)
