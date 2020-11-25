@@ -1,3 +1,46 @@
+% roi_network() - Compute ROI network activity
+%
+% Usage:
+% results = roi_network( roiData, roiInds, 'key', val)
+%
+% Inputs:
+%   ROIdata - [roi x times x trials] ROI activity. Assumes 1 row per ROI
+%   ROIinds - indices of ROI in the network
+%
+% Optional spectral inputs:
+%   'window'  - [integer] lenght of window in samples
+%   'overlap' - [integer] number of overlaping samples
+%   'nfft'    - [integer] number of sample for FFT 
+%
+% Optional inputs:
+%   'srate'      - [real] sampling rate. Default is 128.
+%   'freqranges' - [cell] cell array of requency ranges. For example
+%                  for theta and alpha { [3 5] [9 11] }
+
+% Copyright (C) Arnaud Delorme, arnodelorme@gmail.com
+%
+% Redistribution and use in source and binary forms, with or without
+% modification, are permitted provided that the following conditions are met:
+%
+% 1. Redistributions of source code must retain the above copyright notice,
+% this list of conditions and the following disclaimer.
+%
+% 2. Redistributions in binary form must reproduce the above copyright notice,
+% this list of conditions and the following disclaimer in the documentation
+% and/or other materials provided with the distribution.
+%
+% THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+% AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+% IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+% ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+% LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+% CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+% SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+% INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+% CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+% ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+% THE POSSIBILITY OF SUCH DAMAGE.
+
 function results = roi_network( spatiallyFilteredData, ROI_inds, varargin)
 
 if nargin < 2

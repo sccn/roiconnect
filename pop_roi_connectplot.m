@@ -1,7 +1,7 @@
-% pop_roi_connectivity_plot - plot results of connectivity analysis computed
-%                             by roi_connectivity_process.
+% pop_roi_connectplot - plot results of connectivity analysis computed
+%                       by roi_connect.
 % Usage:
-%  pop_roi_connectivity_plot(EEG, 'key', 'val', ...);
+%  pop_roi_connectplot(EEG, 'key', 'val', ...);
 %
 % Inputs:
 %  EEG - EEGLAB dataset
@@ -27,14 +27,38 @@
 % Author: Stefan Haufe and Arnaud Delorme, 2019
 %
 % Example:
-%   % Requires prior call to pop_roi_connectivity_process
-%   EEG = pop_roi_connectivity_plot(EEG, 'measure', 'psd');
+%   % Requires prior call to pop_roi_connect
+%   EEG = pop_roi_connectplot(EEG, 'measure', 'psd');
 
-function com = pop_roi_connectivity_plot(EEG, varargin)
+% Copyright (C) Arnaud Delorme, arnodelorme@gmail.com
+%
+% Redistribution and use in source and binary forms, with or without
+% modification, are permitted provided that the following conditions are met:
+%
+% 1. Redistributions of source code must retain the above copyright notice,
+% this list of conditions and the following disclaimer.
+%
+% 2. Redistributions in binary form must reproduce the above copyright notice,
+% this list of conditions and the following disclaimer in the documentation
+% and/or other materials provided with the distribution.
+%
+% THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+% AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+% IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+% ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+% LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+% CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+% SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+% INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+% CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+% ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+% THE POSSIBILITY OF SUCH DAMAGE.
+
+function com = pop_roi_connectplot(EEG, varargin)
 
 com = '';
 if nargin < 1
-    help pop_roi_connectivity_plot;
+    help pop_roi_connectplot;
     return
 end
 
@@ -129,7 +153,7 @@ g = finputcheck(options,  { 'measure'    'string'  {splot.acronym}  '';
                             'smooth'     'real'    { }              0.35;
                             'plotcortex' 'string'  { 'on' 'off' }   'on';
                             'plotmatrix' 'string'  { 'on' 'off' }   'off';
-                            'plotpsd'    'string'  { 'on' 'off' }   'off' }, 'pop_roi_connectivity');
+                            'plotpsd'    'string'  { 'on' 'off' }   'off' }, 'pop_roi_connectplot');
 if ischar(g), error(g); end
 S = EEG.roiconnect;
 
@@ -234,5 +258,5 @@ switch lower(g.measure)
 end
 
 if nargin < 2
-    com = sprintf('pop_roi_connectivity_plot(EEG, %s);', vararg2str( options ));
+    com = sprintf('pop_roi_connectplot(EEG, %s);', vararg2str( options ));
 end

@@ -1,3 +1,44 @@
+% plot3dmeshalign - align a first meshes or volume with a second mesh
+%                   to check alignment.
+%
+% Usage:
+%  pop_roi_connectplot(file1, file2, transform, color1, color2, region);
+%
+% Inputs:
+%  file1     - [string] name of the first mesh/volume
+%  file2     - [string] name of the second mesh
+%  transform - [real array] homogenous transformation matrix to put mesh2
+%              into the same space as mesh1/volume1
+%  color1    - color for mesh1
+%  color2    - color for mesh2
+%  region    - region to load (volume data only)
+%
+% Author: Arnaud Delorme, 2020
+
+% Copyright (C) Arnaud Delorme, arnodelorme@gmail.com
+%
+% Redistribution and use in source and binary forms, with or without
+% modification, are permitted provided that the following conditions are met:
+%
+% 1. Redistributions of source code must retain the above copyright notice,
+% this list of conditions and the following disclaimer.
+%
+% 2. Redistributions in binary form must reproduce the above copyright notice,
+% this list of conditions and the following disclaimer in the documentation
+% and/or other materials provided with the distribution.
+%
+% THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+% AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+% IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+% ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+% LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+% CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+% SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+% INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+% CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+% ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+% THE POSSIBILITY OF SUCH DAMAGE.
+
 function plot3dmeshalign(filename1, filename2, transform, color1, color2, region)
 
 if isempty(filename1)

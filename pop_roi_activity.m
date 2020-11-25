@@ -1,7 +1,8 @@
-% pop_roi_connectivity_process - call roi_connectivity_process to compute
-%                                connectivity between ROIs
+% pop_roi_activity - call roi_activity to compute activities of ROIs using
+%                    eLoreta
+%
 % Usage:
-%  EEG = pop_roi_connectivity_process(EEG, 'key', 'val', ...);
+%  EEG = pop_roi_activity(EEG, 'key', 'val', ...);
 %
 % Inputs:
 %  EEG - EEGLAB dataset
@@ -17,21 +18,45 @@
 %                  sourcemodel to MNI space.
 %
 % Output:
-%  EEG - EEGLAB dataset with field 'roiconnect' containing connectivity info.
+%  EEG - EEGLAB dataset with field 'roi' containing connectivity info.
 %
-% Note: Optional inputs to roi_connectivity_process() are also accepted.
+% Note: Optional inputs to roi_activity() are also accepted.
 %
 % Author: Arnaud Delorme, UCSD, 2019
 %
 % Example
 %   p = fileparts(which('eeglab')); % path
-%   EEG = pop_roi_connectivity_process(EEG, 'headmodel', ...
+%   EEG = pop_roi_activity(EEG, 'headmodel', ...
 %   EEG.dipfit.hdmfile, 'elec2mni', EEG.dipfit.coord_transform, ...
 %   'sourcemodel', fullfile(p, 'functions', 'supportfiles', ...
 %   'head_modelColin27_5003_Standard-10-5-Cap339.mat'), 'sourcemodel2mni', ...
 %   [0 -26.6046230000 -46 0.1234625600 0 -1.5707963000 1000 1000 1000]);
 %
-% Use pop_roi_connectivity_plot(EEG) to plot the results.
+% Use pop_roi_connect(EEG) to compute conectivity
+
+% Copyright (C) Arnaud Delorme, arnodelorme@gmail.com
+%
+% Redistribution and use in source and binary forms, with or without
+% modification, are permitted provided that the following conditions are met:
+%
+% 1. Redistributions of source code must retain the above copyright notice,
+% this list of conditions and the following disclaimer.
+%
+% 2. Redistributions in binary form must reproduce the above copyright notice,
+% this list of conditions and the following disclaimer in the documentation
+% and/or other materials provided with the distribution.
+%
+% THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+% AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+% IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+% ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+% LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+% CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+% SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+% INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+% CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+% ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+% THE POSSIBILITY OF SUCH DAMAGE.
 
 % TO DO - Arno
 % - Centralize reading head mesh and Atlas (there might be a function in
@@ -40,11 +65,11 @@
 % - Downsampling of Atlas - check bug submitted to Fieldtrip
 % - Plot inside(blue) vs outside(red) voxels for source volume
 
-function [EEG,com] = pop_roi_connectivity_process(EEG, varargin)
+function [EEG,com] = pop_roi_activity(EEG, varargin)
 
 com = '';
 if nargin < 1
-    help pop_roi_connectivity_process;
+    help pop_roi_activity;
     return
 end
 
@@ -85,8 +110,8 @@ if ~isstruct(EEG)
         set(findobj(gcf, 'tag', 'strfile2')  , 'string', usrdat.file);
         set(findobj(gcf, 'tag', 'selection1')  , 'value', usrdat.headmodel);
         set(findobj(gcf, 'tag', 'selection3')  , 'value', usrdat.sourcemodel);
-        pop_roi_connectivity_process(fig, 'select1');
-        pop_roi_connectivity_process(fig, 'select3');
+        pop_roi_activity(fig, 'select1');
+        pop_roi_activity(fig, 'select3');
         set(findobj(gcf, 'userdata', 'headmodel')  , 'enable', usrdat.modelenable);
         set(findobj(gcf, 'userdata', 'sourcemodel'), 'enable', usrdat.modelenable);
         set(findobj(gcf, 'tag', 'selection1'),     'enable', usrdat.modelenable);
@@ -154,7 +179,7 @@ if ~isstruct(EEG)
     elseif strcmpi(varargin{1}, 'load3') % atlas
         [tmpfilename, tmpfilepath] = uigetfile('*', 'Select a text file');
         if tmpfilename(1) ~=0, set(findobj('parent', gcbf, 'tag', 'strfile3'), 'string', fullfile(tmpfilepath,tmpfilename)); end
-        pop_roi_connectivity_process(gcbf, 'scale');
+        pop_roi_activity(gcbf, 'scale');
         
     elseif strcmpi(varargin{1}, 'selectcoreg1')
         EEG = userdat{5};
@@ -169,24 +194,36 @@ if ~isstruct(EEG)
     
 end
 
-if nargin < 2
-    
-    dipfitOK = false;
-    if isfield(EEG.dipfit, 'coordformat')
-        dipfitOK = strcmpi(EEG.dipfit.coordformat, 'MNI');
+% use DIPFIT settings?
+dipfitOK = false;
+if all(cellfun(@(x)isfield(x, 'coordformat'), { EEG.dipfit }))
+    dipfitOK = strcmpi(EEG(1).dipfit.coordformat, 'MNI');
+end
+if dipfitOK
+    for iEEG = 2:length(EEG)
+        if ~isequal(EEG(iEEG).dipfit.hdmfile, EEG(1).dipfit.hdmfile) || ...
+                ~isequal(EEG(iEEG).dipfit.mrifile, EEG(1).dipfit.mrifile) || ...
+                ~isequal(EEG(iEEG).dipfit.chanfile, EEG(1).dipfit.chanfile) || ...
+                ~isequal(EEG(iEEG).dipfit.coordformat, EEG(1).dipfit.coordformat) || ...
+                ~isequal(EEG(iEEG).dipfit.coord_transform, EEG(1).dipfit.coord_transform)
+            dipfitOK = false;
+        end
     end
-    
+end
+
+if nargin < 2
     headmodel = [];
     if ~dipfitOK
-        res = questdlg2( strvcat('You may use the DIPFIT MNI head model for ROI', ...
-            'connectivity analysis. However, you need to go back', ...
-            'to the DIPFIT settings to align it with your montage.', ...
-            'To continue, you must have a custom Leadfield matrix.'), 'Use DIPFIT Leadfield matrix', 'Continue', 'Go back', 'Go back');
+        res = questdlg2( strvcat( ...
+            'DIPFIT MNI head model not set in one or more datasets. You will not be', ...
+            'able to compute the Leadfield matrix unless you correct this.', ...
+            '(use menu item Tools > Locate Dipoles with DIPFIT > Head model and settings).', ...
+            'To continue, you must have a custom Leadfield matrix file available.'), 'Use DIPFIT Leadfield matrix', 'Continue', 'Go back', 'Go back');
         if strcmpi(res, 'Go back'), return; end
     else
         headmodel(1).label = 'Headmodel: Use DIPFIT current model and conductivities';
-        headmodel(1).file  = EEG.dipfit.hdmfile;
-        headmodel(1).align = EEG.dipfit.coord_transform;
+        headmodel(1).file  = EEG(1).dipfit.hdmfile;
+        headmodel(1).align = EEG(1).dipfit.coord_transform;
         headmodel(1).enable = 'off';
     end
     headmodel(end+1).label = 'Headmodel: DIPFIT compatible head model & conductivities in MNI space';
@@ -195,14 +232,14 @@ if nargin < 2
     headmodel(end).enable = 'on';
     
     leadfield = [];
-    leadfield(end+1).label = 'Leadfield matrix: compute using head model and source model above (Fieldtrip)';
+    leadfield(end+1).label = 'Leadfield matrix: compute using head and source model above (Fieldtrip)';
     leadfield(end).enable  = 'off';
     leadfield(end).file  = '';
     leadfield(end).headmodel = 1;
     leadfield(end).sourcemodel = 1;
     leadfield(end).modelenable = 'on';
 
-    leadfield(end+1).label = 'Leadfield matrix: compute using head model and source model above (mkfilt_eloreta_v2)';
+    leadfield(end+1).label = 'Leadfield matrix: compute using head and source model above (mkfilt_eloreta_v2 - uses less RAM)';
     leadfield(end).enable  = 'off';
     leadfield(end).file  = '';
     leadfield(end).headmodel = 1;
@@ -226,7 +263,7 @@ if nargin < 2
     roi(1).atlaslist    = { 'Desikan-Kiliany' };
     roi(1).atlasind  = 1;
     
-    p  = fileparts(which('pop_roi_connectivity_process.m'));
+    p  = fileparts(which('pop_roi_activity.m'));
     roi(2).label = 'Source model ROI: Use Desikan-Kilianny in ICBM152 template (Brainstrom)';
     roi(2).file  = fullfile(p, 'tess_cortex_mid_low_2000V.mat');
     roi(2).align = [0 -24 -45 0 0 -1.5707963000 1000 1000 1000];
@@ -263,17 +300,18 @@ if nargin < 2
     roi(5).atlaslist    = { '' };
     roi(5).atlasind     = 1;
     
-    cb_select1 = 'pop_roi_connectivity_process(gcf, ''select1'');';
-    cb_select2 = 'pop_roi_connectivity_process(gcf, ''select2'');';
-    cb_select3 = 'pop_roi_connectivity_process(gcf, ''select3'');';
-    cb_load1   = 'pop_roi_connectivity_process(gcf, ''load1'');';
-    cb_load2   = 'pop_roi_connectivity_process(gcf, ''load2'');';
-    cb_load3   = 'pop_roi_connectivity_process(gcf, ''load3'');';
-    cb_selectcoreg1 = 'pop_roi_connectivity_process(gcf, ''selectcoreg1'');';
-    cb_selectcoreg2 = 'pop_roi_connectivity_process(gcf, ''selectcoreg2'');';
+    cb_select1 = 'pop_roi_activity(gcf, ''select1'');';
+    cb_select2 = 'pop_roi_activity(gcf, ''select2'');';
+    cb_select3 = 'pop_roi_activity(gcf, ''select3'');';
+    cb_load1   = 'pop_roi_activity(gcf, ''load1'');';
+    cb_load2   = 'pop_roi_activity(gcf, ''load2'');';
+    cb_load3   = 'pop_roi_activity(gcf, ''load3'');';
+    cb_selectcoreg1 = 'pop_roi_activity(gcf, ''selectcoreg1'');';
+    cb_selectcoreg2 = 'pop_roi_activity(gcf, ''selectcoreg2'');';
     
     rowg = [0.1 0.6 1 0.2];
-    uigeom = { 1 1 rowg rowg 1 rowg rowg [0.1 0.6 0.9 0.3] 1 rowg 1 [0.5 1 0.35 0.5] [0.5 1 0.35 0.5] [1] [0.2 1 1.5] };
+    % uigeom = { 1 1 rowg rowg 1 rowg rowg [0.1 0.6 0.9 0.3] 1 rowg 1 [0.5 1 0.35 0.5] [0.5 1 0.35 0.5] [0.5 1 0.35 0.5] [1] [0.9 1.2 1] };
+    uigeom = { 1 1 rowg rowg 1 rowg rowg [0.1 0.6 0.9 0.3] 1 rowg 1 [0.1 1 0.3 0.1] };
     uilist = { { 'style' 'text' 'string' 'Region Of Interest (ROI) connectivity analysis' 'fontweight' 'bold'} ...
         { 'style' 'popupmenu' 'string' { headmodel.label } 'tag' 'selection1' 'callback' cb_select1 }  ...
         {} { 'style' 'text' 'string' 'File name' 'userdata', 'headmodel'             } { 'style' 'edit' 'string' 'xxxxxxxxxxxxxxxxxxxx' 'tag' 'strfile1'   'enable'  'off' 'userdata', 'headmodel'   } { 'style' 'pushbutton' 'string' '...' 'userdata', 'headmodel' 'tag' 'push1' 'callback' cb_load1 }  ...
@@ -287,18 +325,26 @@ if nargin < 2
         {} { 'style' 'text' 'string' 'File name'  'userdata', 'leadfield' } { 'style' 'edit' 'string' 'xxxxxxxxxxxxxxxxxxxx' 'tag' 'strfile2' 'enable'  'off' 'userdata', 'leadfield' } { 'style' 'pushbutton' 'string' '...' 'tag' 'push2' 'callback' cb_load2 'userdata', 'leadfield' }  ...
         ...
         {} ...
-        {} { 'style' 'text' 'string' 'Autoregressive model order' } { 'style' 'edit' 'string' '20' 'tag' 'morder' } { } ...
-        {} { 'style' 'text' 'string' 'Bootstrap if any (n)' } { 'style' 'edit' 'string' '' 'tag' 'naccu' } { } ...
-        {} ...
-        {} { 'style' 'checkbox' 'string' 'Compute TRGC' 'tag' 'trgc' 'value' 1 } ...
-        { 'style' 'checkbox' 'string' 'Compute cross-spectrum' 'tag' 'crossspec' 'value' 1 } ...
+        {} { 'style' 'text' 'string' 'Dimensions per ROI (use 1 for export to EEGLAB)' }  { 'style' 'edit' 'string' '3' 'tag' 'pca' }     { } ...
         };
-    [result,usrdat,~,out] = inputgui('geometry', uigeom, 'uilist', uilist, 'helpcom', 'pophelp(''pop_loadbv'')', ...
-        'title', 'Load a Brain Vision Data Exchange format dataset', 'userdata', {headmodel leadfield roi [] EEG}, 'eval', [cb_select1 cb_select2 cb_select3 'set(findobj(gcf, ''tag'', ''down''), ''string'', '''');' ]);
+%         {} ...
+%         { 'style' 'checkbox' 'string' 'Export ROI to EEGLAB (will replace ICA components)' 'tag' 'export' 'value' 0 'enable' 'off'} ...
+%         {} { 'style' 'text' 'string' 'Autoregressive model order' } { 'style' 'edit' 'string' '20' 'tag' 'morder' } { } ...
+%         {} { 'style' 'text' 'string' 'Bootstrap if any (n)' }       { 'style' 'edit' 'string' '' 'tag' 'naccu' }    { } ...
+%         { 'style' 'checkbox' 'string' 'Compute TRGC' 'tag' 'trgc' 'value' 1 } ...
+%         { 'style' 'checkbox' 'string' 'Compute cross-spectrum' 'tag' 'crossspec' 'value' 1 } ...
+    [result,usrdat,~,out] = inputgui('geometry', uigeom, 'uilist', uilist, 'helpcom', 'pophelp(''pop_roi_activity'')', ...
+        'title', 'Compute ROI activity', 'userdata', {headmodel leadfield roi [] EEG}, 'eval', [cb_select1 cb_select2 cb_select3 'set(findobj(gcf, ''tag'', ''down''), ''string'', '''');' ]);
     if isempty(result), return, end
     
     if isempty(usrdat{3}), usrdat{3} = 1; end
+                     
     options = {};
+%         'morder' str2num(out.morder) ...
+%         'naccu' str2num(out.naccu) ...
+%         'trgc'  fastif(out.trgc, 'on', 'off') ...
+%         'crossspec' fastif(out.crossspec, 'on', 'off') ...
+%        'export2icamatrix'  fastif(out.export, 'on', 'off') ...
     options = { 'headmodel' out.strfile1 ...
         'elec2mni' str2num(out.transform1) ...
         'leadfield' out.strfile2 ...
@@ -307,22 +353,32 @@ if nargin < 2
         'sourcemodelatlas' roi(out.selection3).atlaslist{out.atlas} ...
         'sourceanalysis' fastif(out.selection2 == 1, 'fieldtrip', 'roiconnect') ...
         'downsample' usrdat{4} ...
-        'morder' str2num(out.morder) ...
-        'naccu' str2num(out.naccu) ...
-        'trgc'  fastif(out.trgc, 'on', 'off') ...
-        'crossspec' fastif(out.crossspec, 'on', 'off') ...
+        'nPCA'  str2num(out.pca) ...
         };
 else
     options = varargin;
 end
 
+% process multiple datasets
+% -------------------------
+if length(EEG) > 1
+    % check that the dipfit settings are the same
+    if nargin < 2
+        [ EEG, com ] = eeg_eval( 'pop_roi_activity', EEG, 'warning', 'on', 'params', options );
+    else
+        [ EEG, com ] = eeg_eval( 'pop_roi_activity', EEG, 'params', options );
+    end
+    return;
+end
+
+%    'export2icamatrix' 'string' {'on', 'off'}   'off';
 [g, moreargs] = finputcheck(options, { ...
     'headmodel'       'string'  { }             '';
     'leadfield'       'string'  { }             '';
     'elec2mni'        'real'    { }             [];
     'downsample'      'integer'  { }             4; % volume only
     'sourcemodel'     'string'  { }             '';
-    'sourcemodel2mni' 'real'    { }             [] }, 'pop_roi_connectivity_process', 'ignore');
+    'sourcemodel2mni' 'real'    { }             [] }, 'pop_roi_activity', 'ignore');
 if ischar(g), error(g); end
 
 if isempty(g.leadfield)
@@ -384,8 +440,84 @@ end
 %     sourcemodel.pos(indRm,:) = [];
 %     sourcemodel.leadfield(indRm) = [];
 
-EEG = roi_connectivity_process(EEG, 'leadfield', leadfield, 'headmodel', g.headmodel, 'sourcemodel', g.sourcemodel, 'downsample', g.downsample, 'sourcemodel2mni', g.sourcemodel2mni, moreargs{:});
+EEG = roi_activity(EEG, 'leadfield', leadfield, 'headmodel', g.headmodel, 'sourcemodel', g.sourcemodel, 'downsample', g.downsample, 'sourcemodel2mni', g.sourcemodel2mni, moreargs{:});
 
 if nargout > 1
-    com = sprintf( 'EEG = pop_roi_connectivity_process(EEG, %s);', vararg2str( options ));
+    com = sprintf( 'EEG = pop_roi_activity(EEG, %s);', vararg2str( options ));
 end
+
+
+
+
+% -----------------------------------
+% surface only - move vertices inward
+% -----------------------------------
+function [sourcemodelout, transform] = transform_move_inward(sourcemodel, headmodel, transform)
+
+if ischar(headmodel)
+    headmodel = load('-mat', headmodel);
+    if isfield(headmodel, 'vol')
+        headmodel = headmodel.vol;
+        headmodel.unit = 'mm';
+    end
+end
+if ischar(sourcemodel)
+    try
+        sourcemodel = load('-mat', sourcemodel);
+    catch
+        % Likely a volume atlas
+        sourcemodelout = sourcemodel;
+        return
+    end
+    if isfield(sourcemodel, 'cortex')
+        sourcemodel = sourcemodel.cortex;
+    end
+end
+if isfield(sourcemodel, 'inside')
+    pos = sourcemodel.transform * [sourcemodel.pos(logical(sourcemodel.inside),:) ones(sum(sourcemodel.inside),1) ]';
+    sourcemodel = [];
+    sourcemodel.pos = pos(1:3,:)';
+end
+    
+newsourcemodel = [];
+if isfield(sourcemodel, 'Vertices') && isfield(sourcemodel, 'Faces')
+    newsourcemodel.pos = sourcemodel.Vertices;
+    newsourcemodel.tri = sourcemodel.Faces;
+elseif isfield(sourcemodel, 'Vertices')
+    newsourcemodel.pos = sourcemodel.Vertices;
+    newsourcemodel.tri = [];
+elseif isfield(sourcemodel, 'vertices')
+    newsourcemodel.pos = sourcemodel.vertices;
+    newsourcemodel.tri = sourcemodel.faces;
+else
+    newsourcemodel.pos = sourcemodel.pos;
+    if isfield(newsourcemodel, 'tri')
+        newsourcemodel.tri = sourcemodel.tri;
+    else
+        newsourcemodel.tri = [];
+    end
+end
+
+cfg = [];
+pos = [newsourcemodel.pos ones(size(newsourcemodel.pos,1),1) ];
+if ~isempty(transform)
+    pos = traditionaldipfit(transform)*pos';
+else
+    pos = pos';
+end
+pos(4,:) = [];
+cfg.sourcemodel.pos = pos';
+cfg.sourcemodel.tri = newsourcemodel.tri;
+cfg.sourcemodel.unit = headmodel.unit;
+cfg.moveinward = 1;
+cfg.headmodel = headmodel;
+disp('moving source model inward if necessary');
+sourcemodelout = ft_prepare_sourcemodel(cfg);
+transform = [];
+
+% plot3dmeshalign(headmodel);
+% 
+% hold on;
+% plot3dmeshalign(tmp2, [], [1 0 0])
+
+

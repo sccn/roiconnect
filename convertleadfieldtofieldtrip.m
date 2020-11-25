@@ -1,3 +1,5 @@
+% convert leadfield Matrix so it can be used in Fieldtrip
+
 function sourcemodel = convertleadfieldtofieldtrip(lf, varargin)
 
 if nargin < 2

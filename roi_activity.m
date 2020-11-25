@@ -1,7 +1,7 @@
-% pop_roi_connectivity_process - call roi_connectivity_process to compute
+% roi_activity - call roi_connectivity_process to compute
 %                                connectivity between ROIs
 % Usage:
-%  EEG = pop_roi_connectivity_process(EEG, 'key', 'val', ...);
+%  EEG = roi_activity(EEG, 'key', 'val', ...);
 %
 % Inputs:
 %  EEG - EEGLAB dataset
@@ -29,19 +29,50 @@
 %                is 'on'.
 %  'crossspec' - ['on'|'off'] compute cross-spectrum from which coherence can
 %                be derived. Default is 'on'.
+%  'roiactivity'  - ['on'|'off'] compute ROI activity. Default is on. If
+%                you just need voxel activity, you can set this option to
+%                'off'.
+%  'exportvoxact' - ['on'|'off'] export voxel activity in EEG.roi.source_voxel_data
+%                These array are huge, so the default is 'off'.
 %
 % Output:
-%  EEG - EEGLAB dataset with field 'roiconnect' containing connectivity info.
+%  EEG - EEGLAB dataset with field 'roi' containing connectivity info.
+%  source_voxel_data - voxel data activity (voxels x times x trials).
+%                      Usually several Gb in size.
 %
 % Author: Stefan Haufe and Arnaud Delorme
 %
-% Example: call pop_roi_connectivity_process instead because it will
+% Example: call pop_roi_activity instead because it will
 % compute the leadfield matrix automatically using Dipfit information.
 
-function EEG = roi_connectivity_process(EEG, varargin)
+% Copyright (C) Arnaud Delorme, arnodelorme@gmail.com
+%
+% Redistribution and use in source and binary forms, with or without
+% modification, are permitted provided that the following conditions are met:
+%
+% 1. Redistributions of source code must retain the above copyright notice,
+% this list of conditions and the following disclaimer.
+%
+% 2. Redistributions in binary form must reproduce the above copyright notice,
+% this list of conditions and the following disclaimer in the documentation
+% and/or other materials provided with the distribution.
+%
+% THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+% AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+% IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+% ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+% LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+% CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+% SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+% INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+% CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+% ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+% THE POSSIBILITY OF SUCH DAMAGE.
+
+function [EEG, source_voxel_data] = roi_activity(EEG, varargin)
 
 if nargin < 2
-    help roi_connectivity_process;
+    help roi_activity;
     return
 end
 
@@ -53,23 +84,19 @@ g = finputcheck(varargin, { ...
     'sourcemodel' 'string'  { }             '';
     'sourcemodel2mni' 'real'    { }         [];
     'sourcemodelatlas' 'string'    { }      '';
-    'morder'     'integer' { }              20;
     'sourceparams'   'cell'    { }          { 0.05 };
     'sourceanalysis' 'string'    { 'fieldtrip' 'roiconnect' } 'fieldtrip';
     'sourcemethod'   'string'    { }        'eloreta';
     'nPCA'        'integer' { }              3;
-    'naccu'       'integer' { }             1;
     'downsample'  'integer' { }              1;
-    'trgc'        'string' { 'on' 'off' }    'on';
-    'crossspec'   'string' { 'on' 'off' }    'on';
     'roiactivity' 'string' { 'on' 'off' }    'on';
-    'outputdir'   'string'  { }              '' }, 'roi_connectivity_process');
+    'exportvoxact' 'string' { 'on' 'off' }    'on';
+    'outputdir'   'string'  { }              '' }, 'roi_activity');
 if ischar(g), error(g); end
 if isempty(g.leadfield), error('Leadfield is mandatory parameter'); end
-if isempty(g.naccu), g.naccu = 1; end
      
 % GO TO BRAINSTORM-MASTER3 folder AND START BRAINSTORM
-p = fileparts(which('roi_connectivity_process'));
+p = fileparts(which('roi_activity'));
 addpath(fullfile(p, 'libs/Daniele_ARMA'));
 addpath(fullfile(p, 'libs/export_fig'));
 addpath(fullfile(p, 'libs/haufe'));
@@ -264,8 +291,8 @@ if strcmpi(g.roiactivity, 'on')
     
     for iROI = 1:nROI
         ind_roi = cortex.Atlas.Scouts(iROI).Vertices;
-        [source_roi_power(iROI), source_roi_power_norm(iROI)] = roi_power(source_voxel_data, ind_roi);
-        source_roi_data(:, :, iROI) = roi_act(source_voxel_data, ind_roi, g.nPCA);
+        [source_roi_power(iROI), source_roi_power_norm(iROI)] = roi_getpower(source_voxel_data, ind_roi);
+        source_roi_data(:, :, iROI) = roi_getact(source_voxel_data, ind_roi, g.nPCA);
     end
 
     % version with nPCA components
@@ -273,71 +300,26 @@ if strcmpi(g.roiactivity, 'on')
 else
     source_roi_data = [];
     source_roi_power_norm = [];
-    g.trgc = 'off';
-    g.crossspec = 'off';
 end
-
-%% spectral and connectivity analysis
-
-if strcmpi(g.trgc, 'off')
-    TRGC    = [];
-    TRGCnet = [];
-    TRGCmat = [];
-else
-    % to test TRGC between ROIs (that is, pairs of nPCA-dimensional spaces), we
-    % need to compute these indices
-    inds = {}; ninds = 0;
-    for iroi = 1:nROI
-        for jroi = (iroi+1):nROI
-            inds{ninds+1} = {(iroi-1)*g.nPCA + [1:g.nPCA], (jroi-1)*g.nPCA + [1:g.nPCA]};
-            inds{ninds+2} = {(jroi-1)*g.nPCA + [1:g.nPCA], (iroi-1)*g.nPCA + [1:g.nPCA]};
-            ninds = ninds + 2;
-        end
-    end
-    
-    % compute time reversed spectral Granger causality between all pairs of ROIs
-    TRGC = data2sctrgc(source_roi_data, fres, g.morder, 0, g.naccu, [], inds);
-    
-    % calculation of net TRGC scores (i->j minus j->i), recommended procedure
-    TRGCnet = TRGC(:, 1:2:end)-TRGC(:, 2:2:end);
-    
-    % create a ROI x ROI connectivity matrix, if needed
-    % TRGCmat(f, ii, jj) is net TRGC from jj to ii
-    TRGCmat = [];
-    iinds = 0;
-    for iroi = 1:nROI
-        for jroi = (iroi+1):nROI
-            iinds = iinds + 1;
-            TRGCmat(:, iroi, jroi) = -TRGCnet(:, iinds);
-            TRGCmat(:, jroi, iroi) = TRGCnet(:, iinds);
-        end
-    end
-end
-
-% compute cross-spectrum, takes a while
-if strcmpi(g.crossspec, 'on')
-    conn = data2spwctrgc(source_roi_data, fres, g.morder, 0, g.naccu, [], {'CS'});
-else
-    conn.CS = [];
-end
+disp('Done');
 
 % Output paramters
-EEG.roiconnect.cortex    = cortex;
-EEG.roiconnect.atlas     = cortex.Atlas.Scouts;
-EEG.roiconnect.source_voxel_data     = source_voxel_data;
-EEG.roiconnect.source_roi_data       = source_roi_data;
-EEG.roiconnect.source_roi_power_norm = source_roi_power_norm; % used for cross-sprectum
-EEG.roiconnect.freqs     = frqs;
-EEG.roiconnect.TRGCmat   = TRGCmat;
-EEG.roiconnect.CS        = conn.CS;
-EEG.roiconnect.nPCA      = g.nPCA;
-EEG.roiconnect.nROI      = nROI;
-EEG.roiconnect.atlas     = cortex.Atlas;
-EEG.roiconnect.srate     = EEG.srate;
-EEG.roiconnect.leadfield = g.leadfield;
-EEG.roiconnect.headmodel = g.headmodel;
-EEG.roiconnect.parameters = varargin;
+EEG.roi.cortex    = cortex;
+EEG.roi.atlas     = cortex.Atlas.Scouts;
+if strcmpi(g.exportvoxact, 'on')
+    EEG.roi.source_voxel_data     = source_voxel_data; % large
+end
+EEG.roi.source_roi_data       = single(source_roi_data);
+EEG.roi.source_roi_power_norm = source_roi_power_norm; % used for cross-sprectum
+EEG.roi.freqs     = frqs;
+EEG.roi.nPCA      = g.nPCA;
+EEG.roi.nROI      = nROI;
+EEG.roi.atlas     = cortex.Atlas;
+EEG.roi.srate     = EEG.srate;
+EEG.roi.leadfield = g.leadfield;
+EEG.roi.headmodel = g.headmodel;
+EEG.roi.parameters = varargin;
 if exist('P_eloreta', 'var')
-    EEG.roiconnect.P_eloreta = P_eloreta;
+    EEG.roi.P_eloreta = single(P_eloreta);
 end
 
