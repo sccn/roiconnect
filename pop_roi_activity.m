@@ -465,13 +465,15 @@ if ischar(sourcemodel)
     try
         sourcemodel = load('-mat', sourcemodel);
     catch
-        % Likely a volume atlas
-        sourcemodelout = sourcemodel;
-        return
+        error('WARNING: could not open source model file')
     end
     if isfield(sourcemodel, 'cortex')
         sourcemodel = sourcemodel.cortex;
     end
+else
+    % Likely a volume atlas
+    sourcemodelout = sourcemodel;
+    return
 end
 if isfield(sourcemodel, 'inside')
     pos = sourcemodel.transform * [sourcemodel.pos(logical(sourcemodel.inside),:) ones(sum(sourcemodel.inside),1) ]';
