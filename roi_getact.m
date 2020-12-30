@@ -2,12 +2,13 @@
 %
 % Usage:
 %    [power, powernorm] = roi_getact(roi_data, ind_roi);
-%    [power, powernorm] = roi_getact(roi_data, ind_roi, nPCA);
+%    [power, powernorm] = roi_getact(roi_data, ind_roi, nPCA, zscore);
 %
 % Inputs:
 %    roi_data - [times x voxels x trials] source activity data
 %    ind_roi  - indices of voxels for the ROI
 %    nPCA     - number of PCA components (default is 1).
+%    zscore   - [0|1] z-score data.
 
 % Copyright (C) Arnaud Delorme, arnodelorme@gmail.com
 %
@@ -33,7 +34,7 @@
 % ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 % THE POSSIBILITY OF SUCH DAMAGE.
 
-function source_roi_data = roi_getact(source_voxel_data, ind_roi, nPCA)
+function source_roi_data = roi_getact(source_voxel_data, ind_roi, nPCA, zscoreflag)
 
 if nargin < 2
     help roi_getact;
@@ -43,22 +44,29 @@ end
 if nargin < 3
     nPCA = 1;
 end
+if nargin < 4
+    zscoreflag = true;
+end
 
 % optional z-scoring, this makes the PCA independent of the power in each
 % voxel, and favors to find components that are consistently expressed in
 % many voxels rather than only in a few voxels with strong power (which
 % may leak from a neighboring region)
 data_  = source_voxel_data(:, ind_roi, :);
-data_(:, :) = zscore(data_(:, :));
+if zscoreflag
+    data_(:, :) = zscore(data_(:, :));
+end
 if nPCA == 1
     [source_roi_data, ~, ~] = svds(double(data_(:, :)), nPCA); 
 else
     % old code
-    [data_, ~, ~] = svd(data_(:, :), 'econ'); % WARNING SHOULD USE SVDS for SPEED
+    [data_, S, ~] = svd(data_(:, :), 'econ'); % WARNING SHOULD USE SVDS for SPEED
                                                % however, sometime polarity
                                                % inverted compared to svds
                                                % Should not have an
                                                % incidence but keeping the
                                                % code for now
-    source_roi_data = data_(:, 1:nPCA);
+    % scale components                                           
+    tS = diag(S);                                    
+    source_roi_data = bsxfun(@times, data_(:, 1:nPCA), tS(1:nPCA)')/sum(tS(1:nPCA));
 end
