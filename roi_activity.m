@@ -89,7 +89,7 @@ g = finputcheck(varargin, { ...
     'nPCA'        'integer' { }              3;
     'downsample'  'integer' { }              1;
     'roiactivity' 'string' { 'on' 'off' }    'on';
-    'exportvoxact' 'string' { 'on' 'off' }    'on';
+    'exportvoxact' 'string' { 'on' 'off' }   'off';
     'outputdir'   'string'  { }              '' }, 'roi_activity');
 if ischar(g), error(g); end
 if isempty(g.leadfield), error('Leadfield is mandatory parameter'); end
@@ -141,9 +141,13 @@ else
         hm = cortex;
         clear cortex;
         % align with MNI coordinates
-        tf = traditionaldipfit(g.sourcemodel2mni);
-        pos      = tf*[hm.cortex.vertices ones(size(hm.cortex.vertices,1),1)]';
-        pos      = pos';
+        if ~isempty(g.sourcemodel2mni)
+            tf = traditionaldipfit(g.sourcemodel2mni);
+            pos      = tf*[hm.cortex.vertices ones(size(hm.cortex.vertices,1),1)]';
+            pos      = pos';
+        else
+            pos = hm.cortex.vertices;
+        end
         cortex.Vertices = pos(:,1:3);
         cortex.Faces = hm.cortex.faces;
 

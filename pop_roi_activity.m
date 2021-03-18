@@ -105,7 +105,11 @@ if ~isstruct(EEG)
     if ~isempty(leadFieldFile)
         try
             tmp = load('-mat', leadFieldFile);
-            atlasList = { tmp.Atlas.Name };
+            if isfield(tmp, 'atlas')
+                atlasList = { 'Desikan-Kilianny' };
+            else
+                atlasList = { tmp.Atlas.Name };
+            end
         catch
             disp('Error reading Atlas list');
             atlasList = ' ';
@@ -202,14 +206,26 @@ end
 if ischar(g), error(g); end
 if isstruct(g.leadfield)
     sourceModelFile = g.leadfield.file;
+    sourceModel2MNI = g.leadfield.coordtransform;
 else
     sourceModelFile = g.leadfield;
+    sourceModel2MNI = [];
 end    
 %modelParams;
 
-EEG = roi_activity(EEG, 'leadfield', g.leadfield, 'headmodel', EEG.dipfit.hdmfile, 'model', g.model, 'modelparams', g.modelparams, 'sourcemodel', sourceModelFile, 'sourcemodelatlas', g.atlas, moreargs{:});
+EEG = roi_activity(EEG, 'leadfield', g.leadfield, 'headmodel', EEG.dipfit.hdmfile, ...
+    'model', g.model, 'modelparams', g.modelparams, 'sourcemodel', sourceModelFile, ...
+    'sourcemodel2mni', sourceModel2MNI, ...
+    'sourcemodelatlas', g.atlas, moreargs{:});
 
 if nargout > 1
+    for iOption = 1:2:length(options)
+        if strcmpi(options{iOption}, 'leadfield') && isequal(options{iOption+1}, EEG.dipfit.sourcemodel)
+            options{iOption+1} = '''EEG.dipfit.sourcemodel''';
+            break;
+        end
+    end
     com = sprintf( 'EEG = pop_roi_activity(EEG, %s);', vararg2str( options ));
+    com = regexprep(com, '''''''', '');
 end
 
