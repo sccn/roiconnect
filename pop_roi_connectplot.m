@@ -62,7 +62,7 @@ if nargin < 1
     return
 end
 
-if ~isfield(EEG, 'roiconnect')
+if ~isfield(EEG, 'roi')
     error('Compute connectivity first');
 end
 
@@ -155,7 +155,7 @@ g = finputcheck(options,  { 'measure'    'string'  {splot.acronym}  '';
                             'plotmatrix' 'string'  { 'on' 'off' }   'off';
                             'plotpsd'    'string'  { 'on' 'off' }   'off' }, 'pop_roi_connectplot');
 if ischar(g), error(g); end
-S = EEG.roiconnect;
+S = EEG.roi;
 
 % colormap
 load cm17;
