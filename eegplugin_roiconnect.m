@@ -64,12 +64,12 @@ cb_connect     = [ 'try, [EEG, LASTCOM] = pop_roi_connect(EEG);'  catchstrs.stor
 cb_plot        = [ 'try, LASTCOM = pop_roi_connectplot(EEG);'     catchstrs.add_to_hist  ]; 
 
 roi_m = uimenu( tool_m, 'label', 'ROI connectivity analysis', 'userdata', 'startup:off;study:on');
-if curroiFlag
-    uimenu( roi_m, 'Label', 'Have EEGLAB use ICA instead of ROIs', 'CallBack', cb_toggle, 'tag', 'toggleroi', 'userdata', 'startup:off;study:on');
-else
-    uimenu( roi_m, 'Label', 'Have EEGLAB use ROIs instead of ICA', 'CallBack', cb_toggle, 'tag', 'toggleroi', 'userdata', 'startup:off;study:on');
-end
-uimenu( roi_m, 'Label', 'Compute ROI activity', 'CallBack', cb_act, 'userdata', 'startup:off;study:on', 'separator', 'on');
+% if curroiFlag
+%     uimenu( roi_m, 'Label', 'Have EEGLAB use ICA instead of ROIs', 'CallBack', cb_toggle, 'tag', 'toggleroi', 'userdata', 'startup:off;study:on');
+% else
+%     uimenu( roi_m, 'Label', 'Have EEGLAB use ROIs instead of ICA', 'CallBack', cb_toggle, 'tag', 'toggleroi', 'userdata', 'startup:off;study:on');
+% end
+uimenu( roi_m, 'Label', 'Compute ROI activity', 'CallBack', cb_act, 'userdata', 'startup:off;study:on');
 uimenu( roi_m, 'Label', 'Compute ROI connectivity', 'CallBack', cb_connect, 'userdata', 'startup:off;study:on');
 uimenu( roi_m, 'Label', 'Plot ROI connectivity', 'CallBack', cb_plot);
 
