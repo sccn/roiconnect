@@ -74,6 +74,10 @@ for iroi = 1:nROI
 end
 if ~isempty(g.methods)
     conn_mult = data2sctrgcmim(source_roi_data, EEG.srate, g.morder, 0, g.naccu, [], inds, g.methods);
+    
+    % can compute CS below as well (not sure if it is better than the one
+    % above, but it is different
+    % conn_uni  = data2spwctrgc2(source_roi_data, EEG.srate, g.morder, 0, g.naccu, [], {'CS'});
 end
 
 fields = fieldnames(conn_mult);

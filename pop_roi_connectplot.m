@@ -74,35 +74,77 @@ end
 %     error('You can only use this function with MNI coordinates - change head model');
 % end
 
-splot(1).label  = 'Source power spectrum';
-splot(1).acronym  = 'PSD';
-splot(1).cortex = 1;
-splot(1).matrix = -1;
-splot(1).psd    = -1;
+cortexFlag = isfield(EEG.roi.cortex, 'Faces');
 
-splot(2).label  = 'ROI based power spectrum';
-splot(2).acronym  = 'ROIPSD';
-splot(2).cortex = 1;
-splot(2).matrix = -1;
-splot(2).psd    = -1;
+splot = [];
+splot(end+1).label  = 'Source power spectrum';
+splot(end  ).acronym  = 'PSD';
+splot(end  ).unit   = '?'; % not used yet
+splot(end  ).cortex = cortexFlag;
+splot(end  ).matrix = -1;
+splot(end  ).psd    = -1;
 
-splot(3).label  = 'ROI to ROI time-reversed granger causality';
-splot(3).acronym  = 'TRGC';
-splot(3).cortex = 1;
-splot(3).matrix = 1;
-splot(3).psd    = -1;
+splot(end+1).label  = 'ROI based power spectrum';
+splot(end  ).acronym  = 'ROIPSD';
+splot(end  ).unit   = '?'; % not used yet
+splot(end  ).cortex = cortexFlag;
+splot(end  ).matrix = -1;
+splot(end  ).psd    = -1;
 
-splot(4).label    = 'ROI to ROI imaginary part of cross-spectrum';
-splot(4).acronym  = 'crossspecimag';
-splot(4).cortex = 1;
-splot(4).matrix = 1;
-splot(4).psd    = -1;
+splot(end+1).label    = 'ROI to ROI cross-spectrum';
+splot(end  ).labelshort = 'Cross-spectrum';
+splot(end  ).acronym  = 'crossspecpow';
+splot(end  ).unit   = 'Power (dB)';
+splot(end  ).cortex = cortexFlag;
+splot(end  ).matrix = -1;
+splot(end  ).psd    = 0;
 
-splot(5).label    = 'ROI cross-spectrum';
-splot(5).acronym  = 'crossspecpow';
-splot(5).cortex = 1;
-splot(5).matrix = -1;
-splot(5).psd    = 0;
+splot(end+1).label    = 'ROI to ROI imaginary part of cross-spectrum';
+splot(end  ).labelshort = 'Img. part of cross-spectrum';
+splot(end  ).acronym  = 'crossspecimag';
+splot(end  ).unit   = 'net |iCOH|';
+splot(end  ).cortex = cortexFlag;
+splot(end  ).matrix = 1;
+splot(end  ).psd    = -1;
+
+splot(end+1).label    = 'ROI to ROI coherence';
+splot(end  ).labelshort = 'Coherence';
+splot(end  ).acronym  = 'Coh';
+splot(end  ).unit   = '?';
+splot(end  ).cortex = cortexFlag;
+splot(end  ).matrix = 1;
+splot(end  ).psd    = -1;
+
+splot(end+1).label  = 'ROI to ROI granger causality';
+splot(end  ).labelshort = 'Granger Causality';
+splot(end  ).acronym  = 'GC';
+splot(end  ).cortex = cortexFlag;
+splot(end  ).matrix = 1;
+splot(end  ).psd    = -1;
+
+splot(end+1).label  = 'ROI to ROI time-reversed granger causality';
+splot(end  ).labelshort = 'Time-rev. Granger Causality';
+splot(end  ).acronym  = 'TRGC';
+splot(end  ).unit   = '?'; % not used yet
+splot(end  ).cortex = cortexFlag;
+splot(end  ).matrix = 1;
+splot(end  ).psd    = -1;
+
+splot(end+1).label    = 'ROI to ROI mutual information C';
+splot(end  ).labelshort = 'Mutual information C';
+splot(end  ).acronym  = 'MIC';
+splot(end  ).unit   = '?'; % not used yet
+splot(end  ).cortex = cortexFlag;
+splot(end  ).matrix = -1;
+splot(end  ).psd    = 0;
+
+splot(end+1).label    = 'ROI to ROI mutual information M';
+splot(end  ).labelshort = 'Mutual information I';
+splot(end  ).acronym  = 'MIM';
+splot(end  ).unit   = '?'; % not used yet
+splot(end  ).cortex = cortexFlag;
+splot(end  ).matrix = -1;
+splot(end  ).psd    = 0;
 
 if nargin < 2
 
@@ -169,8 +211,17 @@ else
     titleStr = 'broadband';
 end
 
+% plotting options
+allMeasures = { splot.acronym };
+pos = strmatch( g.measure, allMeasures, 'exact');
+plotOpt = splot(pos);
+
 switch lower(g.measure)
     case { 'psd' 'roipsd' }
+        if ~isfield(S, 'source_voxel_data')
+            error('Cannot plot spectrum without source data');
+        end
+        
         if ~isempty(g.freqrange)
             % filter range of interest
             freqRatio = g.freqrange/max(S.freqs);
@@ -203,55 +254,84 @@ switch lower(g.measure)
             end
         end
         
-    case 'trgc'
-        if strcmpi(g.plotmatrix, 'on') 
-            figure; imagesc(squeeze(mean(S.TRGCmat(frq_inds, :, :)))); colorbar
+    case { 'trgc' 'gc' }
+        % calculation of net TRGC scores (i->j minus j->i), recommended procedure
+        % TRGCnet = TRGC_(:, 1:2:end)-TRGC_(:, 2:2:end);
+        % new way to compute net scores
+        if strcmpi(g.measure, 'GC')
+            TRGCnet = S.GC(:, :, 1) - S.GC(:, :, 2);
+        else
+            TRGCnet = S.TRGC(:, :, 1) - S.TRGC(:, :, 2);
+        end
+        TRGC = get_connect_mat( TRGCnet, S.nROI, -1);
+        
+        if strcmpi(g.plotmatrix, 'on')
+            figure; imagesc(squeeze(mean(TRGC(frq_inds, :, :)))); colorbar
             xlabel('ROI index (see Atlas for more info)');
-            h = title([ 'ROI to ROI TRGC (' titleStr ')' ]);
+            h = title([ 'ROI to ROI ' upper(g.measure) ' (' titleStr ')' ]);
             set(h, 'fontsize', 16);
         end        
         
         if strcmpi(g.plotcortex, 'on') 
-            atrgc = squeeze(mean(mean(S.TRGCmat(frq_inds, :, :), 1), 2));
-            allplots_cortex_BS(S.cortex, atrgc, [-max(abs(atrgc)) max(abs(atrgc))], cm17, 'TRGC', g.smooth);
-            h = textsc([ 'TRGC (' titleStr '); Red = net sender; Blue = net receiver' ], 'title');
+            atrgc = mean(squeeze(mean(TRGC(frq_inds, :, :))), 2);
+            allplots_cortex_BS(S.cortex, atrgc, [-max(abs(atrgc)) max(abs(atrgc))], cm17, upper(g.measure), g.smooth);
+            h = textsc([ upper(g.measure) ' (' titleStr '); Red = net sender; Blue = net receiver' ], 'title');
             set(h, 'fontsize', 20);
         end
-
-    case 'crossspecimag'
-        absiCOH = abs(imag(cs2coh(S.CS)));
-        absiCOH = squeeze(mean(mean(reshape(absiCOH, S.srate+1, 3, S.nROI, 3, S.nROI), 2), 4));
+        
+    case { 'mim' 'mic' }
+        if strcmpi(g.measure, 'MIC')
+            MI = S.MIC(:, :);
+        else
+            MI = S.MIM(:, :);
+        end
+        MI = get_connect_mat( MI, S.nROI, +1);
 
         if strcmpi(g.plotmatrix, 'on')
-            figure; imagesc(squeeze(mean(absiCOH(frq_inds, :, :)))); colorbar
+            figure; imagesc(squeeze(mean(MI(frq_inds, :, :)))); colorbar
             xlabel('ROI index (see Atlas for more info)');
             h = title(['ROI to ROI imag. part of coherence (' titleStr ')']);
             set(h, 'fontsize', 16);
         end        
         
         if strcmpi(g.plotcortex, 'on')
-            netabsiCOH = mean(squeeze(mean(absiCOH(frq_inds, :, :))), 2);
-            
-            % red = highly interacting ROI
-            allplots_cortex_BS(S.cortex, netabsiCOH, [min(netabsiCOH) max(netabsiCOH)], cm17a, 'net |iCOH|', g.smooth);
-            h = textsc([ 'Imag. part of coherence (' titleStr '); red = highly interacting ROI'], 'title');
+            ami = mean(squeeze(mean(MI(frq_inds, :, :))), 2);
+            allplots_cortex_BS(S.cortex, ami, [min(ami) max(ami)], cm17, upper(g.measure), g.smooth);
+            h = textsc([ upper(g.measure) ' (' titleStr '); Red = net sender; Blue = net receiver' ], 'title');
             set(h, 'fontsize', 20);
         end
         
-    case 'crossspecpow'
-        PS = cs2psd(S.CS);
-        apow = squeeze(sum(sum(reshape(PS(frq_inds, :), [], S.nPCA, S.nROI), 1), 2)).*S.source_roi_power_norm';
-        apow_dB = 10*log10(apow);
+    case { 'crossspecpow' 'coh' 'crossspecimag' }
+        if strcmpi(g.measure, 'coh')
+            PS = S.COH; % do not know what to do here
+            PS = squeeze(mean(mean(reshape(PS, S.srate+1, 3, S.nROI, 3, S.nROI), 2), 4));     
+            PSmean = mean(squeeze(mean(PS(frq_inds, :, :))), 2);
+        elseif strcmpi(g.measure, 'crossspecimag')
+            PS = abs(imag(cs2coh(S.CS)));
+            PS = squeeze(mean(mean(reshape(PS, S.srate+1, 3, S.nROI, 3, S.nROI), 2), 4));     
+            PSmean = mean(squeeze(mean(PS(frq_inds, :, :))), 2);
+        else
+            PS = cs2psd(S.CS);
+            apow = squeeze(sum(sum(reshape(PS(frq_inds, :), [], S.nPCA, S.nROI), 1), 2)).*S.source_roi_power_norm';
+            PSmean = 10*log10(apow);
+        end
         
-        if strcmpi(g.plotcortex, 'on') 
-            allplots_cortex_BS(S.cortex, apow_dB, [min(apow_dB) max(apow_dB)], cm17a, 'power [dB]', g.smooth);
-            h = textsc([ 'Cross-spectrum (' titleStr ')' ], 'title');
+        if strcmpi(g.plotmatrix, 'on')
+            figure; imagesc(squeeze(mean(PS(frq_inds, :, :)))); colorbar
+            xlabel('ROI index (see Atlas for more info)');
+            h = title([ plotOpt.label ' (' titleStr ')']);
+            set(h, 'fontsize', 16);
+        end
+        
+        if strcmpi(g.plotcortex, 'on')
+            allplots_cortex_BS(S.cortex, PSmean, [min(PSmean) max(PSmean)], cm17a, plotOpt.unit, g.smooth);
+            h = textsc([ plotOpt.labelshort ' (' titleStr ')' ], 'title');
             set(h, 'fontsize', 20);
         end
         
         if strcmpi(g.plotpsd, 'on') 
-            figure; semilogy(S.freqs(frq_inds), PS(frq_inds, :)); grid on
-            h = textsc('Broadband ROI cross-spectrum average', 'title');
+            figure; semilogy(S.freqs(frq_inds), PSmean(frq_inds, :)); grid on
+            h = textsc(plotOptS.label, 'title');
             set(h, 'fontsize', 20);
         end
         
@@ -260,3 +340,17 @@ end
 if nargin < 2
     com = sprintf('pop_roi_connectplot(EEG, %s);', vararg2str( options ));
 end
+
+function measure = get_connect_mat( measureOri, nROI, signVal)
+        % create a ROI x ROI connectivity matrix, if needed
+        % TRGCmat(f, ii, jj) is net TRGC from jj to ii
+        measure = [];
+        iinds = 0;
+        for iroi = 1:nROI
+            for jroi = (iroi+1):nROI
+                iinds = iinds + 1;
+                measure(:, iroi, jroi) = signVal * measureOri(:, iinds);
+                measure(:, jroi, iroi) = measureOri(:, iinds);
+            end
+        end
+
