@@ -8,7 +8,7 @@
 %    roi_data - [times x voxels x trials] source activity data
 %    ind_roi  - indices of voxels for the ROI
 %    nPCA     - number of PCA components (default is 1).
-%    zscore   - [0|1] z-score data.
+%    zscore   - [0|1] z-score data (default is 0 or false).
 
 % Copyright (C) Arnaud Delorme, arnodelorme@gmail.com
 %
@@ -45,7 +45,7 @@ if nargin < 3
     nPCA = 1;
 end
 if nargin < 4
-    zscoreflag = true;
+    zscoreflag = false;
 end
 
 % optional z-scoring, this makes the PCA independent of the power in each

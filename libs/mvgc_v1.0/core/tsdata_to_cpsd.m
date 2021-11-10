@@ -148,6 +148,7 @@ ntapers = size(taparray,2);
 
 for k = 1:nchunks
 
+    fprintf('Iteration %d/%d\n', k, nchunks);
     XSEG = X((1:window) + (k-1)*winstep,:);
 
     % compute periodogram

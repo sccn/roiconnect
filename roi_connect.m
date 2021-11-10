@@ -56,55 +56,27 @@ end
 % decode input parameters
 % -----------------------
 g = finputcheck(varargin, { ...
-    'morder'     'integer' { }              20;
-    'naccu'       'integer' { }             1;
-    'trgc'        'string' { 'on' 'off' }    'on';
-    'crossspec'   'string' { 'on' 'off' }    'on' }, 'roi_connect');    
+    'morder'      'integer' { }            20;
+    'naccu'       'integer' { }            0;
+    'methods'     'cell'    { }            {} }, 'roi_connect');    
 if ischar(g), error(g); end
-if isempty(g.naccu), g.naccu = 1; end
+if isempty(g.naccu), g.naccu = 0; end
 
-if strcmpi(g.trgc, 'off')
-    TRGC    = [];
-    TRGCnet = [];
-    TRGCmat = [];
-else
-    % to test TRGC between ROIs (that is, pairs of nPCA-dimensional spaces), we
-    % need to compute these indices
-    inds = {}; ninds = 0;
-    for iroi = 1:nROI
-        for jroi = (iroi+1):nROI
-            inds{ninds+1} = {(iroi-1)*g.nPCA + [1:g.nPCA], (jroi-1)*g.nPCA + [1:g.nPCA]};
-            inds{ninds+2} = {(jroi-1)*g.nPCA + [1:g.nPCA], (iroi-1)*g.nPCA + [1:g.nPCA]};
-            ninds = ninds + 2;
-        end
-    end
-    
-    % compute time reversed spectral Granger causality between all pairs of ROIs
-    TRGC = data2sctrgc(source_roi_data, EEG.srate, g.morder, 0, g.naccu, [], inds);
-    
-    % calculation of net TRGC scores (i->j minus j->i), recommended procedure
-    TRGCnet = TRGC(:, 1:2:end)-TRGC(:, 2:2:end);
-    
-    % create a ROI x ROI connectivity matrix, if needed
-    % TRGCmat(f, ii, jj) is net TRGC from jj to ii
-    TRGCmat = [];
-    iinds = 0;
-    for iroi = 1:nROI
-        for jroi = (iroi+1):nROI
-            iinds = iinds + 1;
-            TRGCmat(:, iroi, jroi) = -TRGCnet(:, iinds);
-            TRGCmat(:, jroi, iroi) = TRGCnet(:, iinds);
-        end
+inds = {}; ninds = 0;
+nROI = EEG.roi.nROI;
+nPCA = EEG.roi.nPCA;
+for iroi = 1:nROI
+    for jroi = (iroi+1):nROI
+        inds{ninds+1} = {(iroi-1)*nPCA + [1:nPCA], (jroi-1)*nPCA + [1:nPCA]};
+        inds{ninds+2} = {(jroi-1)*nPCA + [1:nPCA], (iroi-1)*nPCA + [1:nPCA]};
+        ninds = ninds + 2;
     end
 end
-
-% compute cross-spectrum, takes a while
-if strcmpi(g.crossspec, 'on')
-    disp('Computing connectivity...'); 
-    conn = data2spwctrgc(source_roi_data, EEG.srate, g.morder, 0, g.naccu, [], {'CS'});
-else
-    conn.CS = [];
+if ~isempty(g.methods)
+    conn_mult = data2sctrgcmim(source_roi_data, EEG.srate, g.morder, 0, g.naccu, [], inds, g.methods);
 end
 
-EEG.roi.TRGCmat   = TRGCmat;
-EEG.roi.CS        = conn.CS;
+fields = fieldnames(conn_mult);
+for iField = 1:length(fields)
+    EEG.roi.(fields{iField}) = conn_mult.(fields{iField});
+end

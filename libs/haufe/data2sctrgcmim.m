@@ -198,7 +198,7 @@ if abs(nboot) < 1 % no bootstrap
         
         if ~isempty(intersect(output, {'GC', 'TRGC'}))
           % autocovariance to full forward VAR model
-          [A, SIG] = autocov_to_var3(G(subset, subset, :));
+          [A, SIG] = autocov_to_var2(G(subset, subset, :));
 
           % forward VAR model to state space VARMA models
           [eA2, eC2, eK2, eV2, eVy2] = varma2iss(reshape(A, nsubsetvars, []), [], SIG, eye(nsubsetvars)); 
@@ -209,7 +209,7 @@ if abs(nboot) < 1 % no bootstrap
           
           if ~isempty(intersect(output, {'TRGC'}))
             % backward autocovariance to full backward VAR model
-            [AR, SIGR] = autocov_to_var3(permute(G(subset, subset, :), [2 1 3]));
+            [AR, SIGR] = autocov_to_var2(permute(G(subset, subset, :), [2 1 3]));
 
             % backward VAR to VARMA
             [eA2R, eC2R, eK2R, eV2R, eVy2R] = varma2iss(reshape(AR, nsubsetvars, []), [], SIGR, eye(nsubsetvars));
@@ -331,7 +331,7 @@ else % bootstrap
 
           if ~isempty(intersect(output, {'GC', 'TRGC'}))
             % autocovariance to full forward VAR model
-            [A, SIG] = autocov_to_var3(G(subset, subset, :));
+            [A, SIG] = autocov_to_var2(G(subset, subset, :));
 
             % forward VAR model to state space VARMA models
             [eA, eC, eK, eV, eVy] = varma2iss(reshape(A, nsubsetvars, []), [], SIG, eye(nsubsetvars)); 
