@@ -1,6 +1,6 @@
 eeglab
 
-eeglabp = fileparts('eeglab.m');
+eeglabp = fileparts(which('eeglab.m'));
 EEG = pop_loadset('filename','eeglab_data_epochs_ica.set','filepath',fullfile(eeglabp, 'sample_data/'));
 EEG = pop_select( EEG, 'trial',[1:20] );
 [ALLEEG EEG CURRENTSET] = eeg_store(ALLEEG, EEG);
