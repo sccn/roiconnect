@@ -1,7 +1,7 @@
 % roi_connect() - compute connectivity between ROIs
 %
 % Usage:
-%  EEG = roi_connect(EEG, 'key', 'val', ...);
+%  EEG = roi_connect(EEG, 'key', 'val', ...); 
 %
 % Inputs:
 %  EEG - EEGLAB dataset with ROI activity computed
