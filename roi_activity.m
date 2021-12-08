@@ -93,19 +93,6 @@ g = finputcheck(varargin, { ...
     'outputdir'   'string'  { }              '' }, 'roi_activity');
 if ischar(g), error(g); end
 if isempty(g.leadfield), error('Leadfield is mandatory parameter'); end
-     
-% GO TO BRAINSTORM-MASTER3 folder AND START BRAINSTORM
-p = fileparts(which('roi_activity'));
-addpath(fullfile(p, 'libs/Daniele_ARMA'));
-addpath(fullfile(p, 'libs/export_fig'));
-addpath(fullfile(p, 'libs/haufe'));
-addpath(fullfile(p, 'libs/mvgc_v1.0'));
-addpath(fullfile(p, 'libs/mvgc_v1.0/core'));
-addpath(fullfile(p, 'libs/mvgc_v1.0/stats'));
-addpath(fullfile(p, 'libs/mvgc_v1.0/utils'));
-addpath(fullfile(p, 'libs/nolte'));
-addpath(fullfile(p, 'libs/ssgc_v1.0'));
-addpath(fullfile(p, 'libs/brainstorm'));
 
 %%% Creating result folder
 if ~isempty(g.outputdir)

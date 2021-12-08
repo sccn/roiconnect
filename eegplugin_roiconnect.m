@@ -41,6 +41,21 @@ if nargin < 3
     error('eegplugin_roiconnect requires 3 arguments');
 end
 
+if ~exist('roi_activity')
+    p = fileparts(which('eegplugin_roiconnect'));
+    addpath(p);
+    addpath(fullfile(p, 'libs/Daniele_ARMA'));
+    addpath(fullfile(p, 'libs/export_fig'));
+    addpath(fullfile(p, 'libs/haufe'));
+    addpath(fullfile(p, 'libs/mvgc_v1.0'));
+    addpath(fullfile(p, 'libs/mvgc_v1.0/core'));
+    addpath(fullfile(p, 'libs/mvgc_v1.0/stats'));
+    addpath(fullfile(p, 'libs/mvgc_v1.0/utils'));
+    addpath(fullfile(p, 'libs/nolte'));
+    addpath(fullfile(p, 'libs/ssgc_v1.0'));
+    addpath(fullfile(p, 'libs/brainstorm'));
+end
+
 % use global variable to assess ROI status
 % ----------------------------------------
 try
@@ -58,10 +73,10 @@ tool_m = findobj(fig, 'tag', 'tools');
 
 % command to check that the '.source' is present in the EEG structure
 % -------------------------------------------------------------------
-cb_toggle      = [ 'try, [ALLEEG, LASTCOM] = pop_toggleroiandica(ALLEEG); EEG = ALLEEG(CURRENTSET);' catchstrs.add_to_hist '; eeglab(''redraw'');' ]; 
-cb_act         = [ 'try, [EEG, LASTCOM] = pop_roi_activity(EEG);' catchstrs.store_and_hist ]; 
-cb_connect     = [ 'try, [EEG, LASTCOM] = pop_roi_connect(EEG);'  catchstrs.store_and_hist ]; 
-cb_plot        = [ 'try, [~,LASTCOM] = pop_roi_connectplot(EEG);'     catchstrs.add_to_hist  ]; 
+cb_toggle      = [ trystrs.no_check '[ALLEEG, LASTCOM] = pop_toggleroiandica(ALLEEG); EEG = ALLEEG(CURRENTSET);' catchstrs.add_to_hist '; eeglab(''redraw'');' ]; 
+cb_act         = [ trystrs.no_check '[EEG, LASTCOM] = pop_roi_activity(EEG);' catchstrs.store_and_hist ]; 
+cb_connect     = [ trystrs.no_check '[EEG, LASTCOM] = pop_roi_connect(EEG);'  catchstrs.store_and_hist ]; 
+cb_plot        = [ trystrs.no_check '[~,LASTCOM] = pop_roi_connectplot(EEG);' catchstrs.add_to_hist    ]; 
 
 roi_m = uimenu( tool_m, 'label', 'ROI connectivity analysis', 'userdata', 'startup:off;study:on');
 % if curroiFlag
