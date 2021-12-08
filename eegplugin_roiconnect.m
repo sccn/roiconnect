@@ -41,7 +41,7 @@ if nargin < 3
     error('eegplugin_roiconnect requires 3 arguments');
 end
 
-if ~exist('roi_activity')
+if ~exist('cs2coh')
     p = fileparts(which('eegplugin_roiconnect'));
     addpath(p);
     addpath(fullfile(p, 'libs/Daniele_ARMA'));
