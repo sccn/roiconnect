@@ -61,7 +61,7 @@ tool_m = findobj(fig, 'tag', 'tools');
 cb_toggle      = [ 'try, [ALLEEG, LASTCOM] = pop_toggleroiandica(ALLEEG); EEG = ALLEEG(CURRENTSET);' catchstrs.add_to_hist '; eeglab(''redraw'');' ]; 
 cb_act         = [ 'try, [EEG, LASTCOM] = pop_roi_activity(EEG);' catchstrs.store_and_hist ]; 
 cb_connect     = [ 'try, [EEG, LASTCOM] = pop_roi_connect(EEG);'  catchstrs.store_and_hist ]; 
-cb_plot        = [ 'try, LASTCOM = pop_roi_connectplot(EEG);'     catchstrs.add_to_hist  ]; 
+cb_plot        = [ 'try, [~,LASTCOM] = pop_roi_connectplot(EEG);'     catchstrs.add_to_hist  ]; 
 
 roi_m = uimenu( tool_m, 'label', 'ROI connectivity analysis', 'userdata', 'startup:off;study:on');
 % if curroiFlag

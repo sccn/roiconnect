@@ -54,8 +54,9 @@
 % ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 % THE POSSIBILITY OF SUCH DAMAGE.
 
-function com = pop_roi_connectplot(EEG, varargin)
+function [matrix, com] = pop_roi_connectplot(EEG, varargin)
 
+matrix = [];
 com = '';
 if nargin < 1
     help pop_roi_connectplot;
@@ -266,7 +267,8 @@ switch lower(g.measure)
         TRGC = get_connect_mat( TRGCnet, S.nROI, -1);
         
         if strcmpi(g.plotmatrix, 'on')
-            figure; imagesc(squeeze(mean(TRGC(frq_inds, :, :)))); colorbar
+            matrix = squeeze(mean(TRGC(frq_inds, :, :)));
+            figure; imagesc(matrix); colorbar
             xlabel('ROI index (see Atlas for more info)');
             h = title([ 'ROI to ROI ' upper(g.measure) ' (' titleStr ')' ]);
             set(h, 'fontsize', 16);
@@ -288,7 +290,8 @@ switch lower(g.measure)
         MI = get_connect_mat( MI, S.nROI, +1);
 
         if strcmpi(g.plotmatrix, 'on')
-            figure; imagesc(squeeze(mean(MI(frq_inds, :, :)))); colorbar
+            matrix = squeeze(mean(MI(frq_inds, :, :)));
+            figure; imagesc(matrix); colorbar
             xlabel('ROI index (see Atlas for more info)');
             h = title(['ROI to ROI imag. part of coherence (' titleStr ')']);
             set(h, 'fontsize', 16);
@@ -317,7 +320,8 @@ switch lower(g.measure)
         end
         
         if strcmpi(g.plotmatrix, 'on')
-            figure; imagesc(squeeze(mean(PS(frq_inds, :, :)))); colorbar
+            matrix = squeeze(mean(PS(frq_inds, :, :)));
+            figure; imagesc(matrix); colorbar
             xlabel('ROI index (see Atlas for more info)');
             h = title([ plotOpt.label ' (' titleStr ')']);
             set(h, 'fontsize', 16);
