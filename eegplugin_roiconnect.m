@@ -44,6 +44,7 @@ end
 if ~exist('cs2coh')
     p = fileparts(which('eegplugin_roiconnect'));
     addpath(p);
+    addpath(fullfile(p, 'newscripts'));
     addpath(fullfile(p, 'libs/Daniele_ARMA'));
     addpath(fullfile(p, 'libs/export_fig'));
     addpath(fullfile(p, 'libs/haufe'));
