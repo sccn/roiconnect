@@ -7,6 +7,7 @@ clear
 % Install required plugins
 plugin_askinstall('bids-matlab-tools', 'pop_importbids', 1);
 plugin_askinstall('ICLabel', 'pop_icflag', 1);
+plugin_askinstall('iirfilt', 'iirfilt', 1);
 plugin_askinstall('PICARD', 'picard', 1);
 plugin_askinstall('BIOSIG', 'pop_biosig', 1);
 pop_editoptions('option_parallel', 0);
@@ -28,26 +29,30 @@ pop_savestudy(STUDY, ALLEEG, 'filename', 'meditation.study');
 %% Preprocessing
 % remove channels with no coordinates
 EEG = pop_select( EEG, 'nochannel',{'EXG1','EXG2','EXG3','EXG4','EXG5','EXG6','EXG7','EXG8','GSR1','GSR2','Erg1','Erg2','Resp','Plet','Temp'});
-EEG.chanlocs = struct('labels', { 'Fp1' 'AF7' 'AF3' 'F1' 'F3' 'F5' 'F7' 'FT7' 'FC5' 'FC3' 'FC1' 'C1' 'C3' 'C5' 'T7' 'TP7' 'CP5' 'CP3' 'CP1' 'P1' 'P3' 'P5' 'P7' 'P9' 'PO7' 'PO3' 'O1' 'Iz' 'Oz' 'POz' 'Pz' 'CPz' 'Fpz' 'Fp2' 'AF8' 'AF4' 'AFz' 'Fz' 'F2' 'F4' 'F6' 'F8' 'FT8' 'FC6' 'FC4' 'FC2' 'FCz' 'Cz' 'C2' 'C4' 'C6' 'T8' 'TP8' 'CP6' 'CP4' 'CP2' 'P2' 'P4' 'P6' 'P8' 'P10' 'PO8' 'PO4' 'O2' });
+for iEEG = 1:length(EEG)
+    EEG(iEEG).chanlocs = struct('labels', { 'Fp1' 'AF7' 'AF3' 'F1' 'F3' 'F5' 'F7' 'FT7' 'FC5' 'FC3' 'FC1' 'C1' 'C3' 'C5' 'T7' 'TP7' 'CP5' 'CP3' 'CP1' 'P1' 'P3' 'P5' 'P7' 'P9' 'PO7' 'PO3' 'O1' 'Iz' 'Oz' 'POz' 'Pz' 'CPz' 'Fpz' 'Fp2' 'AF8' 'AF4' 'AFz' 'Fz' 'F2' 'F4' 'F6' 'F8' 'FT8' 'FC6' 'FC4' 'FC2' 'FCz' 'Cz' 'C2' 'C4' 'C6' 'T8' 'TP8' 'CP6' 'CP4' 'CP2' 'P2' 'P4' 'P6' 'P8' 'P10' 'PO8' 'PO4' 'O2' });
+end
 eeglabp = fileparts(which('eeglab.m'));
 EEG = pop_chanedit(EEG, 'lookup',fullfile(eeglabp, 'plugins','dipfit','standard_BEM','elec','standard_1005.elc'));
-chanlocs = EEG.chanlocs;
+chanlocs = EEG(1).chanlocs;
 
 % Rereference using average reference
 EEG = pop_reref( EEG,[]);
 
 % Remove bad channels and bad data
+EEG = pop_iirfilt( EEG, 0, 45, [], 0, 0);
 EEG = pop_clean_rawdata( EEG,'FlatlineCriterion',5,'ChannelCriterion',0.85,...
-    'LineNoiseCriterion',2.5,'Highpass',[0.25 0.75] ,...
+    'LineNoiseCriterion',2.5,'Highpass',[0.75 1.25] ,...
     'BurstCriterion',20,'WindowCriterion',0.25,'BurstRejection','off',...
     'Distance','Euclidian','WindowCriterionTolerances',[-Inf 7]);
-EEG = pop_rmdat( EEG, {'128' '1' '2' '4' '8' '254' },[-1 3] ,1); % remove data around events
+EEG = pop_rmdat( EEG, {'condition 128' 'condition 1' 'condition 2' 'condition 4' 'condition 8' 'condition 254' '128' '1' '2' '4' '8' '254' },[-1 3] ,1); % remove data around events
 
 % Run ICA and flag artifactual components using IClabel
-% EEG = pop_runica(EEG, 'icatype','picard', 'pca', -1, 'maxiter', 500);
-% EEG = pop_iclabel(EEG,'default');
-% EEG = pop_icflag(EEG,[NaN NaN;0.8 1;0.8 1;NaN NaN;NaN NaN;NaN NaN;NaN NaN]);
-% EEG = pop_subcomp(EEG, [], 0); % remove pre-flagged bad components
+EEG = pop_runica(EEG, 'icatype','picard', 'pca', -1, 'maxiter', 500);
+EEG = pop_iclabel(EEG,'default');
+EEG = pop_icflag(EEG,[NaN NaN;0.8 1;0.8 1;NaN NaN;NaN NaN;NaN NaN;NaN NaN]);
+EEG = pop_subcomp(EEG, [], 0); % remove pre-flagged bad components
+ALLEEG = EEG;
 
 % resample extract epochs
 for iEEG = 1:length(ALLEEG)
