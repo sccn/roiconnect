@@ -134,6 +134,35 @@ strComputeShort = { 'LCMV' 'LCMVFieldtrip' 'eLoreta' 'eLoretaFieldtrip' };
 
 if nargin < 2
     
+    options = {};
+    if EEG.trials == 1
+        if EEG.srate > 128
+            res = questdlg2( [ 'This function is optimized to process 2-sec data epochs' 10 ...
+                'at a sampling rate of about 100 Hz. Do you want to resample the data and' 10 ...
+                'extract 2-sec data segments? (make sure your dataset is saved)' ], 'Warning ROI connect', 'Cancel', 'No', 'Yes', 'Yes');
+            if strcmpi(res, 'cancel'), return; end
+            if strcmpi(res, 'yes')
+                options = { options{:} 'resample' 'on' 'regepochs' 'on' };
+            end
+        else
+            res = questdlg2( [ 'This function is optimized to process 2-sec data epochs.' 10 ...
+                'Do you want to resample the data extract 2-sec data segments?' 10 ...
+                '(make sure your dataset is saved)' ], 'Warning ROI connect', 'Cancel', 'No', 'Yes', 'Yes');
+            if strcmpi(res, 'cancel'), return; end
+            if strcmpi(res, 'yes')
+                options = { options{:} 'regepochs' 'on' };
+            end
+        end
+    elseif EEG.srate > 128
+        res = questdlg2( [ 'This function is optimized to process data epochs' 10 ...
+            'at a sampling rate of about 100 Hz. Do you want to resample the data?' 10 ...
+            '(make sure your dataset is saved)' ], 'Warning ROI connect', 'Cancel', 'No', 'Yes', 'Yes');
+        if strcmpi(res, 'cancel'), return; end
+        if strcmpi(res, 'yes')
+            options = { options{:} 'resample' 'on' };
+        end
+    end
+                     
     leadfield = [];
     leadfield(end+1).label = 'Leadfield matrix: compute using head and source model above (Fieldtrip)';
     leadfield(end+1).label = 'Leadfield matrix: compute using head and source model above (mkfilt_eloreta_v2 - uses less RAM)';
@@ -165,9 +194,9 @@ if nargin < 2
 
     % 
     if out.leadfieldselect == 1
-         options = { 'leadfield' EEG.dipfit.sourcemodel };
+         options = { options{:} 'leadfield' EEG.dipfit.sourcemodel };
     else
-         options = { 'leadfield' EEG.dipfit.leadfield };
+         options = { options{:} 'leadfield' EEG.dipfit.leadfield };
     end
     try
         modelParams = eval( [ '{' out.modelparams '}' ] );
@@ -202,8 +231,18 @@ end
     'model'           'string'              strComputeShort 'LCMV';
     'modelparams'     'cell'                {}               {};
     'atlas'           'string'              {}               '';
+    'resample'        'string'              { 'on' 'off'}    'off';
+    'regepochs'       'string'              { 'on' 'off'}    'off';
     'nPCA'            'real'                {}               3 });
 if ischar(g), error(g); end
+
+if strcmpi(g.resample, 'on')
+    EEG = pop_resample(EEG, 100);
+end
+if strcmpi(g.regepochs, 'on')
+    EEG = eeg_regepochs(EEG, 2, [0 2]);
+end
+
 if isstruct(g.leadfield)
     sourceModelFile = g.leadfield.file;
     sourceModel2MNI = g.leadfield.coordtransform;

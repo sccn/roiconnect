@@ -1,4 +1,4 @@
-% pop_roi_connect - call roi_connect to compute connectivity between ROIs
+% pop_roi_connect - call roi_connect to connectivity between ROIs
 %
 % Usage:
 %  EEG = pop_roi_connect(EEG, 'key', 'val', ...);
@@ -7,12 +7,12 @@
 %  EEG - EEGLAB dataset containing ROI activity
 %
 % Optional inputs:
-%  'gc'        - ['on'|'off'] compute Granger Causality. Default 'off'.
-%  'trgc'      - ['on'|'off'] compute time-reverse Granger Causality. Default
+%  'gc'        - ['on'|'off'] Granger Causality. Default 'off'.
+%  'trgc'      - ['on'|'off'] time-reverse Granger Causality. Default
 %                is 'off'.
-%  'mim'       - ['on'|'off'] compute Mututal Information Machine. Default
+%  'mim'       - ['on'|'off'] Mututal Information Machine. Default
 %                is 'off'.
-%  'crossspec' - ['on'|'off'] compute cross-spectrum from which coherence can
+%  'crossspec' - ['on'|'off'] cross-spectrum from which coherence can
 %                be derived. Default is 'off'.
 %
 % Output:
@@ -30,7 +30,7 @@
 %   'head_modelColin27_5003_Standard-10-5-Cap339.mat'), 'sourcemodel2mni', ...
 %   [0 -26.6046230000 -46 0.1234625600 0 -1.5707963000 1000 1000 1000]);
 %
-% Use pop_roi_connectivity(EEG) to compute conectivity
+% Use pop_roi_connectivity(EEG) to conectivity
 
 % Copyright (C) Arnaud Delorme, arnodelorme@gmail.com
 %
@@ -72,20 +72,24 @@ if nargin < 1
 end
 
 if ~isfield(EEG(1), 'roi') || ~isfield(EEG(1).roi, 'source_roi_data')
-    error('Cannot find ROI data - compute ROI data first');
+    error('Cannot find ROI data - ROI data first');
 end
 
 if nargin < 2
 
     rowg = [0.1 0.6 1 0.2];
     % uigeom = { 1 1 rowg rowg 1 rowg rowg [0.1 0.6 0.9 0.3] 1 rowg 1 [0.5 1 0.35 0.5] [0.5 1 0.35 0.5] [0.5 1 0.35 0.5] [1] [0.9 1.2 1] };
-    uigeom = { [1] [1] [1] [1] [1] [1] [0.2 1 0.35] [0.2 1 0.35] };
-    uilist = { { 'style' 'checkbox' 'string' 'Compute cross-spectrum'             'tag' 'crossspec' 'value' 1  } ...
-               { 'style' 'checkbox' 'string' 'Compute coherence'                  'tag' 'coh' 'value' 0  } ...
-               { 'style' 'checkbox' 'string' 'Compute Granger Causality'          'tag' 'gc' 'value' 0   } ...
-               { 'style' 'checkbox' 'string' 'Compute Time-rev GC'                'tag' 'trgc' 'value' 0   } ...
-               { 'style' 'checkbox' 'string' 'Compute Mutual Information C'       'tag' 'mic' 'value' 0  } ...
-               { 'style' 'checkbox' 'string' 'Compute Mutual Information M'       'tag' 'mim' 'value' 0   } ...
+    uigeom = { [1] [1] [1] [1] [1] [1] [1] [1] [1] [1] [0.2 1 0.35] [0.2 1 0.35] };
+    uilist = { { 'style' 'text' 'string' 'Select connectivity measures' 'fontweight' 'bold' } ...
+               { 'style' 'checkbox' 'string' 'Cross-spectrum'               'tag' 'cs' 'value' 1  } ...
+               { 'style' 'checkbox' 'string' 'Coherence'                    'tag' 'coh' 'value' 0  } ...
+               { 'style' 'checkbox' 'string' 'weighted Phase Lag Index'   'tag' 'wpli' 'value' 0  } ...
+               { 'style' 'checkbox' 'string' 'Granger Causality'          'tag' 'gc' 'value' 0   } ...
+               { 'style' 'checkbox' 'string' 'Time-rev GC'                'tag' 'trgc' 'value' 0   } ...
+               { 'style' 'checkbox' 'string' 'Partial Directed Coherence' 'tag' 'pdc' 'value' 0   } ...
+               { 'style' 'checkbox' 'string' 'Time-rev PDC'               'tag' 'trpdc' 'value' 0   } ...
+               { 'style' 'checkbox' 'string' 'Directed Transfer Entropy'  'tag' 'dtf' 'value' 0   } ...
+               { 'style' 'checkbox' 'string' 'Time-rev DTF'               'tag' 'trdtf' 'value' 0   } ...
                {} { 'style' 'text' 'string' 'Autoregressive model order'   } { 'style' 'edit' 'string' '20' 'tag' 'morder' } ...
                {} { 'style' 'text' 'string' 'Bootstrap if any (n)'         } { 'style' 'edit' 'string' '' 'tag' 'naccu2' } };
                 ...
@@ -94,12 +98,15 @@ if nargin < 2
                       
     % check we have the same naccu
     methods = {};
-    if out.trgc, methods = [ methods { 'TRGC' } ]; end
-    if out.gc  , methods = [ methods { 'GC' } ]; end
-    if out.mic,  methods = [ methods { 'MIC' } ]; end
-    if out.mim,  methods = [ methods { 'MIM' } ]; end
-    if out.coh,  methods = [ methods { 'COH' } ]; end
-    if out.crossspec,  methods = [ methods { 'CS' } ]; end
+    if out.gc  ,  methods = [ methods { 'GC' } ]; end
+    if out.coh,   methods = [ methods { 'COH' } ]; end
+    if out.wpli,  methods = [ methods { 'wPLI' } ]; end
+    if out.trgc,  methods = [ methods { 'TRGC' } ]; end
+    if out.pdc  , methods = [ methods { 'PDC' } ]; end
+    if out.trpdc, methods = [ methods { 'TRPDC' } ]; end
+    if out.dtf  , methods = [ methods { 'DTF' } ]; end
+    if out.trdtf, methods = [ methods { 'TRDTF' } ]; end
+    if out.cs,    methods = [ methods { 'CS' } ]; end
     options = {  ...
         'morder' str2num(out.morder) ...
         'naccu' str2num(out.naccu2) ...

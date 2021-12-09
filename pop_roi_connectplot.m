@@ -219,38 +219,18 @@ plotOpt = splot(pos);
 
 switch lower(g.measure)
     case { 'psd' 'roipsd' }
-        if ~isfield(S, 'source_voxel_data')
-            error('Cannot plot spectrum without source data');
-        end
-        
-        if ~isempty(g.freqrange)
-            % filter range of interest
-            freqRatio = g.freqrange/max(S.freqs);
-            [B,A] = butter(5,freqRatio); % sampling rate is 1 so divide by 2 as in S.freqs
-            disp('Filtering...');
-            X = filtfilt(B, A, double(S.source_voxel_data));
-            
-            disp('Applying hilbert transform...');
-            Xhilbert = hilbert(X);
-            P = reshape(sum(sum(Xhilbert.*conj(Xhilbert), 1), 3), [], 1);
-        else
-            P = reshape(sum(sum(S.source_voxel_data.^2, 1), 3), [], 1);
-        end
-        P_dB = 10*log10( P );
+        if strcmpi(g.measure, 'psd')
+            % plot poower of individual voxels
+            % we would need to save the power in roi_activity. The function below can plot power
+            % allplots_cortex_BS(S.cortex, P_dB, [min(P_dB) max(P_dB)], cm17a, 'power [dB]', g.smooth);
+            error('This option is obsolete');
+        end    
         
         if strcmpi(g.plotcortex, 'on')
             if strcmpi(lower(g.measure), 'roipsd')
-                source_roi_power = zeros(1,S.nROI);
-                for iROI = 1:S.nROI
-                    source_roi_power(iROI) = mean(P(S.atlas.Scouts(iROI).Vertices));
-                end
-                source_roi_power_norm_dB = 10*log10( source_roi_power );
+                source_roi_power_norm_dB = 10*log10( mean(EEG.roi.source_roi_power(frq_inds,:)) );
                 allplots_cortex_BS(S.cortex, source_roi_power_norm_dB, [min(source_roi_power_norm_dB) max(source_roi_power_norm_dB)], cm17a, 'power [dB]', g.smooth);
                 h = textsc([ 'ROI source power (' titleStr ')' ], 'title');
-                set(h, 'fontsize', 20);
-            else
-                allplots_cortex_BS(S.cortex, P_dB, [min(P_dB) max(P_dB)], cm17a, 'power [dB]', g.smooth);
-                h = textsc([ 'Source power (' titleStr ')' ], 'title');
                 set(h, 'fontsize', 20);
             end
         end
