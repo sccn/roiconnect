@@ -304,7 +304,7 @@ if strcmpi(g.roiactivity, 'on')
     for iROI = 1:nROI
         ind_roi = cortex.Atlas.Scouts(iROI).Vertices;
         [~, source_roi_power_norm(iROI)] = roi_getpower(source_voxel_data, ind_roi);
-        source_roi_power(:,nROI) = mean(tmpWelch(:, ind_roi),2);
+        source_roi_power(:,iROI) = mean(tmpWelch(:, ind_roi),2);
         
         [source_roi_data_tmp, nPCAs(iROI)] = roi_getact(source_voxel_data, ind_roi, g.nPCA);
         source_roi_data = cat(2, source_roi_data, source_roi_data_tmp);
