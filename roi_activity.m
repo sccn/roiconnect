@@ -93,21 +93,8 @@ g = finputcheck(varargin, { ...
     'outputdir'   'string'  { }              '' }, 'roi_activity');
 if ischar(g), error(g); end
 if isempty(g.leadfield), error('Leadfield is mandatory parameter'); end
-     
-% GO TO BRAINSTORM-MASTER3 folder AND START BRAINSTORM
-p = fileparts(which('roi_activity'));
-addpath(fullfile(p, 'libs/Daniele_ARMA'));
-addpath(fullfile(p, 'libs/export_fig'));
-addpath(fullfile(p, 'libs/haufe'));
-addpath(fullfile(p, 'libs/mvgc_v1.0'));
-addpath(fullfile(p, 'libs/mvgc_v1.0/core'));
-addpath(fullfile(p, 'libs/mvgc_v1.0/stats'));
-addpath(fullfile(p, 'libs/mvgc_v1.0/utils'));
-addpath(fullfile(p, 'libs/nolte'));
-addpath(fullfile(p, 'libs/ssgc_v1.0'));
-addpath(fullfile(p, 'libs/brainstorm'));
 
-%%% Creating result folder
+% Creating result folder
 if ~isempty(g.outputdir)
     mkdir(fullfile( g.outputdir, 'data'));
 end
@@ -303,12 +290,22 @@ labels = {cortex.Atlas.Scouts.Label};
 
 % keep only the first nPCA strongest components for each ROI
 if strcmpi(g.roiactivity, 'on')
+    source_roi_power = zeros(length(frqs), nROI);
     disp('Computing ROI activity...');
     source_roi_data = [];
+
+    % compute power using the Welch method
+    tmpData = reshape(source_voxel_data, EEG.pnts, EEG.trials*size(source_voxel_data,2)*size(source_voxel_data,3));
+    [tmpWelch,ftmp] = pwelch(tmpData(:,:), EEG.srate*2, EEG.srate, EEG.srate*2, EEG.srate); % ftmp should be equal frqs 
+    tmpWelch = reshape(tmpWelch, size(tmpWelch,1), EEG.trials, size(source_voxel_data,2), size(source_voxel_data,3));
+    tmpWelch = squeeze(mean(tmpWelch,2)); % remove trials size freqs x voxels x 3
+    tmpWelch = squeeze(mean(tmpWelch,3)); % remove 3rd dim size freqs x voxels
     
     for iROI = 1:nROI
         ind_roi = cortex.Atlas.Scouts(iROI).Vertices;
-        [source_roi_power(iROI), source_roi_power_norm(iROI)] = roi_getpower(source_voxel_data, ind_roi);
+        [~, source_roi_power_norm(iROI)] = roi_getpower(source_voxel_data, ind_roi);
+        source_roi_power(:,iROI) = mean(tmpWelch(:, ind_roi),2);
+        
         [source_roi_data_tmp, nPCAs(iROI)] = roi_getact(source_voxel_data, ind_roi, g.nPCA);
         source_roi_data = cat(2, source_roi_data, source_roi_data_tmp);
     end
@@ -317,6 +314,7 @@ if strcmpi(g.roiactivity, 'on')
     source_roi_data = permute(reshape(source_roi_data, EEG.pnts, EEG.trials, []), [3 1 2]);
 else
     source_roi_data = [];
+    source_roi_power = [];
     source_roi_power_norm = [];
 end
 disp('Done');
@@ -328,6 +326,7 @@ if strcmpi(g.exportvoxact, 'on')
     EEG.roi.source_voxel_data     = source_voxel_data; % large (takes lots of RAM)
 end
 EEG.roi.source_roi_data       = single(source_roi_data);
+EEG.roi.source_roi_power      = source_roi_power; % used for plotting
 EEG.roi.source_roi_power_norm = source_roi_power_norm; % used for cross-sprectum
 EEG.roi.freqs     = frqs;
 EEG.roi.nPCA      = g.nPCA;
@@ -341,209 +340,4 @@ if exist('P_eloreta', 'var')
     EEG.roi.P_eloreta = single(P_eloreta);
 end
 
-
-
-return;
-
-
-
-
-
-
-
-nPCAs = zeros(1, length(nROI));
-nPCAs(:) = 3;
-beg_inds = cumsum([1 nPCAs(1:end-1)]);
-end_inds = cumsum([nPCAs]);
-
-for iroi = 1:nROI
-  PCA_inds{iroi} = beg_inds(iroi):end_inds(iroi);
-end
-
-%% ROI analysis using nPCA components per ROI
-
-% test TRGC between ROIs (that is, pairs of nPCA-dimensional spaces)
-% compute indices
-% new: 
-inds = {}; ninds = 0;
-for iroi = 1:nROI
-  for jroi = (iroi+1):nROI
-    inds{ninds+1} = {PCA_inds{iroi}, PCA_inds{jroi}};    
-%     inds{ninds+2} = {PCA_inds{jroi}, PCA_inds{iroi}};  
-    ninds = ninds + 1;
-  end
-end
-
-
-% compute TRGC
-% note, this is not yet the net score i->j - j->i , 
-% only the difference forward-backward
-
-
-% TRGC_ = data2sctrgc(source_roi_data, fres, morder, 0, nbootstrap, [], inds);
-% new FC measures: MIC and MIM (Ewald and Nolte) are multivariate undirected (symmetric) FC
-% metrics. They represent the first eigenvalue and the sum of eigenvalues
-% of a maximization of iCOH. 
-conn_mult = data2sctrgcmim(source_roi_data, fres, morder, 0, nbootstrap, [], inds, {'TRGC', 'GC', 'MIM', 'MIC'});
-
-% compute cross-spectrum
-conn_uni = data2spwctrgc2(source_roi_data, fres, morder, 0, nbootstrap, [], {'CS'});
-
-%% TRGC plotting
-
-% calculation of net TRGC scores (i->j minus j->i), recommended procedure
-% TRGCnet = TRGC_(:, 1:2:end)-TRGC_(:, 2:2:end);
-% new way to compute net scores
-TRGCnet = conn_mult.TRGC(:, :, 1) - conn_mult.TRGC(:, :, 2);
-
-% create a ROI x ROI connectivity matrix, if needed
-% TRGCmat(f, ii, jj) is net TRGC from jj to ii
-TRGC = [];
-iinds = 0;
-for iroi = 1:(nROI)
-  for jroi = (iroi+1):(nROI)
-    iinds = iinds + 1;
-    TRGC(:, iroi, jroi) = -TRGCnet(:, iinds);
-    TRGC(:, jroi, iroi) = TRGCnet(:, iinds);
-  end
-end
-
-% plot overall TRGC spectrum, sanity check for numerical instabilities
-figure; plot(frqs, TRGC(:, :))
-
-% TRGC per frequency band
-TRGCband = [];
-for iba = 1:length(bands)
-  TRGCband(iba, :, :) = sum(TRGC(frq_inds{iba}, :, :));
-end
-
-% plot alpha-band net TRGC for each region
-roi_ = sum(TRGCband(2, :, :), 3);
-allplots_cortex_BS(cortex_highres, roi_, [-max(abs(roi_)) max(abs(roi_))], cm17, 'TRGC', smooth_cortex, ...
-  [fig_folder sbj '/TRGC_net_alpha']);
-
-figure; imagesc(squeeze(TRGCband(2, :, :)))
-
-% use left inferior parietal region as sender and plot TRGC to all other
-% areas
-% positive means seed sends more than it receives
-roi_ = squeeze(TRGCband(2, :, 15));
-allplots_cortex_BS(cortex_highres, roi_, [-max(abs(roi_)) max(abs(roi_))], cm17, 'TRGC', smooth_cortex, ...
-  [fig_folder sbj '/TRGC_net_alpha_left_inferior_parietal_sender']);
-
-
-%% iCOH plotting
-
-% note: as an alternative to iCOH, the MIM/MIC scores could be brought into
-% matrix form and be plotted.
-
-% compute (absolute value of) the imaginary part of coherence
-iCOH_ = abs(imag(cs2coh(conn_uni.CS)));
-
-clear iCOH
-for iroi = 1:nROI
-  for jroi = 1:nROI
-    iCOH(:, iroi, jroi) = mean(mean(iCOH_(:, PCA_inds{iroi}, PCA_inds{jroi}), 2), 3);
-  end
-end
-
-
-% iCOH per frequency band
-iCOHband = [];
-for iba = 1:length(bands)
-  iCOHband(iba, :, :) = sum(iCOH(frq_inds{iba}, :, :));
-end
-
-%plot alpha-band net iCOH for each region
-roi_ = mean(iCOHband(2, :, :), 3);
-allplots_cortex_BS(cortex_highres, roi_, [min(abs(roi_)) max(abs(roi_))], cm17a, '|iCOH|', smooth_cortex, ...
-  [fig_folder sbj '/iCOH_net_alpha']);
-
-figure; imagesc(squeeze(iCOHband(2, :, :)))
-
-% use right paracentral region as seed and plot iCOH with all other
-% areas
-% positive means more interaction
-roi_ = squeeze(iCOHband(2, :, 34));
-allplots_cortex_BS(cortex_highres, roi_, [min(abs(roi_)) max(abs(roi_))], cm17a, '|iCOH|', smooth_cortex, ...
-  [fig_folder sbj '/iCOH_net_alpha_right_paracentral_seed']);
-
-
-%%
-
-% create a ROI x ROI MIC connectivity matrix
-MIC = [];
-iinds = 0;
-for iroi = 1:(nROI)
-  for jroi = (iroi+1):(nROI)
-    iinds = iinds + 1;
-    MIC(:, iroi, jroi) = conn_mult.MIC(:, iinds);
-    MIC(:, jroi, iroi) = conn_mult.MIC(:, iinds);
-  end
-end
-
-% MIC per frequency band
-MICband = [];
-for iba = 1:length(bands)
-  MICband(iba, :, :) = sum(MIC(frq_inds{iba}, :, :));
-end
-
-%plot alpha-band net MIC for each region
-roi_ = mean(MICband(2, :, :), 3);
-allplots_cortex_BS(cortex_highres, roi_, [min(abs(roi_)) max(abs(roi_))], cm17a, 'MIC', smooth_cortex, ...
-  [fig_folder sbj '/MIC_net_alpha']);
-
-% use right paracentral region as seed and plot MIC with all other
-% areas
-% positive means more interaction
-roi_ = squeeze(MICband(2, :, 34));
-allplots_cortex_BS(cortex_highres, roi_, [min(abs(roi_)) max(abs(roi_))], cm17a, 'MIC', smooth_cortex, ...
-  [fig_folder sbj '/MIC_net_alpha_right_paracentral_seed']);
-
-
-
-%% power plotting
-
-% plot regionwise broadband power on smoothed surface
-voxel_ = nan*ones(size(cortex.Vertices, 1), 1);
-voxel_(ind_cortex) = 10*log10(reshape(sum(sum(source_voxel_data.^2), 3), [], 1));
-allplots_cortex_BS(cortex_highres, voxel_(in_normal_to_high), [min(voxel_) max(voxel_)], ...
-  cm17a, 'power [dB]', smooth_cortex, [fig_folder sbj '/voxel_broadband_voxel_power_db_smooth']);
-
-
-% % plot regionwise broadband power
-% source_roi_power_norm_dB = 10*log10(source_roi_power_norm);
-% allplots_cortex_BS(cortex_highres, source_roi_power_norm_dB, [min(source_roi_power_norm_dB) max(source_roi_power_norm_dB)], ...
-%   cm17a, 'power [dB]', 0, ...
-%   [fig_folder sbj '/roi_broadband_power_db']);
-
-% plot regionwise broadband power on smoothed surface
-source_roi_power_norm_dB = 10*log10(source_roi_power_norm);
-allplots_cortex_BS(cortex_highres, source_roi_power_norm_dB, [min(source_roi_power_norm_dB) max(source_roi_power_norm_dB)], ...
-  cm17a, 'power [dB]', smooth_cortex, [fig_folder sbj '/roi_broadband_voxel_power_db_smooth']);
-
-
-clear PS
-PS_ = cs2psd(conn_uni.CS);
-for iroi = 1:nROI
-  PS(:, iroi) = sum(PS_(:, PCA_inds{iroi}), 2);
-end
-
-% another way to plot region-wise broadband power 
-% todo: need to check for the proper scales after the Fourier transform
-roi_ = 10*log10(sum(PS)./nvoxel_per_roi)';
-allplots_cortex_BS(cortex_highres, roi_, [min(roi_) max(roi_)], cm17a, 'power [dB]', smooth_cortex, ...
-  [fig_folder sbj '/roi_broadband_power_db2']);
-      
-
-% power per frequency band
-PSband = [];
-for iba = 1:length(bands)
-  PSband(iba, :) = sum(PS(frq_inds{iba}, :));
-end
-
-% 
-roi_ = 10*log10(PSdBband(2, :)./nvoxel_per_roi);
-allplots_cortex_BS(cortex_highres, roi_, [min(roi_) max(roi_)], cm17a, 'power [dB]', smooth_cortex, ...
-  [fig_folder sbj '/power_dB_alpha']);
 

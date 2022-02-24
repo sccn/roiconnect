@@ -54,8 +54,9 @@
 % ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 % THE POSSIBILITY OF SUCH DAMAGE.
 
-function com = pop_roi_connectplot(EEG, varargin)
+function [matrix, com] = pop_roi_connectplot(EEG, varargin)
 
+matrix = [];
 com = '';
 if nargin < 1
     help pop_roi_connectplot;
@@ -218,38 +219,18 @@ plotOpt = splot(pos);
 
 switch lower(g.measure)
     case { 'psd' 'roipsd' }
-        if ~isfield(S, 'source_voxel_data')
-            error('Cannot plot spectrum without source data');
-        end
-        
-        if ~isempty(g.freqrange)
-            % filter range of interest
-            freqRatio = g.freqrange/max(S.freqs);
-            [B,A] = butter(5,freqRatio); % sampling rate is 1 so divide by 2 as in S.freqs
-            disp('Filtering...');
-            X = filtfilt(B, A, double(S.source_voxel_data));
-            
-            disp('Applying hilbert transform...');
-            Xhilbert = hilbert(X);
-            P = reshape(sum(sum(Xhilbert.*conj(Xhilbert), 1), 3), [], 1);
-        else
-            P = reshape(sum(sum(S.source_voxel_data.^2, 1), 3), [], 1);
-        end
-        P_dB = 10*log10( P );
+        if strcmpi(g.measure, 'psd')
+            % plot poower of individual voxels
+            % we would need to save the power in roi_activity. The function below can plot power
+            % allplots_cortex_BS(S.cortex, P_dB, [min(P_dB) max(P_dB)], cm17a, 'power [dB]', g.smooth);
+            error('This option is obsolete');
+        end    
         
         if strcmpi(g.plotcortex, 'on')
             if strcmpi(lower(g.measure), 'roipsd')
-                source_roi_power = zeros(1,S.nROI);
-                for iROI = 1:S.nROI
-                    source_roi_power(iROI) = mean(P(S.atlas.Scouts(iROI).Vertices));
-                end
-                source_roi_power_norm_dB = 10*log10( source_roi_power );
+                source_roi_power_norm_dB = 10*log10( mean(EEG.roi.source_roi_power(frq_inds,:)) );
                 allplots_cortex_BS(S.cortex, source_roi_power_norm_dB, [min(source_roi_power_norm_dB) max(source_roi_power_norm_dB)], cm17a, 'power [dB]', g.smooth);
                 h = textsc([ 'ROI source power (' titleStr ')' ], 'title');
-                set(h, 'fontsize', 20);
-            else
-                allplots_cortex_BS(S.cortex, P_dB, [min(P_dB) max(P_dB)], cm17a, 'power [dB]', g.smooth);
-                h = textsc([ 'Source power (' titleStr ')' ], 'title');
                 set(h, 'fontsize', 20);
             end
         end
@@ -266,7 +247,8 @@ switch lower(g.measure)
         TRGC = get_connect_mat( TRGCnet, S.nROI, -1);
         
         if strcmpi(g.plotmatrix, 'on')
-            figure; imagesc(squeeze(mean(TRGC(frq_inds, :, :)))); colorbar
+            matrix = squeeze(mean(TRGC(frq_inds, :, :)));
+            figure; imagesc(matrix); colorbar
             xlabel('ROI index (see Atlas for more info)');
             h = title([ 'ROI to ROI ' upper(g.measure) ' (' titleStr ')' ]);
             set(h, 'fontsize', 16);
@@ -288,7 +270,8 @@ switch lower(g.measure)
         MI = get_connect_mat( MI, S.nROI, +1);
 
         if strcmpi(g.plotmatrix, 'on')
-            figure; imagesc(squeeze(mean(MI(frq_inds, :, :)))); colorbar
+            matrix = squeeze(mean(MI(frq_inds, :, :)));
+            figure; imagesc(matrix); colorbar
             xlabel('ROI index (see Atlas for more info)');
             h = title(['ROI to ROI imag. part of coherence (' titleStr ')']);
             set(h, 'fontsize', 16);
@@ -317,7 +300,8 @@ switch lower(g.measure)
         end
         
         if strcmpi(g.plotmatrix, 'on')
-            figure; imagesc(squeeze(mean(PS(frq_inds, :, :)))); colorbar
+            matrix = squeeze(mean(PS(frq_inds, :, :)));
+            figure; imagesc(matrix); colorbar
             xlabel('ROI index (see Atlas for more info)');
             h = title([ plotOpt.label ' (' titleStr ')']);
             set(h, 'fontsize', 16);

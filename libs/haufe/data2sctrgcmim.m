@@ -1,4 +1,4 @@
-function conn = data2sctrgcmim(data, fres, nlags, cond, nboot, maxfreq, inds, output)
+function conn = data2sctrgcmim(data, fres, nlags, cond, nboot, maxfreq, inds, output, verbose)
 % Epoched time series data to spectral conditional time-reversed Granger causality
 %
 % (C) 2018 Stefan Haufe
@@ -29,14 +29,6 @@ function conn = data2sctrgcmim(data, fres, nlags, cond, nboot, maxfreq, inds, ou
 % toolbox: a new approach to Granger-causal inference. Journal of 
 % neuroscience methods, 223, 50-68.
 
-% From Stefan's email March 2021
-%
-% The index vector inds now only contains the forward directions. The
-% corresponding backward directions are added automatically within the
-% function data2sctrgcmim . For MIM/MIC the backward direction is omitted
-% because of symmetry. For GC/TRGC, the backward direction is added in the
-% third dimension of the output array. Consequently, the GC/TRGC net score
-% is calculated in a different way now.
 
 [nchan, ndat, nepo] = size(data);
 
@@ -83,6 +75,10 @@ end
 
 if nargin < 8 || isempty(output)
   output = {'TRGC'};
+end
+
+if nargin < 9 || isempty(verbose)
+  verbose = 0;
 end
 
 if  nlags < 0
@@ -153,8 +149,10 @@ if abs(nboot) < 1 % no bootstrap
     %% loop over sender/receiver combinations to compute (time-reversed) GC 
     for iind = 1:ninds   
       if ~isequal(inds{iind}{1}, inds{iind}{2})
-        disp(['testing connection ' num2str(iind) '/' num2str(ninds) ': [' num2str(inds{iind}{1}) '] <-> [' num2str(inds{iind}{2}) '], conditional'])
- 
+        if verbose
+          disp(['testing connection ' num2str(iind) '/' num2str(ninds) ': [' num2str(inds{iind}{1}) '] <-> [' num2str(inds{iind}{2}) '], conditional'])
+        end
+        
         if ~isempty(intersect(output, {'MIM', 'MIC'}))
         %MIC and MIM
           [MIC(:, iind) , MIM(:, iind)] =  roi_mim2(COH, inds{iind}{1}, inds{iind}{2});    
@@ -184,8 +182,9 @@ if abs(nboot) < 1 % no bootstrap
     % loop over sender/receiver combinations to compute time-reversed GC 
     for iind = 1:ninds  
       if ~isequal(inds{iind}{1}, inds{iind}{2})
-        disp(['testing connection ' num2str(iind) '/' num2str(ninds) ': [' num2str(inds{iind}{1}) '] <-> [' num2str(inds{iind}{2}) ']'])
-
+        if verbose
+          disp(['testing connection ' num2str(iind) '/' num2str(ninds) ': [' num2str(inds{iind}{1}) '] <-> [' num2str(inds{iind}{2}) ']'])
+        end
         %ind configuration 
         subset = [inds{iind}{1} inds{iind}{2}];
         nsubsetvars = length(subset);
@@ -198,7 +197,7 @@ if abs(nboot) < 1 % no bootstrap
         
         if ~isempty(intersect(output, {'GC', 'TRGC'}))
           % autocovariance to full forward VAR model
-          [A, SIG] = autocov_to_var2(G(subset, subset, :));
+          [A, SIG] = autocov_to_var3(G(subset, subset, :));
 
           % forward VAR model to state space VARMA models
           [eA2, eC2, eK2, eV2, eVy2] = varma2iss(reshape(A, nsubsetvars, []), [], SIG, eye(nsubsetvars)); 
@@ -209,7 +208,7 @@ if abs(nboot) < 1 % no bootstrap
           
           if ~isempty(intersect(output, {'TRGC'}))
             % backward autocovariance to full backward VAR model
-            [AR, SIGR] = autocov_to_var2(permute(G(subset, subset, :), [2 1 3]));
+            [AR, SIGR] = autocov_to_var3(permute(G(subset, subset, :), [2 1 3]));
 
             % backward VAR to VARMA
             [eA2R, eC2R, eK2R, eV2R, eVy2R] = varma2iss(reshape(AR, nsubsetvars, []), [], SIGR, eye(nsubsetvars));
@@ -287,7 +286,9 @@ else % bootstrap
       for iind = 1:ninds
         if ~isequal(inds{iind}{1}, inds{iind}{2})
 %           i3 = setdiff(setdiff(1:nchan, inds{iind}{1}), inds{iind}{2});
-          disp(['bootstrap run ' num2str(iboot) '/' num2str(nboot) ', testing connection ' num2str(iind) '/' num2str(ninds) ': [' num2str(inds{iind}{1}) '] <-> [' num2str(inds{iind}{2}) '], conditional'])
+          if verbose
+            disp(['bootstrap run ' num2str(iboot) '/' num2str(nboot) ', testing connection ' num2str(iind) '/' num2str(ninds) ': [' num2str(inds{iind}{1}) '] <-> [' num2str(inds{iind}{2}) '], conditional'])
+          end
           
           if ~isempty(intersect(output, {'MIM', 'MIC'}))
             %MIC and MIM
@@ -318,8 +319,10 @@ else % bootstrap
       % loop over sender/receiver combinations to compute time-reversed GC 
       for iind = 1:ninds 
         if ~isequal(inds{iind}{1}, inds{iind}{2})
-          disp(['bootstrap run ' num2str(iboot) '/' num2str(nboot) ', testing connection ' num2str(iind) '/' num2str(ninds) ': [' num2str(inds{iind}{1}) '] <-> [' num2str(inds{iind}{2}) ']'])
-
+          if verbose
+            disp(['bootstrap run ' num2str(iboot) '/' num2str(nboot) ', testing connection ' num2str(iind) '/' num2str(ninds) ': [' num2str(inds{iind}{1}) '] <-> [' num2str(inds{iind}{2}) ']'])
+          end
+          
           subset = [inds{iind}{1} inds{iind}{2}];
           nsubsetvars = length(subset);
           subinds = {1:length(inds{iind}{1}), length(inds{iind}{1}) + (1:length(inds{iind}{2}))};   
@@ -331,7 +334,7 @@ else % bootstrap
 
           if ~isempty(intersect(output, {'GC', 'TRGC'}))
             % autocovariance to full forward VAR model
-            [A, SIG] = autocov_to_var2(G(subset, subset, :));
+            [A, SIG] = autocov_to_var3(G(subset, subset, :));
 
             % forward VAR model to state space VARMA models
             [eA, eC, eK, eV, eVy] = varma2iss(reshape(A, nsubsetvars, []), [], SIG, eye(nsubsetvars)); 
