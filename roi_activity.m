@@ -89,6 +89,7 @@ g = finputcheck(varargin, { ...
     'nPCA'        'integer' { }              3;
     'downsample'  'integer' { }              1;
     'roiactivity' 'string' { 'on' 'off' }    'on';
+    'channelpower' 'string' { 'on' 'off' }    'off';
     'exportvoxact' 'string' { 'on' 'off' }   'off';
     'outputdir'   'string'  { }              '' }, 'roi_activity');
 if ischar(g), error(g); end
@@ -338,6 +339,16 @@ EEG.roi.headmodel = g.headmodel;
 EEG.roi.parameters = varargin;
 if exist('P_eloreta', 'var')
     EEG.roi.P_eloreta = single(P_eloreta);
+end
+
+% get channel power for comparison
+if strcmpi(g.channelpower, 'on')
+    tmpdata = permute(EEG.data, [2 1 3]); % pnts trials channels
+    tmpdata = reshape(tmpdata, size(tmpdata,1), size(tmpdata,2)*size(tmpdata,3));
+    [tmpWelch,ftmp] = pwelch(tmpdata, EEG.srate*2, EEG.srate, EEG.srate*2, EEG.srate); % ftmp should be equal frqs 
+    tmpWelch = reshape(tmpWelch, size(tmpWelch,1), EEG.nbchan, EEG.trials);
+    tmpWelch = squeeze(mean(tmpWelch,3)); % remove trials size freqs x voxels x 3
+    EEG.roi.channel_power = tmpWelch;
 end
 
 
