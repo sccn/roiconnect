@@ -85,3 +85,4 @@ else
     % units still in nA*m
     % source_roi_data_corr = source_roi_data .* repmat(sqrt(1./vx_), 1, nPCA, EEG.pnts, EEG.trials);
 end
+
