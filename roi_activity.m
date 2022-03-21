@@ -25,10 +25,6 @@
 %  'naccu'     - [interger] For bootstrap, number of accumulation. Default is 
 %                none.
 %  'eloretareg' - [float] regularization term for eLoreta. Default is 0.05.
-%  'trgc'      - ['on'|'off'] compute time-reverse Granger Causality. Default
-%                is 'on'.
-%  'crossspec' - ['on'|'off'] compute cross-spectrum from which coherence can
-%                be derived. Default is 'on'.
 %  'roiactivity'  - ['on'|'off'] compute ROI activity. Default is on. If
 %                you just need voxel activity, you can set this option to
 %                'off'.

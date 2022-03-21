@@ -7,10 +7,18 @@
 %  EEG - EEGLAB dataset with ROI activity computed
 %
 % Optional inputs (choose at least one):
-%  'trgc'      - ['on'|'off'] compute time-reverse Granger Causality. Default
-%                is 'on'.
+%  'morder'    - [integer] order of autoregressive model. Default is 20.
+%  'naccu'     - [integer] number of accumulation for stats. Default is 0.
 %  'crossspec' - ['on'|'off'] compute cross-spectrum from which coherence can
 %                be derived. Default is 'on'.
+%  'methods'    - [cell of string 'psd'|'roipsd'|'trgc'|'crossspecimag'|'crossspecpow'|'mic'|'mim']
+%                   'psd'   : Source power spectrum
+%                   'psdroi': ROI based power spectrum
+%                   'trgc'  : Time-reversed granger causality
+%                   'crossspecimag': Imaginary part of coherence from cross-spectrum
+%                   'crossspecpow' : Average cross-spectrum power for each ROI
+%                   'mic' : Maximized Imaginary Coherency for each ROI
+%                   'mim' : Multivariate Interaction Measure for each ROI
 %
 % Output:
 %   EEG - EEG structure with EEG.roi field updated and now containing

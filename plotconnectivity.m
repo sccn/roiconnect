@@ -1,4 +1,5 @@
-% plotconnectivity() - plot circle showing connectivity between regions
+% plotconnectivity() - plot circle o brain image showing connectivity 
+%                      between regions
 %
 % Usage:
 %     plotconnectivity(array, 'key', val);
@@ -10,7 +11,8 @@
 %    'labels'  - [cell] name for each row/column
 %    'axis'    - [axis handle] axis to plot the figure (otherwise creates
 %                a new figure)
-%    'threshold' - [real] only show connections above a given threshold.
+%    'brainimg' - ['on'|'off'] plot results on a 2-D image of the brain
+%    'threshold' - [real] only show connections above a given threshold
 %
 % Author: Arnaud Delorme
 
@@ -38,7 +40,15 @@
 % ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 % THE POSSIBILITY OF SUCH DAMAGE.
 
+% Test
+% plotconnectivity(rand(4,4), 'labels', { 'Dorso_lateral_prefrontal_cortex' 'Parietal_lobe' 'Thalamus' 'Visual_cortex' });
+
 function plotconnectivity(array, varargin)
+
+if nargin < 2
+    help plotconnectivity
+    return
+end
 
 radius = 0.5;
 linewidth = 1;
@@ -46,6 +56,7 @@ linewidth = 1;
 g = finputcheck(varargin, { ...
     'labels'      'cell'      { }             {};
     'axis'        ''          {}              [];
+    'brainimg'   'string'    {'on' 'off'}     'on';
     'threshold'   'real'      {}              0.25;
     }, 'roi_network');
 if isstr(g)
@@ -59,10 +70,39 @@ end
 if size(array,1) ~= size(array,2)
     error('Input array must be square');
 end
+if isempty(g.labels)
+    if strcmpi(g.brainimg, 'on')
+        disp('Cannot plot on brain with area labels')
+        g.brainimg = 'off';
+    end
+end
 
-anglesInit = linspace(0,2*pi,size(array,1)+1) + pi/size(array,1);
-x = sin(anglesInit)*radius;
-y = cos(anglesInit)*radius;
+if strcmpi(g.brainimg, 'on')
+    p = fileparts(which('plotconnectivity.m'));
+    [img, map, alphachannel]  = imread(fullfile(p, 'brain.png'));
+    coords = loadtxt('brain_coords.txt');
+    coords(:,1) = [];
+    for indLab = 1:length(g.labels)
+        indCoord = strmatch( lower(g.labels{indLab}), lower(coords(1,:)) );
+        if isempty(indCoord)
+            disp('Could not find brain areas, plotting on circle')
+            g.brainimg = 'off';
+            indLab = length(g.labels);
+        else
+            x(indLab) = coords{2,indCoord};
+            y(indLab) = coords{3,indCoord};
+        end
+    end
+
+end
+if strcmpi(g.brainimg, 'off')
+    plotImg = false;
+    anglesInit = linspace(0,2*pi,size(array,1)+1) + pi/size(array,1);
+    x = sin(anglesInit)*radius;
+    y = cos(anglesInit)*radius;
+    x(end) = [];
+    y(end) = [];
+end
 
 % settings
 % --------
@@ -81,7 +121,7 @@ if isempty(g.labels)
     for iPnt = 1:length(anglesInit)
         g.labels{iPnt} = sprintf('  Area %d', iPnt);
     end
-elseif length(anglesInit)-1 ~= length(g.labels)
+elseif length(x) ~= length(g.labels)
     error('Wrong number of labels');
 else
     for iPnt = 1:length(g.labels)
@@ -93,17 +133,22 @@ end
 % make lines between pairs of electrodes
 % --------------------------------------
 if isempty(g.axis)
-    figure; hold on;
+    figure;
 else
     axes(g.axis); hold on;
+end
+if strcmpi(g.brainimg, 'on')
+    imagesc(img, 'AlphaData', alphachannel); axis off;
+    alpha(0.2)
+    hold on;
+    pos = get(gca, 'position');
+    axes('position', pos); axis off; hold on;
 end
 axis equal;
 axis off;
 
 plot(x,y,'k');
 plot(x,y,'.','markersize', 12);
-x(end) = [];
-y(end) = [];
 
 warning off;
 color = 'r';
@@ -118,7 +163,7 @@ for ind1 = 1:size(array,1)
 
                 center = distance*4*2*(aa+bb)/2;
                 radius = sqrt(sum(abs(aa-center).^2));
-                if sum(abs(center)) < 1e-8
+                if sum(abs(center)) < 1e-8 || strcmpi(g.brainimg, 'on')
                     plot([aa(1) bb(1)],[aa(2) bb(2)],'-');
                 else
                     angle1 = atan2(aa(1)-center(1), aa(2)-center(2));
@@ -140,10 +185,36 @@ for ind1 = 1:size(array,1)
             end
         end
     end
-    h = text( x(ind1), y(ind1), 0, g.labels{ind1});
-    set(h, 'HorizontalAlignment','left', 'rotation', 90-anglesInit(ind1)/pi*180);
+    if strcmpi(g.brainimg, 'on')
+        str = formatlabel(g.labels{ind1});
+        xx = (x(ind1)-0.7)*1.2+0.7;
+        if any(str == 10)   
+            yy = (y(ind1)-0.4)*1.2+0.4;
+        else
+            yy = (y(ind1)-0.45)*1.2+0.45;
+        end
+        h = text( xx, yy, 0, str, 'interpreter', 'none');
+    else
+        h = text( x(ind1), y(ind1), 0, g.labels{ind1}, 'interpreter', 'none');
+    end
+    %set(h, 'HorizontalAlignment','left', 'rotation', 90-anglesInit(ind1)/pi*180);
     0;
 end
-xlim([-0.7 0.7]);
-ylim([-0.7 0.7]);
+if strcmpi(g.brainimg, 'on')
+    xlim([0 1])
+    ylim([0 1])
+else
+    xlim([-0.7 0.7]);
+    ylim([-0.7 0.7]);
+end
 
+function str = formatlabel(str)
+
+str = strip(str);
+str(str == '_') = ' ';
+if length(str) > 10
+    sp = find(str == ' ');
+    if length(sp) > 1
+        str = [ str(1:sp(2)-1) 10 str(sp(2)+1:end) ];
+    end
+end

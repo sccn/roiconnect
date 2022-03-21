@@ -11,12 +11,14 @@
 %  'sourcemodel' - [string] source model file
 % 
 % Optional inputs:
-%  'measure'    - ['psd'|'roipsd'|'trgc'|'crossspecimag'|'crossspecpow']
+%  'measure'    - ['psd'|'roipsd'|'trgc'|'crossspecimag'|'crossspecpow'|'mic'|'mim']
 %                   'psd'   : Source power spectrum
 %                   'psdroi': ROI based power spectrum
 %                   'trgc'  : Time-reversed granger causality
 %                   'crossspecimag': Imaginary part of coherence from cross-spectrum
 %                   'crossspecpow' : Average cross-spectrum power for each ROI
+%                   'mic' : Maximized Imaginary Coherency for each ROI
+%                   'mim' : Multivariate Interaction Measure for each ROI
 %  'freqrange'  - [min max] frequency range in Hz. Default is to plot
 %                 broadband power.
 %  'smooth'     - [float] smoothing factor for cortex surface plotting
@@ -131,16 +133,16 @@ splot(end  ).cortex = cortexFlag;
 splot(end  ).matrix = 1;
 splot(end  ).psd    = -1;
 
-splot(end+1).label    = 'ROI to ROI mutual information C';
-splot(end  ).labelshort = 'Mutual information C';
+splot(end+1).label    = 'ROI to ROI Maximized Imag. Coh.';
+splot(end  ).labelshort = 'Maximized Imag. Coh.';
 splot(end  ).acronym  = 'MIC';
 splot(end  ).unit   = '?'; % not used yet
 splot(end  ).cortex = cortexFlag;
 splot(end  ).matrix = -1;
 splot(end  ).psd    = 0;
 
-splot(end+1).label    = 'ROI to ROI mutual information M';
-splot(end  ).labelshort = 'Mutual information I';
+splot(end+1).label    = 'ROI to ROI Multivariate Interaction Measure';
+splot(end  ).labelshort = 'Multivariate Interaction Measure';
 splot(end  ).acronym  = 'MIM';
 splot(end  ).unit   = '?'; % not used yet
 splot(end  ).cortex = cortexFlag;
