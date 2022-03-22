@@ -233,7 +233,7 @@ end
     'atlas'           'string'              {}               '';
     'resample'        'string'              { 'on' 'off'}    'off';
     'regepochs'       'string'              { 'on' 'off'}    'off';
-    'nPCA'            'real'                {}               3 });
+    'nPCA'            'real'                {}               3 }, 'pop_roi_activity', 'ignore');
 if ischar(g), error(g); end
 
 if strcmpi(g.resample, 'on')
@@ -243,7 +243,7 @@ if strcmpi(g.regepochs, 'on')
     EEG = eeg_regepochs(EEG, 2, [0 2]);
 end
 
-if isstruct(g.leadfield)
+if isstruct(g.leadfield) && isfield(g.leadfield, 'file')
     sourceModelFile = g.leadfield.file;
     sourceModel2MNI = g.leadfield.coordtransform;
 else
