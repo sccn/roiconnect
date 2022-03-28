@@ -243,7 +243,7 @@ if strcmpi(g.regepochs, 'on')
     EEG = eeg_regepochs(EEG, 2, [0 2]);
 end
 
-if isstruct(g.leadfield)
+if isstruct(g.leadfield) && isfield(g.leadfield, 'file')
     sourceModelFile = g.leadfield.file;
     sourceModel2MNI = g.leadfield.coordtransform;
 else
