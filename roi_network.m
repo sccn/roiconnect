@@ -76,6 +76,7 @@ else
         'processfreq'    ''          {}      [];
         'processconnect' ''          {}      [] }, 'roi_network');
 end     
+if ischar(opt), error(opt); end
 if isempty(opt.processfreq)
     opt.processfreq.theta = @(x)x(:,1);
     opt.processfreq.alpha = @(x)x(:,2);
