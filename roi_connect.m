@@ -76,8 +76,7 @@ nPCA = EEG.roi.nPCA;
 for iroi = 1:nROI
     for jroi = (iroi+1):nROI
         inds{ninds+1} = {(iroi-1)*nPCA + [1:nPCA], (jroi-1)*nPCA + [1:nPCA]};
-        inds{ninds+2} = {(jroi-1)*nPCA + [1:nPCA], (iroi-1)*nPCA + [1:nPCA]};
-        ninds = ninds + 2;
+        ninds = ninds + 1;
     end
 end
 if ~isempty(g.methods)
