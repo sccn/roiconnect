@@ -1,4 +1,4 @@
 	Augular_gyrus	Prefrontal_cortex	Post_cingulate_cortex	Insular_cortex	Dorsal_anterior_cingulate_cortex	Dorso_lateral_prefrontal_cortex	Parietal_lobe	Frontal_midline_cortex	Frontal_operculum	Dorsal_anterior_prefrontal_cortex	Thalamus	Right_anterior_inferior_parietal_lobe	Posterior_partietal_cortex	Frontal_eye_field	Intraparietal_sulcus_region	Visual_cortex
 x	0.65	0.1	0.45	0.3	0.17	0.15	0.7	0.3	0.25	0.18	0.5	0.7	0.8	0.3	0.7	0.85
-y	0.65	0.6	0.7	0.53	0.65	0.75	0.8	0.8	0.53	0.8	0.35	0.6	0.7	0.9	0.8	0.35
+y	0.65	0.6	0.7	0.52	0.65	0.75	0.8	0.8	0.57	0.8	0.35	0.6	0.7	0.9	0.8	0.35
 deep	0	0	1	1	1	0	0	0	0	0	1	0	0	0	0	0
