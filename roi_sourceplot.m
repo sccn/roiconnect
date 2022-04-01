@@ -41,7 +41,7 @@
 % ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 % THE POSSIBILITY OF SUCH DAMAGE.
 
-function roi_sourceplot(freqs, sourceact, sourcemodel, varargin)
+function alldata = roi_sourceplot(freqs, sourceact, sourcemodel, varargin)
 
 if nargin < 3
     help roi_sourceplot;
@@ -51,6 +51,7 @@ end
 g = finputcheck(varargin, { ...
     'freqrange'       {'cell' 'real'}  { [] [] }       {};
     'saveasfile'      'string'         { }             '';
+    'precomputed'     'struct'         { }             struct([]);
     'slice'           'integer'        []              [5 8 10 15 18]}, 'roi_sourceplot');
 if ischar(g)
     error(g);
@@ -60,6 +61,7 @@ if ~iscell(g.freqrange)
 end
 
 figure('paperpositionmode', 'auto', 'position', [1440  200  814 1138]);
+alldata = [];
 for iFreq = 1:length(g.freqrange)
     
     g.freqselect = g.freqrange{iFreq};
@@ -108,6 +110,19 @@ for iFreq = 1:length(g.freqrange)
         sourcemodelout.inside(ind) = true;
     end
     
+    % put precomputed data in VolMat
+    for iSlice = 1:length(g.slice)
+        fieldVal = sprintf('loreta%1.0fto%1.0fHz_slice%d', g.freqrange{iFreq}(1), g.freqrange{iFreq}(2), g.slice(iSlice));
+        if isfield(g.precomputed, fieldVal)
+            res = g.precomputed.(fieldVal);
+            res(isnan(res)) = 0;
+            res(:,:) = res(end:-1:1,:);
+            res = res';
+            volMat(:,:,g.slice(iSlice)) = res;
+        end
+    end
+    
+    % plot
     res = squeeze(volMat(:,:,g.slice));
     mi = min(res(:));
     mx = max(res(:));
@@ -116,6 +131,11 @@ for iFreq = 1:length(g.freqrange)
         res = squeeze(volMat(:,:,g.slice(iSlice)));
         res = res';
         res(:,:) = res(end:-1:1,:);
+        
+        % save and retreive data
+        fieldVal = sprintf('loreta%1.0fto%1.0fHz_slice%d', g.freqrange{iFreq}(1), g.freqrange{iFreq}(2), g.slice(iSlice));
+        alldata.(fieldVal) = res;
+        
         resrgb = ones([size(res) 3]);
         for iPix1 = 1:size(res,1)
             for iPix2 = 1:size(res,2)

@@ -76,6 +76,7 @@ else
         'freqrange'      'cell'      {}      { [4 6] [ 8 12] [18 22] };
         'freqname'       'cell'      {}      { 'theta' 'alpha' 'beta' };
         'processfreq'    ''          {}      [];
+        'precomputed'    'struct'    {}      struct([]);
         'leadfield'      'string'    {}      '';
         'sourcemodel'    'string'    {}      '';
         'plotnetworkfile' ''         {}      '';
@@ -156,7 +157,7 @@ freqs  = freqs(2:end); % remove DC (match the output of PSD)
 
 % Plot loreta file
 if ~isempty(opt.plotloretafile)
-    roi_sourceplot(freqs, source_voxel_spec', opt.sourcemodel, 'freqrange', opt.freqrange, 'saveasfile',  opt.plotloretafile);
+    loretaMeasures = roi_sourceplot(freqs, source_voxel_spec', opt.sourcemodel, 'freqrange', opt.freqrange, 'saveasfile',  opt.plotloretafile, 'precomputed', opt.precomputed);
 end
 
 % Compute ROI activity
@@ -185,7 +186,7 @@ end
 % compute metric of interest
 processfreqFields = fieldnames(opt.processfreq);
 for iProcess = 1:length(processfreqFields)
-    results.(processfreqFields{iProcess}) = feval(opt.processfreq.(processfreqFields{iProcess}), loretaSpecSelect);
+    results.(['loreta_' processfreqFields{iProcess}]) = feval(opt.processfreq.(processfreqFields{iProcess}), loretaSpecSelect);
 end
 
 % compute cross-spectral density for each network
@@ -198,7 +199,18 @@ if ~isempty(opt.processconnect)
             % copy results
             fields = fieldnames(restmp);
             for iField = 1:length(fields)
-                results.([ loreta_Networks(iNet).name '_' fields{iField} ]) = restmp.(fields{iField});
+                meanField   = [ loreta_Networks(iNet).name '_' fields{iField} ];
+                detailField = [ loreta_Networks(iNet).name '_' fields{iField} '_details' ];
+                results.(meanField) = restmp.(fields{iField});
+                results.(detailField) = connectSpecSelect{iNet}(:,:,iField);
+                
+                % reuse data
+                if isfield(opt.precomputed, meanField)
+                    restmp.(fields{iField}) = opt.precomputed.(meanField);
+                end           
+                if isfield(opt.precomputed, detailField)
+                    connectSpecSelect{iNet}(:,:,iField) = opt.precomputed.(detailField);
+                end           
             end
         else
             networkData = spatiallyFilteredData(loreta_Networks(iNet).ROI_inds,:);
@@ -229,24 +241,8 @@ if ~isempty(opt.processconnect)
     end
     if length(loreta_Networks) > 0 && ~isempty(opt.plotnetworkfile)
         for iField = 1:length(fields)
-            
-            figure('position', [100 100 1000 700], 'paperpositionmode', 'auto');
-            ncol = ceil(sqrt(length(loreta_Networks)));
-            nrow = ceil(length(loreta_Networks)/ncol);
-            
-            for iNet = 1:length(loreta_Networks)
-                subplot(nrow, ncol, iNet)
-                labels = { loreta_ROIS(loreta_Networks(iNet).ROI_inds).Label };
-                plotconnectivity(connectSpecSelect{iNet}(:,:,iField), 'labels', labels, 'axis', gca, 'threshold', 0.1);
-                h = title(loreta_Networks(iNet).name);
-                pos = get(h, 'position');
-                set(h, 'position', pos + [0 0.1 0]);
-            end
-            
-            h = textsc(fields{iField}, 'title');
-            set(h, 'fontsize', 16, 'fontweight', 'bold');
-            print('-djpeg', [opt.plotnetworkfile '_' fields{iField} ]);
-            close
+            connectTmp = cellfun(@(x)x(:,:,iField), connectSpecSelect, 'uniformoutput', false);
+            plotconnectivitymultiple(opt.networkfile, connectTmp, fields{iField}, [opt.plotnetworkfile '_' fields{iField} ]);
         end
     end
     
@@ -257,6 +253,10 @@ if strcmpi(opt.measureoutput, 'on')
     fields = fieldnames(results);
     for iField = 1:length(fields)
         out.measures.(fields{iField}).mean = results.(fields{iField});
+    end
+    fields = fieldnames(loretaMeasures);
+    for iField = 1:length(fields)
+        out.measures.(fields{iField}).mean = loretaMeasures.(fields{iField});
     end
     results = out;
 end

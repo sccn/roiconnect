@@ -138,11 +138,13 @@ else
     axes(g.axis); hold on;
 end
 if strcmpi(g.brainimg, 'on')
-    imagesc(img, 'AlphaData', alphachannel); axis off;
+    imagesc(img, 'AlphaData', alphachannel); axis off; axis equal;
     alpha(0.2)
     hold on;
+    set(gca, 'ydir', 'reverse');
     pos = get(gca, 'position');
     axes('position', pos); axis off; hold on;
+    set(gca, 'ydir', 'normal');
 end
 axis equal;
 axis off;
@@ -202,7 +204,7 @@ for ind1 = 1:size(array,1)
 end
 if strcmpi(g.brainimg, 'on')
     xlim([0 1])
-    ylim([0 1])
+    ylim([0 1.05])
 else
     xlim([-0.7 0.7]);
     ylim([-0.7 0.7]);
