@@ -147,8 +147,10 @@ if ~strcmpi(g.brainimg, 'off')
     alpha(0.2)
     hold on;
     axis equal
+    set(gca, 'ydir', 'reverse');
     pos = get(gca, 'position');
     axes('position', pos); axis off; hold on;
+    set(gca, 'ydir', 'normal');
 end
 axis equal;
 axis off;
@@ -209,7 +211,7 @@ end
 if ~strcmpi(g.brainimg, 'off')
     if strcmpi(g.brainimg, 'bilateral')
         xlim([0 1])
-        ylim([0 2.1])
+        ylim([0 2])
     else
         xlim([0 1])
         ylim([0 1])
