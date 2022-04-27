@@ -50,7 +50,7 @@
 % ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 % THE POSSIBILITY OF SUCH DAMAGE.
 
-function [EEG,results] = roi_network(EEG, varargin)
+function [EEG,results,imgFileName,txtFileName] = roi_network(EEG, varargin)
 
 if EEG.trials == 1 % fast call
     opt = struct(varargin{:});
@@ -240,9 +240,13 @@ if ~isempty(opt.processconnect)
         end
     end
     if length(loreta_Networks) > 0 && ~isempty(opt.plotnetworkfile)
+        imgFileName = {};
+        txtFileName = {};
         for iField = 1:length(fields)
             connectTmp = cellfun(@(x)x(:,:,iField), connectSpecSelect, 'uniformoutput', false);
-            plotconnectivitymultiple(opt.networkfile, connectTmp, fields{iField}, [opt.plotnetworkfile '_' fields{iField} ]);
+            [imgFileNameTmp,txtFileNameTmp] = plotconnectivitymultiple(opt.networkfile, connectTmp, 'title', fields{iField}, 'filename' ,[opt.plotnetworkfile '_' fields{iField} ]);
+            imgFileName = [ imgFileName imgFileNameTmp ];
+            txtFileName = [ txtFileName txtFileNameTmp ];
         end
     end
     
