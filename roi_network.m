@@ -20,6 +20,8 @@
 %                   processconnect.theta = @(x)sum(sum(x(:,:,1)))/((size(x,1).^2)-size(x,1));
 %                   processconnect.alpha = @(x)sum(sum(x(:,:,2)))/((size(x,1).^2)-size(x,1));
 %                   processconnect.beta  = @(x)sum(sum(x(:,:,3)))/((size(x,1).^2)-size(x,1));
+% 'plotmode'       - ['2D'|'3D'|'both'] plot in 2-D, 3-D or both. Default
+%                   is 2D.
 %
 % Output:
 %   EEG - EEG structure with EEG.roi field updated and now containing
@@ -50,7 +52,7 @@
 % ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 % THE POSSIBILITY OF SUCH DAMAGE.
 
-function [EEG,results,imgFileName,txtFileName] = roi_network(EEG, varargin)
+function [EEG,results,loretaFile,imgFileName,txtFileName] = roi_network(EEG, varargin)
 
 if EEG.trials == 1 % fast call
     opt = struct(varargin{:});
@@ -80,7 +82,9 @@ else
         'leadfield'      'string'    {}      '';
         'sourcemodel'    'string'    {}      '';
         'plotnetworkfile' ''         {}      '';
+        'plotmode'        'string'    {'2D' '3D' 'both' }  '2D';
         'plotloretafile'  ''         {}      '';
+        'loretalimits'    ''         {}      [];
         'processconnect'  ''         {}      [] }, 'roi_network');
 end     
 if ischar(opt), error(opt); end
@@ -157,7 +161,8 @@ freqs  = freqs(2:end); % remove DC (match the output of PSD)
 
 % Plot loreta file
 if ~isempty(opt.plotloretafile)
-    loretaMeasures = roi_sourceplot(freqs, source_voxel_spec', opt.sourcemodel, 'freqrange', opt.freqrange, 'saveasfile',  opt.plotloretafile, 'precomputed', opt.precomputed);
+    loretaFile = opt.plotloretafile;
+    loretaMeasures = roi_sourceplot(freqs, source_voxel_spec', opt.sourcemodel, 'freqrange', opt.freqrange, 'limits', opt.loretalimits, 'saveasfile',  opt.plotloretafile, 'precomputed', opt.precomputed);
 end
 
 % Compute ROI activity
@@ -244,7 +249,7 @@ if ~isempty(opt.processconnect)
         txtFileName = {};
         for iField = 1:length(fields)
             connectTmp = cellfun(@(x)x(:,:,iField), connectSpecSelect, 'uniformoutput', false);
-            [imgFileNameTmp,txtFileNameTmp] = plotconnectivitymultiple(opt.networkfile, connectTmp, 'title', fields{iField}, 'filename' ,[opt.plotnetworkfile '_' fields{iField} ]);
+            [imgFileNameTmp,txtFileNameTmp] = plotconnectivitymultiple(opt.networkfile, connectTmp, 'title', fields{iField}, 'filename' ,[opt.plotnetworkfile '_' fields{iField} ], 'plotmode', opt.plotmode);
             imgFileName = [ imgFileName imgFileNameTmp ];
             txtFileName = [ txtFileName txtFileNameTmp ];
         end

@@ -9,6 +9,7 @@ g = finputcheck(varargin, { ...
     'subplots'    'string'    {'on' 'off'}    'off';
     'exporttxt'   'string'    {'on' 'off'}    'on';
     'title'       'string'    {}              '';
+    'plotmode'    'string'    {'2D' '3D' 'both' }  '2D';
     'filename'    'string'    {}              '';
     }, 'roi_network');
 if isstr(g)
@@ -18,7 +19,16 @@ if ~isempty(g.filename) % remove file extension
     [filePath,g.filename] = fileparts(g.filename);
     g.filename = fullfile(filePath, g.filename);
 end
-
+if strcmpi(g.subplots, 'on')
+    if ~strcmpi(g.plotmode, '2D')
+        error('When using subplots, you cannot use 3-D plots');
+    end
+end
+if ~strcmpi(g.plotmode, '2D')
+    if ~exist('roi_plotbrainmovie')
+        error('You need to install the Brainmovie plugin to plot sources in 3-D');
+    end
+end
 if nargin < 5
     % create a single packet
     singlefig = true;
@@ -46,15 +56,39 @@ for iNet = 1:length(loreta_Networks)
     end
     
     labels = { loreta_ROIS(loreta_Networks(iNet).ROI_inds).Label };
-    plotconnectivity(connectSpecSelect{iNet}(:,:), 'labels', labels, 'axis', gca, 'threshold', 0.1);
     tmpTitle = loreta_Networks(iNet).name;
     tmpTitle(tmpTitle == '_') = ' ';
     tmpTitle = [ tmpTitle ' ' g.title ];
-    h = title(tmpTitle, 'interpreter', 'none');
-    pos = get(h, 'position');
-    set(h, 'position', pos + [0 0.1 0]);
     
-    % save individual plots
+    % 2-D plot
+    if strcmpi(g.plotmode, '2D') || strcmpi(g.plotmode, 'both')
+        plotconnectivity(connectSpecSelect{iNet}(:,:), 'labels', labels, 'axis', gca, 'threshold', 0.1);
+        h = title(tmpTitle, 'interpreter', 'none');
+        pos = get(h, 'position');
+        set(h, 'position', pos + [0 0.1 0]);
+    
+        % save individual plots
+        if ~strcmpi(g.subplots, 'on') && ~isempty(g.filename)
+            set(h, 'fontsize', 16, 'fontweight', 'bold');
+            tmpFileName = [ g.filename '_' loreta_Networks(iNet).name '.jpg' ];
+            imgFileName{end+1} = tmpFileName;
+            print('-djpeg', tmpFileName );
+            close
+        end
+    end
+    
+    % 3-D plot
+    if strcmpi(g.plotmode, '3D') || strcmpi(g.plotmode, 'both')
+        options = {};
+        if ~strcmpi(g.subplots, 'on') && ~isempty(g.filename)
+            tmpFileName = [ g.filename '_' loreta_Networks(iNet).name '_3d' ];
+            options = { 'filename'  tmpFileName };
+            imgFileName{end+1} = [ tmpFileName '.xhtml' ];
+        end
+        roi_plotbrainmovie(connectSpecSelect{iNet}(:,:), 'labels', labels, 'threshold', 0.1, options{:});
+    end
+    
+    % save text
     if strcmpi(g.exporttxt, 'on') && ~isempty(g.filename)
         tmptable = array2table(connectSpecSelect{iNet}(:,:), 'variablenames', labels, 'rownames', labels);
         tmpFileName = [ g.filename '_' loreta_Networks(iNet).name '.txt' ];
@@ -62,14 +96,6 @@ for iNet = 1:length(loreta_Networks)
         writetable(tmptable, tmpFileName,'WriteRowNames', true );
     end
     
-    % save text
-    if ~strcmpi(g.subplots, 'on') && ~isempty(g.filename)
-        set(h, 'fontsize', 16, 'fontweight', 'bold');
-        tmpFileName = [ g.filename '_' loreta_Networks(iNet).name '.jpg' ];
-        imgFileName{end+1} = tmpFileName;
-        print('-djpeg', tmpFileName );
-        close
-    end
 end
 
 if strcmpi(g.subplots, 'on')
