@@ -69,6 +69,14 @@ if ~isfield(EEG, 'roi')
     error('Compute connectivity first');
 end
 
+if ~exist('roi_plotbrainmovie')
+    fprintf(2, 'To plot connectivity in 3-D, install the brainmovie plugin\n');
+    plot3dFlag = -1;
+else
+    plot3dFlag = 1;
+end
+
+
 % if ~isfield(EEG.dipfit, 'hdmfile')
 %     error('You need to select a head model file using DIPFIT settings first');
 % end
@@ -94,6 +102,7 @@ if isfield(EEG.roi, 'source_roi_power')
     splot(end  ).cortex = cortexFlag;
     splot(end  ).matrix = -1;
     splot(end  ).psd    = -1;
+    splot(end  ).plot3d = -1;
 end
 
 if isfield(EEG.roi, 'CS')
@@ -104,6 +113,7 @@ if isfield(EEG.roi, 'CS')
     splot(end  ).cortex = cortexFlag;
     splot(end  ).matrix = -1;
     splot(end  ).psd    = 0;
+    splot(end  ).plot3d = plot3dFlag;
 end
 
 if isfield(EEG.roi, 'COH')
@@ -114,6 +124,7 @@ if isfield(EEG.roi, 'COH')
     splot(end  ).cortex = cortexFlag;
     splot(end  ).matrix = 1;
     splot(end  ).psd    = -1;
+    splot(end  ).plot3d = plot3dFlag;
 end
 
 if isfield(EEG.roi, 'COH')
@@ -124,6 +135,7 @@ if isfield(EEG.roi, 'COH')
     splot(end  ).cortex = cortexFlag;
     splot(end  ).matrix = 1;
     splot(end  ).psd    = -1;
+    splot(end  ).plot3d = plot3dFlag;
 end
 
 if isfield(EEG.roi, 'GC')
@@ -133,6 +145,7 @@ if isfield(EEG.roi, 'GC')
     splot(end  ).cortex = cortexFlag;
     splot(end  ).matrix = 1;
     splot(end  ).psd    = -1;
+    splot(end  ).plot3d = plot3dFlag;
 end
 
 if isfield(EEG.roi, 'TRGC')
@@ -143,6 +156,7 @@ if isfield(EEG.roi, 'TRGC')
     splot(end  ).cortex = cortexFlag;
     splot(end  ).matrix = 1;
     splot(end  ).psd    = -1;
+    splot(end  ).plot3d = plot3dFlag;
 end
 
 if isfield(EEG.roi, 'MIC')
@@ -153,6 +167,7 @@ if isfield(EEG.roi, 'MIC')
     splot(end  ).cortex = cortexFlag;
     splot(end  ).matrix = -1;
     splot(end  ).psd    = 0;
+    splot(end  ).plot3d = -1;
 end
 
 if isfield(EEG.roi, 'MIM')
@@ -163,13 +178,14 @@ if isfield(EEG.roi, 'MIM')
     splot(end  ).cortex = cortexFlag;
     splot(end  ).matrix = -1;
     splot(end  ).psd    = 0;
+    splot(end  ).plot3d = -1;
 end
 
 if nargin < 2
 
     cb_select = [ 'usrdat = get(gcf, ''userdata'');' ...
         'usrdat = usrdat(get(findobj(gcf, ''tag'', ''selection''), ''value''));' ...
-        'fieldTmp = { ''cortex'' ''matrix'' ''psd'' };' ...
+        'fieldTmp = { ''cortex'' ''matrix'' ''psd'' ''plot3d'' };' ...
         'for iField = 1:length(fieldTmp),' ...
         '   if usrdat.(fieldTmp{iField}) == 1,' ...
         '       set(findobj(gcf, ''tag'', fieldTmp{iField}), ''enable'', ''on'', ''value'', 1);' ...
@@ -181,16 +197,25 @@ if nargin < 2
         'end;' ...
         'clear iField fieldTmp usrdat;' ];
 
-    uigeom = { [1 1] [1 1] 1 [0.3 1.1 1 1] };
+    plotrow = [1 1];
+    uigeom = { [1 1] [1 1] 1 [1 1] plotrow plotrow plotrow plotrow };
     uilist = {{ 'style' 'text' 'string' 'Select a measure to plot' 'fontweight' 'bold'} ...
         { 'style' 'popupmenu' 'string' {splot.label} 'callback' cb_select 'value' 4 'tag' 'selection' } ...
         { 'style' 'text' 'string' 'Frequency range in Hz [min max]:'} ...
         { 'style' 'edit' 'string' ''} ...
         {} ...
-        {} ...
-        { 'style' 'checkbox' 'string' 'Plot on cortex' 'tag' 'cortex' 'value' 1 } ...
-        { 'style' 'checkbox' 'string' 'Plot PSD' 'tag' 'psd'  'enable' 'off'  } ...
-        { 'style' 'checkbox' 'string' 'Plot in matrix' 'tag' 'matrix' 'enable' 'off' } ...
+        { 'style' 'text' 'string' 'Measure to plot' 'fontweight' 'bold' } ...
+        { 'style' 'text' 'string' 'Measure parameters' 'fontweight' 'bold' } ...
+        ...
+        { 'style' 'checkbox' 'string' '3d static brainmovie' 'tag' 'plot3d' 'value' 1 } ...
+        { 'style' 'edit'     'string' '''thresholdper'', 0.8' 'tag' 'plot3dparams' } ...
+        ...
+        { 'style' 'checkbox' 'string' 'Connectivity of each area' 'tag' 'cortex' 'value' 1 } ...
+        { 'style' 'text'     'string' '' 'tag' 'cortexparams' } ...
+        ...
+        { 'style' 'checkbox' 'string' 'Matrix representation' 'tag' 'matrix' 'enable' 'off' } {} ...
+        ...
+        { 'style' 'checkbox' 'string' 'Power spectral density' 'tag' 'psd'  'enable' 'off'  } {} ...
         };
 
     [result,~,~,outs] = inputgui('geometry', uigeom, 'uilist', uilist, 'helpcom', 'pophelp(''pop_loadbv'')', ...
@@ -201,8 +226,11 @@ if nargin < 2
     options = { options{:} 'measure'   splot(result{1}).acronym };
     options = { options{:} 'freqrange' eval( [ '[' result{2} ']' ] ) };
     options = { options{:} 'plotcortex' fastif(outs.cortex, 'on', 'off') };
+    options = { options{:} 'plotcortexparams' {} };
     options = { options{:} 'plotmatrix' fastif(outs.matrix, 'on', 'off') };
     options = { options{:} 'plotpsd'    fastif(outs.psd   , 'on', 'off') };
+    options = { options{:} 'plot3d'     fastif(outs.plot3d, 'on', 'off') };
+    options = { options{:} 'plot3dparams' eval( [ '{' outs.plot3dparams '}' ] ) };
 else
     options = varargin;
 end
@@ -210,11 +238,14 @@ end
 % decode input parameters
 % -----------------------
 g = finputcheck(options,  { 'measure'    'string'  {splot.acronym}  '';
-    'freqrange'  'real'    { }              [];
-    'smooth'     'real'    { }              0.35;
-    'plotcortex' 'string'  { 'on' 'off' }   'on';
-    'plotmatrix' 'string'  { 'on' 'off' }   'off';
-    'plotpsd'    'string'  { 'on' 'off' }   'off' }, 'pop_roi_connectplot');
+    'freqrange'        'real'    { }              [];
+    'smooth'           'real'    { }              0.35;
+    'plotcortex'       'string'  { 'on' 'off' }   'on';
+    'plotcortexparams' 'cell'    { }              {};
+    'plot3d'           'string'  { 'on' 'off' }   'off';
+    'plot3dparams'     'cell'    { }              {};
+    'plotmatrix'       'string'  { 'on' 'off' }   'off';
+    'plotpsd'          'string'  { 'on' 'off' }   'off' }, 'pop_roi_connectplot');
 if ischar(g), error(g); end
 S = EEG.roi;
 
@@ -275,6 +306,11 @@ switch lower(g.measure)
             set(h, 'fontsize', 16);
         end
 
+        if strcmpi(g.plot3d, 'on')
+            atrgc = squeeze(mean(TRGC(frq_inds, :, :)));
+            roi_plotbrainmovie(atrgc, 'cortex', EEG.roi.cortex, 'atlas', EEG.roi.atlas, g.plot3dparams{:});
+        end
+
         if strcmpi(g.plotcortex, 'on')
             atrgc = mean(squeeze(mean(TRGC(frq_inds, :, :))), 2);
             allplots_cortex_BS(S.cortex, atrgc, [-max(abs(atrgc)) max(abs(atrgc))], cm17, upper(g.measure), g.smooth);
@@ -309,13 +345,17 @@ switch lower(g.measure)
         if strcmpi(g.measure, 'coh')
             PS = abs(S.COH); % do not know what to do here
             PS = squeeze(mean(mean(reshape(PS, S.srate+1, S.nPCA, S.nROI, S.nPCA, S.nROI), 2), 4));
-            PSmean = mean(squeeze(mean(PS(frq_inds, :, :))), 2);
+            PSarea2area = squeeze(mean(PS(frq_inds, :, :)));
+            PSmean = mean(PSarea2area, 2);
         elseif strcmpi(g.measure, 'crossspecimag')
             PS = abs(imag(cs2coh(S.CS)));
             PS = squeeze(mean(mean(reshape(PS, S.srate+1, S.nPCA, S.nROI, S.nPCA, S.nROI), 2), 4));
-            PSmean = mean(squeeze(mean(PS(frq_inds, :, :))), 2);
+            PSarea2area = squeeze(mean(PS(frq_inds, :, :)));
+            PSmean = mean(PSarea2area, 2);
         else
             PS = cs2psd(S.CS);
+            PS2 = squeeze(mean(mean(reshape(PS, S.srate+1, S.nPCA, S.nROI, S.nPCA, S.nROI), 2), 4));
+            PSarea2area = squeeze(mean(PS2(frq_inds, :, :)));
             apow = squeeze(sum(sum(reshape(PS(frq_inds, :), [], S.nPCA, S.nROI), 1), 2)).*S.source_roi_power_norm';
             PSmean = 10*log10(apow);
         end
@@ -332,6 +372,10 @@ switch lower(g.measure)
             allplots_cortex_BS(S.cortex, PSmean, [min(PSmean) max(PSmean)], cm17a, plotOpt.unit, g.smooth);
             h = textsc([ plotOpt.labelshort ' (' titleStr ')' ], 'title');
             set(h, 'fontsize', 20);
+        end
+
+        if strcmpi(g.plot3d, 'on')
+            roi_plotbrainmovie(PSarea2area, 'cortex', EEG.roi.cortex, 'atlas', EEG.roi.atlas, g.plot3dparams{:});
         end
 
         if strcmpi(g.plotpsd, 'on')
