@@ -336,7 +336,7 @@ else % bootstrap
           
           if ~isempty(intersect(output, {'MIM', 'MIC'}))
             %MIC and MIM
-            [MIC(:, iind, iboot) , MIM(:, iind, iboot)] =  roi_mim2(COH_, subinds{1}, subinds{2});
+            [MIC(:, iind, iboot) , MIM(:, iind, iboot)] =  roi_mim2(COH_(subset, subset, :), subinds{1}, subinds{2});
           end
 
           if ~isempty(intersect(output, {'GC', 'TRGC'}))
