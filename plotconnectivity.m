@@ -58,7 +58,7 @@ linewidth = 1;
 g = finputcheck(varargin, { ...
     'labels'      'cell'      { }             {};
     'axis'        ''          {}              [];
-    'brainimg'   'string'    {'on' 'off' 'bilateral'}     'on';
+    'brainimg'   'string'    {'on' 'off' 'bilateral'}     'bilateral';
     'threshold'   'real'      {}              0.25;
     }, 'roi_network');
 if isstr(g)
@@ -201,9 +201,9 @@ for ind1 = 1:size(array,1)
         else
             yy = y(ind1)+0.05;
         end
-        h = text( xx, yy, 0, str, 'interpreter', 'none');
+        h = text( xx, yy, 0, str, 'interpreter', 'none', 'fontsize', 8);
     else
-        h = text( x(ind1), y(ind1), 0, g.labels{ind1}, 'interpreter', 'none');
+        h = text( x(ind1), y(ind1), 0, g.labels{ind1}, 'interpreter', 'none', 'fontsize', 8);
     end
     %set(h, 'HorizontalAlignment','left', 'rotation', 90-anglesInit(ind1)/pi*180);
     0;
