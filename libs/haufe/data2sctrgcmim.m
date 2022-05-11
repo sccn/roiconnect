@@ -180,7 +180,13 @@ if abs(nboot) < 1 % no bootstrap
   % (time-reversed) GC just between sender and receiver sets
 
     % loop over sender/receiver combinations to compute time-reversed GC 
+    fprintf('Progress of %d:', ninds);
     for iind = 1:ninds  
+        if mod(iind,100) == 0
+            fprintf('%d', iind);
+        else
+            fprintf('.');
+        end
       if ~isequal(inds{iind}{1}, inds{iind}{2})
         if verbose
           disp(['testing connection ' num2str(iind) '/' num2str(ninds) ': [' num2str(inds{iind}{1}) '] <-> [' num2str(inds{iind}{2}) ']'])
@@ -228,6 +234,7 @@ if abs(nboot) < 1 % no bootstrap
         end
       end
     end
+    fprintf('\n');
   end
 else % bootstrap
 

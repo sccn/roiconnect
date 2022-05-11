@@ -80,7 +80,8 @@ for iroi = 1:nROI
     end
 end
 if ~isempty(g.methods)
-    conn_mult = data2sctrgcmim(source_roi_data, EEG.srate, g.morder, 0, g.naccu, [], inds, g.methods);
+    % conn_mult = data2sctrgcmim(source_roi_data, EEG.srate, g.morder, 0, g.naccu, [], inds, g.methods);
+    conn_mult = data2spwctrgc(source_roi_data, EEG.srate, g.morder, 0, g.naccu, [], g.methods);
 end
 
 fields = fieldnames(conn_mult);
