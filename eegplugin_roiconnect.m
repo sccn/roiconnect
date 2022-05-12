@@ -52,6 +52,7 @@ if ~exist('cs2coh')
     addpath(fullfile(p, 'libs/mvgc_v1.0/core'));
     addpath(fullfile(p, 'libs/mvgc_v1.0/stats'));
     addpath(fullfile(p, 'libs/mvgc_v1.0/utils'));
+    addpath(fullfile(p, 'libs/mvgc_v1.0/utils/control'));
     addpath(fullfile(p, 'libs/nolte'));
     addpath(fullfile(p, 'libs/ssgc_v1.0'));
     addpath(fullfile(p, 'libs/brainstorm'));

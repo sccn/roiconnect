@@ -58,6 +58,7 @@ if zscoreflag
 end
 if nPCA == 1
     [source_roi_data, ~, ~] = svds(double(data_(:, :)), 1); 
+    nPCAs = 1;
 else
     % old code
     [data_, S_, ~] = svd(data_(:, :), 'econ'); % WARNING SHOULD USE SVDS for SPEED

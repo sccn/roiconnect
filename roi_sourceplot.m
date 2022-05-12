@@ -52,6 +52,7 @@ g = finputcheck(varargin, { ...
     'freqrange'       {'cell' 'real'}  { [] [] }       {};
     'saveasfile'      'string'         { }             '';
     'precomputed'     'struct'         { }             struct([]);
+    'limits'          ''               []              [];
     'slice'           'integer'        []              [5 8 10 15 18]}, 'roi_sourceplot');
 if ischar(g)
     error(g);
@@ -124,8 +125,14 @@ for iFreq = 1:length(g.freqrange)
     
     % plot
     res = squeeze(volMat(:,:,g.slice));
-    mi = min(res(:));
-    mx = max(res(:));
+    if isempty(g.limits)
+        mi = min(res(:));
+        mx = max(res(:));
+        fprintf('Loreta limits from data: %1.2f to %1.2f\n', mi, mx);
+    else
+        mi = 0;
+        mx = g.limits(iFreq);
+    end
     cmap = colormap('jet');
     for iSlice = 1:length(g.slice)
         res = squeeze(volMat(:,:,g.slice(iSlice)));
@@ -141,6 +148,8 @@ for iFreq = 1:length(g.freqrange)
             for iPix2 = 1:size(res,2)
                 if res(iPix1,iPix2) ~= 0
                     ind = ceil((res(iPix1,iPix2)-mi)/(mx-mi)*(size(cmap,1)-1))+1;
+                    ind = max(1, ind);
+                    ind = min(size(cmap,1), ind);
                     resrgb(iPix1,iPix2,:) = cmap(ind,:);
                 end
             end

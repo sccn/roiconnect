@@ -42,6 +42,8 @@
 
 % Test
 % plotconnectivity(rand(4,4), 'labels', { 'Dorso_lateral_prefrontal_cortex' 'Parietal_lobe' 'Thalamus' 'Visual_cortex' });
+% plotconnectivity(rand(8,8), 'brainimg', 'bilateral', 'labels', { 'Dorso_lateral_prefrontal_cortex_L' 'Parietal_lobe_L' 'Thalamus_L' 'Visual_cortex_L' 'Dorso_lateral_prefrontal_cortex_R' 'Parietal_lobe_R' 'Thalamus_R' 'Visual_cortex_R' });
+% plotconnectivity(rand(4,4), 'brainimg', 'bilateral', 'labels', { 'Dorso_lateral_prefrontal_cortex_L' 'Parietal_lobe_L' 'Thalamus_L' 'Visual_cortex_L' });
 
 function plotconnectivity(array, varargin)
 
@@ -56,7 +58,7 @@ linewidth = 1;
 g = finputcheck(varargin, { ...
     'labels'      'cell'      { }             {};
     'axis'        ''          {}              [];
-    'brainimg'   'string'    {'on' 'off'}     'on';
+    'brainimg'   'string'    {'on' 'off' 'bilateral'}     'bilateral';
     'threshold'   'real'      {}              0.25;
     }, 'roi_network');
 if isstr(g)
@@ -77,10 +79,15 @@ if isempty(g.labels)
     end
 end
 
-if strcmpi(g.brainimg, 'on')
+if ~strcmpi(g.brainimg, 'off')
     p = fileparts(which('plotconnectivity.m'));
-    [img, map, alphachannel]  = imread(fullfile(p, 'brain.png'));
-    coords = loadtxt('brain_coords.txt');
+    if strcmpi(g.brainimg, 'bilateral')
+        [img, map, alphachannel]  = imread(fullfile(p, 'brain2.png'));
+        coords = loadtxt('brain_coords2.txt');
+    else
+        [img, map, alphachannel]  = imread(fullfile(p, 'brain.png'));
+        coords = loadtxt('brain_coords.txt');
+    end
     coords(:,1) = [];
     for indLab = 1:length(g.labels)
         indCoord = strmatch( lower(g.labels{indLab}), lower(coords(1,:)) );
@@ -93,9 +100,7 @@ if strcmpi(g.brainimg, 'on')
             y(indLab) = coords{3,indCoord};
         end
     end
-
-end
-if strcmpi(g.brainimg, 'off')
+else
     plotImg = false;
     anglesInit = linspace(0,2*pi,size(array,1)+1) + pi/size(array,1);
     x = sin(anglesInit)*radius;
@@ -133,14 +138,15 @@ end
 % make lines between pairs of electrodes
 % --------------------------------------
 if isempty(g.axis)
-    figure;
+    figure('position', [0 0 400 700])
 else
     axes(g.axis); hold on;
 end
-if strcmpi(g.brainimg, 'on')
-    imagesc(img, 'AlphaData', alphachannel); axis off; axis equal;
+if ~strcmpi(g.brainimg, 'off')
+    imagesc(img, 'AlphaData', alphachannel); axis off;
     alpha(0.2)
     hold on;
+    axis equal
     set(gca, 'ydir', 'reverse');
     pos = get(gca, 'position');
     axes('position', pos); axis off; hold on;
@@ -165,7 +171,7 @@ for ind1 = 1:size(array,1)
 
                 center = distance*4*2*(aa+bb)/2;
                 radius = sqrt(sum(abs(aa-center).^2));
-                if sum(abs(center)) < 1e-8 || strcmpi(g.brainimg, 'on')
+                if sum(abs(center)) < 1e-8 || ~strcmpi(g.brainimg, 'off')
                     plot([aa(1) bb(1)],[aa(2) bb(2)],'-');
                 else
                     angle1 = atan2(aa(1)-center(1), aa(2)-center(2));
@@ -187,24 +193,29 @@ for ind1 = 1:size(array,1)
             end
         end
     end
-    if strcmpi(g.brainimg, 'on')
+    if ~strcmpi(g.brainimg, 'off')
         str = formatlabel(g.labels{ind1});
-        xx = (x(ind1)-0.7)*1.2+0.7;
+        xx = x(ind1)-0.1;
         if any(str == 10)   
-            yy = (y(ind1)-0.4)*1.2+0.4;
+            yy = y(ind1)+0.1;
         else
-            yy = (y(ind1)-0.45)*1.2+0.45;
+            yy = y(ind1)+0.05;
         end
-        h = text( xx, yy, 0, str, 'interpreter', 'none');
+        h = text( xx, yy, 0, str, 'interpreter', 'none', 'fontsize', 8);
     else
-        h = text( x(ind1), y(ind1), 0, g.labels{ind1}, 'interpreter', 'none');
+        h = text( x(ind1), y(ind1), 0, g.labels{ind1}, 'interpreter', 'none', 'fontsize', 8);
     end
     %set(h, 'HorizontalAlignment','left', 'rotation', 90-anglesInit(ind1)/pi*180);
     0;
 end
-if strcmpi(g.brainimg, 'on')
-    xlim([0 1])
-    ylim([0 1.05])
+if ~strcmpi(g.brainimg, 'off')
+    if strcmpi(g.brainimg, 'bilateral')
+        xlim([0 1])
+        ylim([0 2])
+    else
+        xlim([0 1])
+        ylim([0 1])
+    end
 else
     xlim([-0.7 0.7]);
     ylim([-0.7 0.7]);
@@ -216,7 +227,7 @@ str = strip(str);
 str(str == '_') = ' ';
 if length(str) > 10
     sp = find(str == ' ');
-    if length(sp) > 1
+    if length(sp) > 1 && length(str(sp(2)+1:end) ) > 1
         str = [ str(1:sp(2)-1) 10 str(sp(2)+1:end) ];
     end
 end
