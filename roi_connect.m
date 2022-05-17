@@ -12,14 +12,17 @@
 %  'crossspec' - ['on'|'off'] compute cross-spectrum from which coherence can
 %                be derived. Default is 'on'.
 %  'methods'    - [cell of string 'psd'|'roipsd'|'trgc'|'crossspecimag'|'crossspecpow'|'mic'|'mim']
-%                   'psd'   : Source power spectrum
-%                   'psdroi': ROI based power spectrum
+%                   'cs'    : cross spectrum
+%                   'coh'   : coherence
+%                   'gc'    : Granger causality
 %                   'trgc'  : Time-reversed granger causality
-%                   'crossspecimag': Imaginary part of coherence from cross-spectrum
-%                   'crossspecpow' : Average cross-spectrum power for each ROI
-%                   'mic' : Maximized Imaginary Coherency for each ROI
-%                   'mim' : Multivariate Interaction Measure for each ROI
-%
+%                   'wpli'  : Weighted phase lag index
+%                   'pdc'   : Partial directed coherence
+%                   'trpdc' : Time-reversed partial directed coherence
+%                   'dtf'   : Directed transfer entropy
+%                   'trdtf' : Time-reversed directed transfer entropy
+%                   'mic'   : Maximized Imaginary Coherency for each ROI
+%                   'mim'   : Multivariate Interaction Measure for each ROI
 % Output:
 %   EEG - EEG structure with EEG.roi field updated and now containing
 %         connectivity information.
@@ -69,6 +72,10 @@ g = finputcheck(varargin, { ...
     'methods'     'cell'    { }            {} }, 'roi_connect');    
 if ischar(g), error(g); end
 if isempty(g.naccu), g.naccu = 0; end
+tmpMethods = setdiff(g.methods, {  'CS' 'COH' 'GC' 'TRGC' 'wPLI' 'PDC' 'TRPDC' 'DTF' 'TRDTF' 'MIM' 'MIC'});
+if ~isempty(tmpMethods)
+    error('Unknown methods %s', vararg2str(tmpMethods))
+end
 
 inds = {}; ninds = 0;
 nROI = EEG.roi.nROI;
@@ -79,15 +86,25 @@ for iroi = 1:nROI
         ninds = ninds + 1;
     end
 end
-if ~isempty(g.methods)
-    % conn_mult = data2sctrgcmim(source_roi_data, EEG.srate, g.morder, 0, g.naccu, [], inds, g.methods);
-    conn_mult = data2spwctrgc(source_roi_data, EEG.srate, g.morder, 0, g.naccu, [], g.methods);
+
+% MIC and MIM use a different function
+if ismember(g.methods, 'MIC') || ismember(g.methods, 'MIM')
+    tmpMethods = setdiff(g.methods, { 'CS' 'COH' 'PSD' 'PSDROI' 'GC' 'TRGC' 'wPLI' 'PDC' 'TRPDC' 'DTF' 'TRDTF' });
+    conn_mult = data2sctrgcmim(source_roi_data, EEG.srate, g.morder, 0, g.naccu, [], inds, tmpMethods);
+    fields = fieldnames(conn_mult);
+    for iField = 1:length(fields)
+        EEG.roi.(fields{iField}) = conn_mult.(fields{iField});
+    end
+end
+tmpMethods2 = setdiff(g.methods, { 'MIM' 'MIC' });
+if ~isempty(tmpMethods2)
+    conn_mult = data2spwctrgc(source_roi_data, EEG.srate, g.morder, 0, g.naccu, [], tmpMethods2);
+    fields = fieldnames(conn_mult);
+    for iField = 1:length(fields)
+        EEG.roi.(fields{iField}) = conn_mult.(fields{iField});
+    end
 end
 
-fields = fieldnames(conn_mult);
-for iField = 1:length(fields)
-    EEG.roi.(fields{iField}) = conn_mult.(fields{iField});
-end
 
 % convert to matrices
 function EEG = vec2mat(EEG)
