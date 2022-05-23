@@ -1,4 +1,4 @@
-edit % pop_roi_connectplot - plot results of connectivity analysis computed
+% pop_roi_connectplot - plot results of connectivity analysis computed
 %                       by roi_connect.
 % Usage:
 %  pop_roi_connectplot(EEG, 'key', 'val', ...);
