@@ -273,12 +273,11 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
     if strcmpi(g.largeplot, 'on')
         source_roi_power_norm_dB = 10*log10( mean(EEG.roi.source_roi_power(frq_inds,:)) ); % roipsd
         
-        % new, not working
 %         TRGCnet = S.TRGC;
 %         TRGCnet = TRGCnet - permute(TRGCnet, [1 3 2]);
 %         TRGCnet = TRGCnet(:,:);
-        % old
-        TRGCnet = S.TRGC(:, :, 1) - S.TRGC(:, :, 2); % trgc
+        
+        TRGCnet = S.TRGC(:, :, 1) - S.TRGC(:, :, 2);
         TRGC = get_connect_mat( TRGCnet, S.nROI, -1);
         TRGC_matrix = squeeze(mean(TRGC(frq_inds, :, :)));
         
@@ -316,14 +315,14 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
                 % TRGCnet = TRGC_(:, 1:2:end)-TRGC_(:, 2:2:end);
                 % new way to compute net scores
                 if strcmpi(g.measure, 'GC')
-                    % TRGCnet = S.GC; % new, not working
+                    % TRGCnet = S.GC; 
                     TRGCnet = S.GC(:, :, 1) - S.GC(:, :, 2);
                 else
-                   % TRGCnet = S.TRGC; % new, not working
+                   % TRGCnet = S.TRGC; 
                    TRGCnet = S.TRGC(:, :, 1) - S.TRGC(:, :, 2);
                 end
-%                 TRGCnet = TRGCnet - permute(TRGCnet, [1 3 2]); % new, not working
-%                 TRGCnet = TRGCnet(:,:); % new, not working
+%                 TRGCnet = TRGCnet - permute(TRGCnet, [1 3 2]); 
+%                 TRGCnet = TRGCnet(:,:); 
                 % TRGCnet = S.GC(:, :, 1) - S.GC(:, :, 2);
                 TRGC = get_connect_mat( TRGCnet, S.nROI, -1);
 
@@ -431,8 +430,6 @@ end
         
 function pltmatrix( EEG, matrix, titleStr, measure, hemisphere, region)
     % plot individual ROI to ROI matrix with colored labels (corresponding lobes/regions)
-    
-    % colormap
     load cm17
     switch lower(measure)
         case {'mim', 'mic', 'coh'}
@@ -441,8 +438,7 @@ function pltmatrix( EEG, matrix, titleStr, measure, hemisphere, region)
             cmap = cm17;
     end
     
-    % plot matrix with colored labels sorted by region according to the
-    % Desikan-Killiany atlas
+    % plot matrix with colored labels sorted by region according to the Desikan-Killiany atlas
     labels = strings(1,length(EEG.roi.atlas.Scouts));
     for i = 1:length(labels)
         scout = struct2cell(EEG.roi.atlas.Scouts(i));
@@ -468,16 +464,12 @@ function pltmatrix( EEG, matrix, titleStr, measure, hemisphere, region)
     labels_dk_cell_idx = labels(roi_idxx);
     
     if strcmpi(measure, 'roipsd')  % plot barplot for power
-%         f = figure();
-%         f.WindowState = 'maximized';
         barh(matrix(roi_idxx));
-
         set(gca, 'YDir', 'reverse');
         set(gca,'ytick',[1:68],'yticklabel',labels_dk_cell_idx(1:68), 'fontweight','bold','fontsize', 9, 'TickLength',[0.015, 0.02], 'LineWidth',0.7);
         h = title([ 'ROI source power' ' (' titleStr ')' ]);
         set(h, 'fontsize', 16);
         ylabel('power [dB]')
-
         ax = gca;
         for i=1:numel(roi_idxx)
             ax.YTickLabel{ceil(i)} = sprintf('\\color[rgb]{%f,%f,%f}%s', colors{color_idxx(i)}, ax.YTickLabel{ceil(i)});
@@ -585,8 +577,6 @@ end
 
 function pltlarge(EEG, mim, trgc, roipsd, titleStr)
     % plot MIM, TRGC and power (barplot) in a single large figure
-
-    % colormap
     load cm17
     
     % plot matrix with colored labels sorted by region according to the
@@ -617,7 +607,6 @@ function pltlarge(EEG, mim, trgc, roipsd, titleStr)
     
     f = figure();
     f.WindowState = 'maximized';
-    
     fc_matrices = cell(1,2);
     fc_matrices{1,1} = mim;
     fc_matrices{1,2} = trgc;
@@ -629,7 +618,7 @@ function pltlarge(EEG, mim, trgc, roipsd, titleStr)
         img = squeeze(fc)';
         img_sorted = img(roi_idxx, roi_idxx);
         imagesc(img_sorted)
-        
+
         set(gca,'ytick',[1:68],'yticklabel',labels_dk_cell_idx(1:68), 'fontsize', 5, 'TickLength',[0.015, 0.02], 'LineWidth',0.75);
         set(gca,'xtick',[1:68],'xticklabel',labels_dk_cell_idx(1:68));
         h = title([ 'ROI to ROI ' fc_names{k} ' (' titleStr ')' ]);
@@ -638,7 +627,6 @@ function pltlarge(EEG, mim, trgc, roipsd, titleStr)
         hcb.Label.FontSize = 10;
         set(gca,'DataAspectRatio',[1 1 1])
         xtickangle(90)
-
         ax = gca;
         for i=1:numel(roi_idxx)    
             ax.XTickLabel{ceil(i)} = sprintf('\\color[rgb]{%f,%f,%f}%s', colors{color_idxx(i)}, ax.XTickLabel{ceil(i)});
@@ -651,13 +639,12 @@ function pltlarge(EEG, mim, trgc, roipsd, titleStr)
     % power
     subplot(1,3,3);
     barh(roipsd(roi_idxx));
-    
+
     set(gca, 'YDir', 'reverse');
     set(gca,'ytick',[1:68],'yticklabel',labels_dk_cell_idx(1:68), 'fontweight','bold','fontsize', 9, 'TickLength',[0.015, 0.02], 'LineWidth',0.7);
     h = title([ 'ROI source power' ' (' titleStr ')' ]);
     set(h, 'fontsize', 16);
     ylabel('power [dB]')
-    
     ax = gca;
     for i=1:numel(roi_idxx)
         ax.YTickLabel{ceil(i)} = sprintf('\\color[rgb]{%f,%f,%f}%s', colors{color_idxx(i)}, ax.YTickLabel{ceil(i)});

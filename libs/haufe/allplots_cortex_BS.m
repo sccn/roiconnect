@@ -25,8 +25,8 @@ else
     end
 end
 
-cortex.Vertices = cortex.Vertices(:, [2 1 3]);
-cortex.Vertices(:, 1) = -cortex.Vertices(:, 1);
+% cortex.Vertices = cortex.Vertices(:, [2 1 3]);
+% cortex.Vertices(:, 1) = -cortex.Vertices(:, 1);
 
 
 for iatl = 1:length(cortex.Atlas)
@@ -75,7 +75,7 @@ if length(varargin) > 1
     end
 end
 
-figure('position', [60   828   950   500]);
+figure('position', [60 828 950 500]);
 subplot(2,3,1);
 surface_pars.myviewdir = [-1 0 0];
 showsurface3(vc, cortex.Faces_left, surface_pars, data, varargin1{:});
