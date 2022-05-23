@@ -25,8 +25,8 @@ else
     end
 end
 
-% cortex.Vertices = cortex.Vertices(:, [2 1 3]);
-% cortex.Vertices(:, 1) = -cortex.Vertices(:, 1);
+cortex.Vertices = cortex.Vertices(:, [2 1 3]);
+cortex.Vertices(:, 1) = -cortex.Vertices(:, 1);
 
 
 for iatl = 1:length(cortex.Atlas)
