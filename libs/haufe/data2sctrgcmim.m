@@ -184,7 +184,7 @@ if abs(nboot) < 1 % no bootstrap
     for iind = 1:ninds  
         if mod(iind,100) == 0
             fprintf('%d', iind);
-        else
+        elseif mod(iind, 10) == 0
             fprintf('.');
         end
       if ~isequal(inds{iind}{1}, inds{iind}{2})
