@@ -1,8 +1,8 @@
 # ROI connectivity toolbox for EEGLAB
 
-This toolbox allows to perform connectivity analysis between regions of interest.
+This toolbox allows performing connectivity analysis between regions of interest. Regions of interest are defined based on popular fMRI atlases, and source localization is performed through eLoreta and Beamforming. Connectivity analysis is performed between all pairs of brain regions using Granger Causality, Directed Transfer Entropy, and many other methods. Visualization is performed in 2-D and 3-D.
 
-Code developped by Stefan Haufe, with EEGLAB interface, coregistration and Fieldtrip integration performed by Arnaud Delorme.
+Code developped by Stefan Haufe and team, with EEGLAB interface, coregistration, 3-D vizualisation and Fieldtrip integration performed by Arnaud Delorme.
 
 # Available features
 
