@@ -285,7 +285,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         MI = get_connect_mat( MI, S.nROI, +1);
         MIM_matrix = squeeze(mean(MI(frq_inds, :, :)));
         
-        pltlarge(EEG, MIM_matrix, TRGC_matrix, source_roi_power_norm_dB, titleStr)
+        roi_largeplot(EEG, MIM_matrix, TRGC_matrix, source_roi_power_norm_dB, titleStr)
     else     
         switch lower(g.measure)
             case { 'psd' 'roipsd' }
@@ -307,7 +307,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
 
                 if strcmpi(g.plotbarplot, 'on')
                     source_roi_power_norm_dB = 10*log10( mean(EEG.roi.source_roi_power(frq_inds,:)) );
-                    pltmatrix(EEG, source_roi_power_norm_dB, titleStr, g.measure, g.hemisphere, g.region);
+                    roi_plotcoloredlobes(EEG, source_roi_power_norm_dB, titleStr, g.measure, g.hemisphere, g.region);
                 end
 
             case { 'trgc' 'gc' }
@@ -328,7 +328,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
 
                 if strcmpi(g.plotmatrix, 'on')
                     matrix = squeeze(mean(TRGC(frq_inds, :, :)));
-                    pltmatrix(EEG, matrix, titleStr, g.measure, g.hemisphere, g.region);
+                    roi_plotcoloredlobes(EEG, matrix, titleStr, g.measure, g.hemisphere, g.region);
                 end
 
                 if strcmpi(g.plot3d, 'on')
@@ -353,7 +353,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
 
                 if strcmpi(g.plotmatrix, 'on')
                     matrix = squeeze(mean(MI(frq_inds, :, :)));
-                    pltmatrix(EEG, matrix, titleStr, g.measure, g.hemisphere, g.region);
+                    roi_plotcoloredlobes(EEG, matrix, titleStr, g.measure, g.hemisphere, g.region);
                 end
 
                 if strcmpi(g.plotcortex, 'on')
@@ -428,7 +428,7 @@ function measure = get_connect_mat( measureOri, nROI, signVal)
     end
 end
         
-function pltmatrix( EEG, matrix, titleStr, measure, hemisphere, region)
+function roi_plotcoloredlobes( EEG, matrix, titleStr, measure, hemisphere, region)
     % plot individual ROI to ROI matrix with colored labels (corresponding lobes/regions)
     load cm17
     switch lower(measure)
@@ -575,7 +575,7 @@ function pltmatrix( EEG, matrix, titleStr, measure, hemisphere, region)
     end
 end 
 
-function pltlarge(EEG, mim, trgc, roipsd, titleStr)
+function roi_largeplot(EEG, mim, trgc, roipsd, titleStr)
     % plot MIM, TRGC and power (barplot) in a single large figure
     load cm17
     
