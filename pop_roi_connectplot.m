@@ -341,6 +341,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
                     allplots_cortex_BS(S.cortex, atrgc, [-max(abs(atrgc)) max(abs(atrgc))], cm17, upper(g.measure), g.smooth);
                     h = textsc([ upper(g.measure) ' (' titleStr '); Red = net sender; Blue = net receiver' ], 'title');
                     set(h, 'fontsize', 20);
+                    movegui(gcf, 'south')
                 end
 
             case { 'mim' 'mic' }
