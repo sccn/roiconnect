@@ -237,18 +237,19 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
     % decode input parameters
     % -----------------------
     g = finputcheck(options,  { 'measure'    'string'  {splot.acronym}  '';
-        'freqrange'        'real'    { }              [];
-        'smooth'           'real'    { }              0.35;
-        'plotcortex'       'string'  { 'on' 'off' }   'on';
-        'plotcortexparams' 'cell'    { }              {};
-        'plot3d'           'string'  { 'on' 'off' }   'off';
-        'plot3dparams'     'cell'    { }              {};
-        'plotmatrix'       'string'  { 'on' 'off' }   'off';
-        'plotbarplot'  'string'  { 'on' 'off'}  'off';
-        'hemisphere'  'string'  {'all' 'left' 'right'}  'all';
-        'region'  'string'  { 'all', 'cingulate', 'prefrontal', 'frontal', 'temporal', 'parietal', 'central', 'occipital' }  'all';
-        'largeplot',  'string'  { 'on'  'off'  } 'off';
-        'plotpsd',  'string'  { 'on' 'off' }   'off' }, 'pop_roi_connectplot');
+        'freqrange'             'real'     { }                     [];
+        'smooth'                'real'     { }                     0.35;
+        'plotcortex'            'string'   { 'on' 'off' }          'on';
+        'plotcortexparams'      'cell'     { }                     {};
+        'plotcortexseedregion'  'string'   { }                     [];
+        'plot3d'                'string'   { 'on' 'off' }          'off';
+        'plot3dparams'          'cell'     { }                     {};
+        'plotmatrix'            'string'   { 'on' 'off' }          'off';
+        'plotbarplot'           'string'   { 'on' 'off'}           'off';
+        'hemisphere'            'string'   {'all' 'left' 'right'}  'all';
+        'region'                'string'   { 'all', 'cingulate', 'prefrontal', 'frontal', 'temporal', 'parietal', 'central', 'occipital' }  'all';
+        'largeplot',            'string'   { 'on'  'off'  }        'off';
+        'plotpsd',              'string'   { 'on' 'off' }          'off' }, 'pop_roi_connectplot');
     if ischar(g), error(g); end
     S = EEG.roi;
 
@@ -337,8 +338,14 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
                 end
 
                 if strcmpi(g.plotcortex, 'on')
-                    atrgc = mean(squeeze(mean(TRGC(frq_inds, :, :))), 2);
-                    allplots_cortex_BS(S.cortex, atrgc, [-max(abs(atrgc)) max(abs(atrgc))], cm17, upper(g.measure), g.smooth);
+                    if isempty(g.plotcortexseedregion)
+                        atrgc = mean(squeeze(mean(TRGC(frq_inds, :, :))), 2);
+                        allplots_cortex_BS(S.cortex, atrgc, [-max(abs(atrgc)) max(abs(atrgc))], cm17, upper(g.measure), g.smooth);
+                    else
+                        [coordinate, seed_idx] = get_seedregion_coordinate(g.plotcortexseedregion, EEG.roi.cortex.Vertices);
+                        atrgc = squeeze(mean(TRGC(frq_inds, seed_idx, :)));
+                        allplots_cortex_BS(S.cortex, atrgc, [-max(abs(atrgc)) max(abs(atrgc))], cm17, upper(g.measure), g.smooth, [], {coordinate});
+                    end
                     h = textsc([ upper(g.measure) ' (' titleStr '); Red = net sender; Blue = net receiver' ], 'title');
                     set(h, 'fontsize', 20);
                     movegui(gcf, 'south')
@@ -358,9 +365,15 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
                 end
 
                 if strcmpi(g.plotcortex, 'on')
-                    ami = mean(squeeze(mean(MI(frq_inds, :, :))), 2);
-                    allplots_cortex_BS(S.cortex, ami, [min(ami) max(ami)], cm17, upper(g.measure), g.smooth);
-                    h = textsc([ upper(g.measure) ' (' titleStr '); Red = net sender; Blue = net receiver' ], 'title');
+                    if isempty(g.plotcortexseedregion)
+                        ami = mean(squeeze(mean(MI(frq_inds, :, :))), 2);
+                        allplots_cortex_BS(S.cortex, ami, [min(ami) max(ami)], cm17a, upper(g.measure), g.smooth);
+                    else
+                        [coordinate, seed_idx] = get_seedregion_coordinate(g.plotcortexseedregion, EEG.roi.cortex.Vertices);
+                        ami = squeeze(mean(MI(frq_inds, seed_idx,:)));
+                        allplots_cortex_BS(S.cortex, ami, [min(ami) max(ami)], cm17a, upper(g.measure), g.smooth, [], {coordinate});
+                    end
+                    h = textsc([ upper(g.measure) ' (' titleStr ') '], 'title');
                     set(h, 'fontsize', 20);
                 end
 
@@ -426,6 +439,23 @@ function measure = get_connect_mat( measureOri, nROI, signVal)
             measure(:, iroi, jroi) = signVal * measureOri(:, iinds);
             measure(:, jroi, iroi) = measureOri(:, iinds);
         end
+    end
+end
+
+function [coordinate, seed_idx] = get_seedregion_coordinate(seed_region, vc)
+    % determine voxel of selected seed region, if needed
+    % assign region index to selected seed region (passed as string)
+    load cortex
+    cortex_struct = struct2cell(a);
+    seed_idx = find(contains(cortex_struct(4,:,:), seed_region));
+    if ~isempty(seed_idx)
+        pos_idx = a(seed_idx).Vertices;
+        pos = vc(pos_idx,:);
+        mid_point = mean(pos,1);
+        [~,closest_pos_idx] = min(eucl(mid_point, pos));
+        coordinate = pos(closest_pos_idx,:);
+    else
+        error('Selected region not in cortex')
     end
 end
         
