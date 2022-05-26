@@ -11,20 +11,28 @@
 %  'sourcemodel' - [string] source model file
 %
 % Optional inputs:
-%  'measure'    - ['psd'|'roipsd'|'trgc'|'crossspecimag'|'crossspecpow'|'mic'|'mim']
-%                   'psd'   : Source power spectrum
-%                   'psdroi': ROI based power spectrum
-%                   'trgc'  : Time-reversed granger causality
-%                   'crossspecimag': Imaginary part of coherence from cross-spectrum
-%                   'crossspecpow' : Average cross-spectrum power for each ROI
-%                   'mic' : Maximized Imaginary Coherency for each ROI
-%                   'mim' : Multivariate Interaction Measure for each ROI
-%  'freqrange'  - [min max] frequency range in Hz. Default is to plot
-%                 broadband power.
-%  'smooth'     - [float] smoothing factor for cortex surface plotting
-%  'plotcortex' - ['on'|'off'] plot results on smooth cortex. Default is 'on'
-%  'plotmatrix' - ['on'|'off'] plot results on smooth cortex. Default is 'off'
-%  'plotpsd'    - ['on'|'off'] plot PSD (for 'crossspecpow' only). Default is 'off'
+%  'measure'              - ['psd'|'roipsd'|'trgc'|'crossspecimag'|'crossspecpow'|'mic'|'mim']
+%                           'psd'   : Source power spectrum
+%                           'psdroi': ROI based power spectrum
+%                           'trgc'  : Time-reversed granger causality
+%                           'gc'    : Granger causality
+%                           'crossspecimag': Imaginary part of coherence from cross-spectrum
+%                           'crossspecpow' : Average cross-spectrum power for each ROI
+%                           'mic' : Maximized Imaginary Coherency for each ROI
+%                           'mim' : Multivariate Interaction Measure for each ROI
+%  'freqrange'            - [min max] frequency range in Hz. Default is to plot broadband power.
+%  'smooth'               - [float] smoothing factor for cortex surface plotting
+%  'plotcortex'           - ['on'|'off'] plot results on smooth cortex. Default is 'on'
+%  'plotcortexparams'     - [cell] ...
+%  'plotcortexseedregion' - [string] plot seed voxel on cortex. Takes name of seed region as input.
+%  'plot3d'               - ['on'|'off'] ... Default is 'off'
+%  'plot3dparams'         - [cell] ...
+%  'plotmatrix'           - ['on'|'off'] plot results as ROI to ROI matrix. Default is 'off'
+%  'plotbarplot'          - ['on'|'off'] plot ROI based power spectrum as barplot. Default is 'off'
+%  'hemisphere'           - ['all'|'left'|'right'] hemisphere options for ROI to ROI matrix. Default is 'all'
+%  'region'               - ['all'|'cingulate'|'prefrontal'|'frontal'|'temporal'|'parietal'|'central'|'occipital'] region selection for ROI to ROI matrix. Default is 'all'
+%  'largeplot'            - ['on'|'off'] plot MIM, TRGC and Power in a single large plot. Default is 'off'
+%  'plotpsd'              - ['on'|'off'] plot PSD (for 'crossspecpow' only). Default is 'off'
 %
 % Author: Stefan Haufe and Arnaud Delorme, 2019
 %
