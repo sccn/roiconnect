@@ -265,7 +265,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         'smooth'                'real'     { }                     0.35;
         'plotcortex'            'string'   { 'on' 'off' }          'on';
         'plotcortexparams'      'cell'     { }                     {};
-        'plotcortexseedregion'  'integer'   { }                     [];
+        'plotcortexseedregion'  'integer'  { }                     [];
         'plot3d'                'string'   { 'on' 'off' }          'off';
         'plot3dparams'          'cell'     { }                     {};
         'plotmatrix'            'string'   { 'on' 'off' }          'off';
@@ -366,7 +366,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
                         atrgc = mean(squeeze(mean(TRGC(frq_inds, :, :))), 2);
                         allplots_cortex_BS(S.cortex, atrgc, [-max(abs(atrgc)) max(abs(atrgc))], cm17, upper(g.measure), g.smooth);
                     else
-                        [coordinate, seed_idx] = get_seedregion_coordinate(g.plotcortexseedregion, EEG.roi.cortex.Vertices);
+                        [coordinate, seed_idx] = get_seedregion_coordinate(EEG.roi.atlas.Scouts, g.plotcortexseedregion, EEG.roi.cortex.Vertices);
                         atrgc = squeeze(mean(TRGC(frq_inds, seed_idx, :)));
                         allplots_cortex_BS(S.cortex, atrgc, [-max(abs(atrgc)) max(abs(atrgc))], cm17, upper(g.measure), g.smooth, [], {coordinate});
                     end
@@ -391,12 +391,10 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
                     if isempty(g.plotcortexseedregion)
                         ami = mean(squeeze(mean(MI(frq_inds, :, :))), 2);
                         allplots_cortex_BS(S.cortex, ami, [min(ami) max(ami)], cm17a, upper(g.measure), g.smooth);
-                        movegui(gcf, 'south')
                     else
-                        [coordinate, seed_idx] = get_seedregion_coordinate(g.plotcortexseedregion, EEG.roi.cortex.Vertices);
+                        [coordinate, seed_idx] = get_seedregion_coordinate(EEG.roi.atlas.Scouts, g.plotcortexseedregion, EEG.roi.cortex.Vertices);
                         ami = squeeze(mean(MI(frq_inds, seed_idx,:)));
                         allplots_cortex_BS(S.cortex, ami, [min(ami) max(ami)], cm17a, upper(g.measure), g.smooth, [], {coordinate});
-                        movegui(gcf, 'south')
                     end
                     h = textsc([ upper(g.measure) ' (' titleStr ') '], 'title');
                     set(h, 'fontsize', 20);
@@ -468,14 +466,13 @@ function measure = get_connect_mat( measureOri, nROI, signVal)
 end
 
 % function [coordinate, seed_idx] = get_seedregion_coordinate(seed_region, vc)
-function [coordinate, seed_idx] = get_seedregion_coordinate(seed_idx, vc)
+function [coordinate, seed_idx] = get_seedregion_coordinate(scouts, seed_idx, vc)
     % determine voxel of selected seed region, if needed
     % assign region index to selected seed region (passed as string)
-    load cortex
 %     cortex_struct = struct2cell(a);
 %     seed_idx = find(contains(cortex_struct(4,:,:), seed_region));
     if ~isempty(seed_idx)
-        pos_idx = a(seed_idx).Vertices;
+        pos_idx = scouts(seed_idx).Vertices;
         pos = vc(pos_idx,:);
         mid_point = mean(pos,1);
         [~,closest_pos_idx] = min(eucl(mid_point, pos));
