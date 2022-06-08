@@ -87,8 +87,8 @@ for iroi = 1:nROI
     end
 end
 
-% MIC and MIM use a different function
-if ismember(g.methods, 'MIC') || ismember(g.methods, 'MIM')
+% % MIC and MIM use a different function
+if any(ismember(g.methods, 'MIC')) || any(ismember(g.methods, 'MIM'))
     tmpMethods = setdiff(g.methods, { 'CS' 'COH' 'PSD' 'PSDROI' 'GC' 'TRGC' 'wPLI' 'PDC' 'TRPDC' 'DTF' 'TRDTF' });
     conn_mult = data2sctrgcmim(source_roi_data, EEG.srate, g.morder, 0, g.naccu, [], inds, tmpMethods);
     fields = fieldnames(conn_mult);

@@ -245,7 +245,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         options = { options{:} 'plotpsd'    fastif(outs.psd   , 'on', 'off') };
         options = { options{:} 'plot3d'     fastif(outs.plot3d, 'on', 'off') };
         options = { options{:} 'plot3dparams' eval( [ '{' outs.plot3dparams '}' ] ) };
-        options = { options{:} 'region' fcregions{result{9}} };
+        options = { options{:} 'region' fcregions{result{8}} };
         % choose which hemisphere to plot
         if outs.hemisphere_left == 1 && outs.hemisphere_right == 0
             options = { options{:} 'hemisphere' 'left' };
@@ -365,10 +365,12 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
                     if isempty(g.plotcortexseedregion)
                         atrgc = mean(squeeze(mean(TRGC(frq_inds, :, :))), 2);
                         allplots_cortex_BS(S.cortex, atrgc, [-max(abs(atrgc)) max(abs(atrgc))], cm17, upper(g.measure), g.smooth);
+                        movegui(gcf, 'south')
                     else
                         [coordinate, seed_idx] = get_seedregion_coordinate(EEG.roi.atlas.Scouts, g.plotcortexseedregion, EEG.roi.cortex.Vertices);
                         atrgc = squeeze(mean(TRGC(frq_inds, seed_idx, :)));
                         allplots_cortex_BS(S.cortex, atrgc, [-max(abs(atrgc)) max(abs(atrgc))], cm17, upper(g.measure), g.smooth, [], {coordinate});
+                        movegui(gcf, 'south')
                     end
                     h = textsc([ upper(g.measure) ' (' titleStr '); Red = net sender; Blue = net receiver' ], 'title');
                     set(h, 'fontsize', 20);
