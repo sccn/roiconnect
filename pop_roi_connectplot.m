@@ -470,7 +470,7 @@ end
 % function [coordinate, seed_idx] = get_seedregion_coordinate(seed_region, vc)
 function [coordinate, seed_idx] = get_seedregion_coordinate(scouts, seed_idx, vc)
     % determine voxel of selected seed region, if needed
-    % assign region index to selected seed region (passed as string)
+    % assign region index to selected seed region (passed as index)
 %     cortex_struct = struct2cell(a);
 %     seed_idx = find(contains(cortex_struct(4,:,:), seed_region));
     if ~isempty(seed_idx)
