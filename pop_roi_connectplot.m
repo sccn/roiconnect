@@ -467,18 +467,24 @@ function measure = get_connect_mat( measureOri, nROI, signVal)
     end
 end
 
-% function [coordinate, seed_idx] = get_seedregion_coordinate(seed_region, vc)
 function [coordinate, seed_idx] = get_seedregion_coordinate(scouts, seed_idx, vc)
     % determine voxel of selected seed region, if needed
     % assign region index to selected seed region (passed as index)
-%     cortex_struct = struct2cell(a);
-%     seed_idx = find(contains(cortex_struct(4,:,:), seed_region));
     if ~isempty(seed_idx)
+        % ball not visible for these regions when plotting the mean voxel
+        manual_region_idxs = [2, 16, 18, 25, 26, 31, 32, 45, 49, 50, 55, 56, 59, 60, 61, 64]; 
         pos_idx = scouts(seed_idx).Vertices;
         pos = vc(pos_idx,:);
-        mid_point = mean(pos,1);
-        [~,closest_pos_idx] = min(eucl(mid_point, pos));
-        coordinate = pos(closest_pos_idx,:);
+        if seed_idx == 1
+            coordinate = vc(736,:);
+        elseif ismember(seed_idx, manual_region_idxs)
+            pos_sorted = sortrows(pos, 3, 'descend'); % sort by descending Z-coordinate
+            coordinate = pos_sorted(1,:);
+        else
+            mid_point = mean(pos,1);
+            [~,closest_pos_idx] = min(eucl(mid_point, pos)); % determine mean voxel
+            coordinate = pos(closest_pos_idx,:);
+        end
     else
         error('Selected region not in cortex')
     end
