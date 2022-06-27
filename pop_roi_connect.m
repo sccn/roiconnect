@@ -119,6 +119,10 @@ if nargin < 2
 else
     options = varargin;
 end
+% check if connectivity should be computed on snippets
+is_snippet = options{4};
+options(end) = [];
+options(end) = [];
 
 % process multiple datasets
 % -------------------------
@@ -132,6 +136,20 @@ if length(EEG) > 1
     return;
 end
 
+if strcmpi(is_snippet, 'on')
+    % cut data into snippets
+    snippet_length = 60; % 60 seconds
+    snip_eps = snippet_length/(size(EEG.data,2)/EEG.srate);% n epochs in snippet
+    nsnips = floor(EEG.trials/snip_eps);
+
+    source_roi_data_save = EEG.roi.source_roi_data;
+    source_roi_data_snips = zeros(EEG.roi.nROI, EEG.pnts, snip_eps, nsnips);
+    for isnip = 1:nsnips
+        source_roi_data_snips(:,:,:,isnip) = source_roi_data_save(:,:,(isnip-1)* snip_eps + 1 : (isnip-1)* snip_eps + snip_eps); %s ource data
+    end
+    source_roi_data = mean(source_roi_data_snips, 4); % mean over snippets
+    EEG.roi.source_roi_data = single(source_roi_data);
+end
 EEG = roi_connect(EEG, options{:});
 
 if nargout > 1
