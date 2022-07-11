@@ -145,10 +145,13 @@ if strcmpi(is_snippet, 'on')
     source_roi_data_save = EEG.roi.source_roi_data;
     source_roi_data_snips = zeros(EEG.roi.nROI, EEG.pnts, snip_eps, nsnips);
     for isnip = 1:nsnips
-        source_roi_data_snips(:,:,:,isnip) = source_roi_data_save(:,:,(isnip-1)* snip_eps + 1 : (isnip-1)* snip_eps + snip_eps); %s ource data
+        roi_snip = source_roi_data_save(:,:,(isnip-1)* snip_eps + 1 : (isnip-1)* snip_eps + snip_eps); % cut source data into snippet
+        EEG.roi.source_roi_data = single(roi_snip);
+        EEG = roi_connect(EEG, options{:}); % compute connectivity over one 60s snippet
+        source_roi_data_snips(:,:,:,isnip) = EEG.roi.source_roi_data;
     end
     source_roi_data = mean(source_roi_data_snips, 4); % mean over snippets
-    EEG.roi.source_roi_data = single(source_roi_data);
+    EEG.roi.source_roi_data = source_roi_data;
 end
 EEG = roi_connect(EEG, options{:});
 
