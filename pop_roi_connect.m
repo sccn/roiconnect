@@ -136,24 +136,46 @@ if length(EEG) > 1
     return;
 end
 
+% compute connectivity over snippets
+n_conn_metrics = length(options{2}); % number of connectivity metrics
+conn_matrices_snips = {};
 if strcmpi(is_snippet, 'on')
-    % cut data into snippets
-    snippet_length = 60; % 60 seconds
-    snip_eps = snippet_length/(size(EEG.data,2)/EEG.srate);% n epochs in snippet
+    snippet_length = 60; % seconds
+    snip_eps = snippet_length/(size(EEG.data,2)/EEG.srate); % n epochs in snippet
     nsnips = floor(EEG.trials/snip_eps);
 
     source_roi_data_save = EEG.roi.source_roi_data;
     source_roi_data_snips = zeros(EEG.roi.nROI, EEG.pnts, snip_eps, nsnips);
     for isnip = 1:nsnips
-        roi_snip = source_roi_data_save(:,:,(isnip-1)* snip_eps + 1 : (isnip-1)* snip_eps + snip_eps); % cut source data into snippet
+        roi_snip = source_roi_data_save(:,:,(isnip-1)* snip_eps + 1 : (isnip-1)* snip_eps + snip_eps); % cut source data into snippets
+        EEG = roi_connect(EEG, options{:}); % compute connectivity over one snippet
+        for fc = 1:n_conn_metrics 
+            fc_name = options{2}{fc};
+            fc_matrix = EEG.roi.(fc_name);
+            conn_matrices_snips{isnip,fc} = fc_matrix; % store each connectivity metric for each snippet in separate structure
+        end
         EEG.roi.source_roi_data = single(roi_snip);
-        EEG = roi_connect(EEG, options{:}); % compute connectivity over one 60s snippet
         source_roi_data_snips(:,:,:,isnip) = EEG.roi.source_roi_data;
     end
     source_roi_data = mean(source_roi_data_snips, 4); % mean over snippets
     EEG.roi.source_roi_data = source_roi_data;
+    
+    % compute mean over connectivity of each snippet
+    for fc = 1:n_conn_metrics
+        first_dim = size(conn_matrices_snips{1,fc},1);
+        second_dim = size(conn_matrices_snips{1,fc},2);
+        third_dim = size(conn_matrices_snips{1,fc},3);
+
+        conn_cell = conn_matrices_snips(:,fc); % store all matrices of one metric in a cell
+        mat = cell2mat(conn_cell);
+        reshaped = squeeze(reshape(mat, first_dim, nsnips, second_dim, third_dim));
+        mean_conn = squeeze(mean(reshaped, 2)); 
+        fc_name = options{2}{fc};
+        EEG.roi.(fc_name) = mean_conn; % store mean connectivity in EEG struct
+    end
+else
+    EEG = roi_connect(EEG, options{:});
 end
-EEG = roi_connect(EEG, options{:});
 
 if nargout > 1
     com = sprintf( 'EEG = pop_roi_connect(EEG, %s);', vararg2str( options ));
