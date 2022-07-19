@@ -82,7 +82,7 @@ else
         'leadfield'      'string'    {}      '';
         'sourcemodel'    'string'    {}      '';
         'plotnetworkfile' ''         {}      '';
-        'plotmode'        'string'    {'2D' '3D' 'both' }  '2D';
+        'plotmode'        'string'    {'2D' '3D' 'both' 'off' }  '2D';
         'plotloretafile'  ''         {}      '';
         'loretalimits'    ''         {}      [];
         'processconnect'  ''         {}      [] }, 'roi_network');
@@ -162,7 +162,9 @@ freqs  = freqs(2:end); % remove DC (match the output of PSD)
 % Plot loreta file
 if ~isempty(opt.plotloretafile)
     loretaFile = opt.plotloretafile;
-    loretaMeasures = roi_sourceplot(freqs, source_voxel_spec', opt.sourcemodel, 'freqrange', opt.freqrange, 'limits', opt.loretalimits, 'saveasfile',  opt.plotloretafile, 'precomputed', opt.precomputed);
+    options = { 'freqrange', opt.freqrange, 'limits', opt.loretalimits, 'saveasfile',  opt.plotloretafile, 'precomputed', opt.precomputed };
+    if strcmpi(opt.plotmode, 'off') options = [ options { 'noplot' 'on' } ]; end
+    loretaMeasures = roi_sourceplot(freqs, source_voxel_spec', opt.sourcemodel, options{:});
 end
 
 % Compute ROI activity
@@ -191,7 +193,7 @@ end
 % compute metric of interest
 processfreqFields = fieldnames(opt.processfreq);
 for iProcess = 1:length(processfreqFields)
-    results.(['loreta_' processfreqFields{iProcess}]) = feval(opt.processfreq.(processfreqFields{iProcess}), loretaSpecSelect);
+    results.(['loreta_regions_' processfreqFields{iProcess}]) = feval(opt.processfreq.(processfreqFields{iProcess}), loretaSpecSelect);
 end
 
 % compute cross-spectral density for each network
@@ -244,7 +246,7 @@ if ~isempty(opt.processconnect)
             end
         end
     end
-    if length(loreta_Networks) > 0 && ~isempty(opt.plotnetworkfile)
+    if ~isempty(loreta_Networks) && ~isempty(opt.plotnetworkfile) && ~strcmpi(opt.plotmode, 'off')
         imgFileName = {};
         txtFileName = {};
         for iField = 1:length(fields)
@@ -253,6 +255,9 @@ if ~isempty(opt.processconnect)
             imgFileName = [ imgFileName imgFileNameTmp ];
             txtFileName = [ txtFileName txtFileNameTmp ];
         end
+    else
+        imgFileName = {};
+        txtFileName = {};
     end
     
 end
