@@ -157,13 +157,13 @@ if strcmpi(g.snippet, 'on')
     source_roi_data_snips = zeros(EEG.roi.nROI, EEG.pnts, snip_eps, nsnips);
     for isnip = 1:nsnips
         roi_snip = source_roi_data_save(:,:,(isnip-1)* snip_eps + 1 : (isnip-1)* snip_eps + snip_eps); % cut source data into snippets
+        EEG.roi.source_roi_data = single(roi_snip);
         EEG = roi_connect(EEG, 'methods', g.methods); % compute connectivity over one snippet
         for fc = 1:n_conn_metrics 
             fc_name = options{2}{fc};
             fc_matrix = EEG.roi.(fc_name);
             conn_matrices_snips{isnip,fc} = fc_matrix; % store each connectivity metric for each snippet in separate structure
         end
-        EEG.roi.source_roi_data = single(roi_snip);
         source_roi_data_snips(:,:,:,isnip) = EEG.roi.source_roi_data;
     end
     source_roi_data = mean(source_roi_data_snips, 4); % mean over snippets
