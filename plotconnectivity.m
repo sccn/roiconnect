@@ -41,7 +41,7 @@
 % THE POSSIBILITY OF SUCH DAMAGE.
 
 % Test
-% plotconnectivity(rand(4,4), 'labels', { 'Dorso_lateral_prefrontal_cortex' 'Parietal_lobe' 'Thalamus' 'Visual_cortex' });
+% plotconnectivity(rand(4,4), 'labels', { 'Dorso_lateral_prefrontal_cortex' 'Parietal_lobe' 'Thalamus' 'Visual_cortex' }, 'brainimg', 'off');
 % plotconnectivity(rand(8,8), 'brainimg', 'bilateral', 'labels', { 'Dorso_lateral_prefrontal_cortex_L' 'Parietal_lobe_L' 'Thalamus_L' 'Visual_cortex_L' 'Dorso_lateral_prefrontal_cortex_R' 'Parietal_lobe_R' 'Thalamus_R' 'Visual_cortex_R' });
 % plotconnectivity(rand(4,4), 'brainimg', 'bilateral', 'labels', { 'Dorso_lateral_prefrontal_cortex_L' 'Parietal_lobe_L' 'Thalamus_L' 'Visual_cortex_L' });
 
@@ -58,7 +58,8 @@ linewidth = 1;
 g = finputcheck(varargin, { ...
     'labels'      'cell'      { }             {};
     'axis'        ''          {}              [];
-    'brainimg'   'string'    {'on' 'off' 'bilateral'}     'bilateral';
+    'colormap'    ''          {}              cool;
+    'brainimg'   'string'     {'on' 'off' 'bilateral'}     'bilateral';
     'threshold'   'real'      {}              0.25;
     }, 'roi_network');
 if isstr(g)
@@ -66,7 +67,7 @@ if isstr(g)
 end
 
 if g.threshold > 0
-    array(array < g.threshold) = 0;
+    array(abs(array) < g.threshold) = 0;
 end
 
 if size(array,1) ~= size(array,2)
@@ -138,7 +139,11 @@ end
 % make lines between pairs of electrodes
 % --------------------------------------
 if isempty(g.axis)
-    figure('position', [0 0 400 700])
+    if ~strcmpi(g.brainimg, 'off')
+        figure('position', [0 0 400 700])
+    else
+        figure;
+    end
 else
     axes(g.axis); hold on;
 end
@@ -151,6 +156,9 @@ if ~strcmpi(g.brainimg, 'off')
     pos = get(gca, 'position');
     axes('position', pos); axis off; hold on;
     set(gca, 'ydir', 'normal');
+else
+    hold on;
+    axis equal
 end
 axis equal;
 axis off;
@@ -159,11 +167,12 @@ plot(x,y,'k');
 plot(x,y,'.','markersize', 12);
 
 warning off;
-color = 'r';
+arrayMin = min(array(:));
+arrayMax = max(array(:));
 for ind1 = 1:size(array,1)
     for ind2 = 1:size(array,2)
         if ind1 ~= ind2
-            if array(ind1, ind2) > 0
+            if array(ind1, ind2) ~= 0
 
                 aa = [x(ind1) y(ind1)];
                 bb = [x(ind2) y(ind2)];
@@ -187,8 +196,8 @@ for ind1 = 1:size(array,1)
                     pnts = linspace(angles(1),angles(2),round(diff(angles)*10));
                     x2 = sin(pnts)*radius+center(1);
                     y2 = cos(pnts)*radius+center(2);
-                    plot(x2,y2,'-');
-                    0;
+                    col = ceil((array(ind1, ind2)-arrayMin)/(arrayMax-arrayMin)*size(g.colormap,1)+1);
+                    plot(x2,y2,'-', 'color', g.colormap(col, :));
                 end
             end
         end
@@ -204,9 +213,8 @@ for ind1 = 1:size(array,1)
         h = text( xx, yy, 0, str, 'interpreter', 'none', 'fontsize', 8);
     else
         h = text( x(ind1), y(ind1), 0, g.labels{ind1}, 'interpreter', 'none', 'fontsize', 8);
+        set(h, 'HorizontalAlignment','left', 'rotation', 90-anglesInit(ind1)/pi*180);
     end
-    %set(h, 'HorizontalAlignment','left', 'rotation', 90-anglesInit(ind1)/pi*180);
-    0;
 end
 if ~strcmpi(g.brainimg, 'off')
     if strcmpi(g.brainimg, 'bilateral')
