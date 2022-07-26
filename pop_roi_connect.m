@@ -7,13 +7,23 @@
 %  EEG - EEGLAB dataset containing ROI activity
 %
 % Optional inputs:
-%  'gc'        - ['on'|'off'] Granger Causality. Default 'off'.
-%  'trgc'      - ['on'|'off'] time-reverse Granger Causality. Default
-%                is 'off'.
-%  'mim'       - ['on'|'off'] Mututal Information Machine. Default
-%                is 'off'.
-%  'crossspec' - ['on'|'off'] cross-spectrum from which coherence can
-%                be derived. Default is 'off'.
+%  'morder'         - [integer]  Order of autoregressive model. Default is 20.
+%  'naccu'          - [integer]  Number of accumulation for stats. Default is 0.
+%  'methods'        - [cell] Cell of strings corresponding to methods.
+%                       'CS'    : Cross spectrum
+%                       'COH'   : Coherence
+%                       'GC'    : Granger Causality
+%                       'TRGC'  : Time-reversed Granger Causality
+%                       'wPLI'  : Weighted Phase Lag Index
+%                       'PDC'   : Partial directed coherence
+%                       'TRPDC' : Time-reversed partial directed coherence
+%                       'DTF'   : Directed transfer entropy
+%                       'TRDTF' : Time-reversed directed transfer entropy
+%                       'MIM'   : Multivariate Interaction Measure for each ROI
+%                       'MIC'   : Maximized Imaginary Coherency for each ROI
+%  'snippet'        - ['on'|off]  Option to compute connectivity over snippets. Default is 'off'. 
+%  'snip_length'    - ['on'|'off']  Length of the snippets. Default is 60 [seconds].
+%  'fcsave_format'  - ['mean_snips'|'all_snips']  Option to save mean over snippets (shape: 101,68,68) or all snippets (shape: n_snips,101,68,68).
 %
 % Output:
 %  EEG - EEGLAB dataset with field 'roi' containing connectivity info.
@@ -123,9 +133,11 @@ end
 % decode input parameters
 % -----------------------
 g = finputcheck(options, ...
-    { 'methods'        'cell'     { }                           {};
+    { 'morder'         'integer' { }                            20;
+      'naccu'          'integer' { }                            0;
+      'methods'        'cell'     { }                           {};
       'snippet'        'string'   { 'on', 'off' }               'off';
-      'snip_length'    'integer'  { }                            60; 
+      'snip_length'    'integer'  { }                           60; 
       'fcsave_format'  'string'   { 'mean_snips', 'all_snips'}  'mean_snips'});
 if ischar(g), error(g); end
 
@@ -154,20 +166,16 @@ if strcmpi(g.snippet, 'on')
     end
 
     source_roi_data_save = EEG.roi.source_roi_data;
-    source_roi_data_snips = zeros(EEG.roi.nROI, EEG.pnts, snip_eps, nsnips);
     for isnip = 1:nsnips
         roi_snip = source_roi_data_save(:,:,(isnip-1)* snip_eps + 1 : (isnip-1)* snip_eps + snip_eps); % cut source data into snippets
         EEG.roi.source_roi_data = single(roi_snip);
-        EEG = roi_connect(EEG, 'methods', g.methods); % compute connectivity over one snippet
+        EEG = roi_connect(EEG, 'morder', g.morder, 'naccu', g.naccu, 'methods', g.methods); % compute connectivity over one snippet
         for fc = 1:n_conn_metrics 
             fc_name = options{2}{fc};
             fc_matrix = EEG.roi.(fc_name);
             conn_matrices_snips{isnip,fc} = fc_matrix; % store each connectivity metric for each snippet in separate structure
         end
-        source_roi_data_snips(:,:,:,isnip) = EEG.roi.source_roi_data;
     end
-    source_roi_data = mean(source_roi_data_snips, 4); % mean over snippets
-    EEG.roi.source_roi_data = source_roi_data;
     
     % compute mean over connectivity of each snippet
     for fc = 1:n_conn_metrics
@@ -188,7 +196,7 @@ if strcmpi(g.snippet, 'on')
         end
     end
 else
-    EEG = roi_connect(EEG, 'methods', g.methods);
+    EEG = roi_connect(EEG, 'morder', g.morder, 'naccu', g.naccu, 'methods', g.methods);
 end
 
 if nargout > 1

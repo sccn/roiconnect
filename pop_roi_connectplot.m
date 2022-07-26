@@ -22,7 +22,6 @@
 %                           'mim' : Multivariate Interaction Measure for each ROI
 %  'freqrange'            - [min max] frequency range in Hz. Default is to plot broadband power.
 %  'smooth'               - [float] smoothing factor for cortex surface plotting
-%  'get_connect_mat'      - ['on'|'off'] create a ROI x ROI connectivity matrix, if needed
 %  'plotcortex'           - ['on'|'off'] plot results on smooth cortex. Default is 'on'
 %  'plotcortexparams'     - [cell] ...
 %  'plotcortexseedregion' - [string] plot seed voxel on cortex. Takes name of seed region as input.
@@ -264,7 +263,6 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
     g = finputcheck(options,  { 'measure'    'string'  {splot.acronym}  '';
         'freqrange'             'real'     { }                     [];
         'smooth'                'real'     { }                     0.35;
-        'get_connect_mat'       'string'   { 'on' 'off' }          'on';
         'plotcortex'            'string'   { 'on' 'off' }          'on';
         'plotcortexparams'      'cell'     { }                     {};
         'plotcortexseedregion'  'integer'  { }                     [];
@@ -304,19 +302,8 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
 %         TRGCnet = TRGCnet - permute(TRGCnet, [1 3 2]);
 %         TRGCnet = TRGCnet(:,:);
         
-        if strcmpi(g.get_connect_mat, 'on')
-            TRGCnet = S.TRGC(:, :, 1) - S.TRGC(:, :, 2);
-            TRGC = get_connect_mat( TRGCnet, S.nROI, -1);
-        else
-            TRGC = S.TRGC;
-        end
-        TRGC_matrix = squeeze(mean(TRGC(frq_inds, :, :)));
-        
-        MI = S.MIM(:, :);
-        if strcmpi(g.get_connect_mat, 'on')
-            MI = get_connect_mat( MI, S.nROI, +1);
-        end
-        MIM_matrix = squeeze(mean(MI(frq_inds, :, :)));
+        TRGC_matrix = squeeze(mean(S.TRGC(frq_inds, :, :)));
+        MIM_matrix = squeeze(mean(S.MIM(frq_inds, :, :)));
         
         roi_largeplot(EEG, MIM_matrix, TRGC_matrix, source_roi_power_norm_dB, titleStr)
     else     
@@ -347,17 +334,13 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
                 % calculation of net TRGC scores (i->j minus j->i), recommended procedure
                 % TRGCnet = TRGC_(:, 1:2:end)-TRGC_(:, 2:2:end);
                 % new way to compute net scores
-                if strcmpi(g.get_connect_mat, 'on') & strcmpi(g.measure, 'GC')
-%                     TRGCnet = S.GC; 
-                    TRGCnet = S.GC(:, :, 1) - S.GC(:, :, 2);
-                    TRGC = get_connect_mat( TRGCnet, S.nROI, -1);
-                elseif strcmpi(g.get_connect_mat, 'on') & strcmpi(g.measure, 'TRGC')
-%                    TRGCnet = S.TRGC; 
-                    TRGCnet = S.TRGC(:, :, 1) - S.TRGC(:, :, 2);
-                    TRGC = get_connect_mat( TRGCnet, S.nROI, -1);
-                elseif strcmpi(g.get_connect_mat, 'off') & strcmpi(g.measure, 'GC')
+                if strcmpi(g.measure, 'GC')
+%                     TRGCnet = S.GC(:, :, 1) - S.GC(:, :, 2);
+%                     TRGC = get_connect_mat( TRGCnet, S.nROI, -1);
                     TRGC = S.GC;
                 else
+%                     TRGCnet = S.TRGC(:, :, 1) - S.TRGC(:, :, 2);
+%                     TRGC = get_connect_mat( TRGCnet, S.nROI, -1);
                     TRGC = S.TRGC;
                 end
 %                 TRGCnet = TRGCnet - permute(TRGCnet, [1 3 2]); 
@@ -391,12 +374,11 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
 
             case { 'mim' 'mic' }
                 if strcmpi(g.measure, 'MIC')
-                    MI = S.MIC(:, :);
+                    % MI = S.MIC(:, :);
+                    MI = S.MIC;
                 else
-                    MI = S.MIM(:, :);
-                end
-                if strcmpi(g.get_connect_mat, 'on')
-                    MI = get_connect_mat( MI, S.nROI, +1);
+                    % MI = S.MIM(:, :);
+                    MI = S.MIM;
                 end
 
                 if strcmpi(g.plotmatrix, 'on')
