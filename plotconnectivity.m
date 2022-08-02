@@ -41,7 +41,7 @@
 % THE POSSIBILITY OF SUCH DAMAGE.
 
 % Test
-% plotconnectivity(rand(4,4), 'labels', { 'Dorso_lateral_prefrontal_cortex' 'Parietal_lobe' 'Thalamus' 'Visual_cortex' });
+% plotconnectivity(rand(4,4), 'labels', { 'Dorso_lateral_prefrontal_cortex' 'Parietal_lobe' 'Thalamus' 'Visual_cortex' }, 'brainimg', 'off');
 % plotconnectivity(rand(8,8), 'brainimg', 'bilateral', 'labels', { 'Dorso_lateral_prefrontal_cortex_L' 'Parietal_lobe_L' 'Thalamus_L' 'Visual_cortex_L' 'Dorso_lateral_prefrontal_cortex_R' 'Parietal_lobe_R' 'Thalamus_R' 'Visual_cortex_R' });
 % plotconnectivity(rand(4,4), 'brainimg', 'bilateral', 'labels', { 'Dorso_lateral_prefrontal_cortex_L' 'Parietal_lobe_L' 'Thalamus_L' 'Visual_cortex_L' });
 
@@ -57,8 +57,10 @@ linewidth = 1;
 
 g = finputcheck(varargin, { ...
     'labels'      'cell'      { }             {};
+    'labelsgroup'  'cell'      { }             {};
     'axis'        ''          {}              [];
-    'brainimg'   'string'    {'on' 'off' 'bilateral'}     'bilateral';
+    'colormap'    ''          {}              cool;
+    'brainimg'   'string'     {'on' 'off' 'bilateral'}     'bilateral';
     'threshold'   'real'      {}              0.25;
     }, 'roi_network');
 if isstr(g)
@@ -66,7 +68,7 @@ if isstr(g)
 end
 
 if g.threshold > 0
-    array(array < g.threshold) = 0;
+    array(abs(array) < g.threshold) = 0;
 end
 
 if size(array,1) ~= size(array,2)
@@ -77,6 +79,25 @@ if isempty(g.labels)
         disp('Cannot plot on brain with area labels')
         g.brainimg = 'off';
     end
+end
+
+% colors for labelgroups
+if ~isempty(g.labelsgroup)
+    groups = unique(g.labelsgroup);
+    %               green         yellow              purple    grey
+    colors = { 'r' [0 0.8 0] 'b' [0.7 0.7 0] 'k' 'm' [0.6 0.6 1] [0.5 0.5 0.5]};
+
+    % reorder by group
+    allinds = [];
+    for iGroup = 1:length(groups)
+        inds = strmatch(groups{iGroup}, g.labelsgroup, 'exact');
+        inds = sort(inds);
+        allinds = [ allinds; inds];
+    end
+    g.labelsgroup = g.labelsgroup(allinds);
+    g.labels      = g.labels(allinds);
+    array = array(allinds, :);
+    array = array(:,allinds);
 end
 
 if ~strcmpi(g.brainimg, 'off')
@@ -105,8 +126,6 @@ else
     anglesInit = linspace(0,2*pi,size(array,1)+1) + pi/size(array,1);
     x = sin(anglesInit)*radius;
     y = cos(anglesInit)*radius;
-    x(end) = [];
-    y(end) = [];
 end
 
 % settings
@@ -120,8 +139,54 @@ end
 % else                               cmap = yellowredbluecmap;
 % end
 
-% find channel coordinates
-% ------------------------
+% make lines between pairs of electrodes
+% --------------------------------------
+if isempty(g.axis)
+    if ~strcmpi(g.brainimg, 'off')
+        figure('position', [0 0 400 700])
+    else
+        figure;
+    end
+else
+    axes(g.axis); hold on;
+end
+if ~strcmpi(g.brainimg, 'off')
+    imagesc(img, 'AlphaData', alphachannel); axis off;
+    alpha(0.2)
+    hold on;
+    axis equal
+    set(gca, 'ydir', 'reverse');
+    pos = get(gca, 'position');
+    axes('position', pos); axis off; hold on;
+    set(gca, 'ydir', 'normal');
+else
+    hold on;
+    axis equal
+end
+axis equal;
+axis off;
+
+% plot dots
+if ~strcmpi(g.brainimg, 'off')
+    plot(x,y,'k');
+    plot(x,y,'.','markersize', 12);
+else
+    plot(x,y,'k-');
+    x(end) = [];
+    y(end) = []; % remove duplicate last point
+    for iX = 1:length(x)
+        if ~isempty(g.labelsgroup)
+            ind = strmatch(g.labelsgroup{iX}, groups, 'exact');
+            col = colors{ind}; %mod(ind-1, length(colors))+1};
+        else
+            col = 'r';
+        end
+        plot(x(iX),y(iX),'.','markersize', 12, 'color', col);
+    end
+end
+
+% rename labels
+% -------------
 if isempty(g.labels)
     for iPnt = 1:length(anglesInit)
         g.labels{iPnt} = sprintf('  Area %d', iPnt);
@@ -135,35 +200,13 @@ else
     end
 end
 
-% make lines between pairs of electrodes
-% --------------------------------------
-if isempty(g.axis)
-    figure('position', [0 0 400 700])
-else
-    axes(g.axis); hold on;
-end
-if ~strcmpi(g.brainimg, 'off')
-    imagesc(img, 'AlphaData', alphachannel); axis off;
-    alpha(0.2)
-    hold on;
-    axis equal
-    set(gca, 'ydir', 'reverse');
-    pos = get(gca, 'position');
-    axes('position', pos); axis off; hold on;
-    set(gca, 'ydir', 'normal');
-end
-axis equal;
-axis off;
-
-plot(x,y,'k');
-plot(x,y,'.','markersize', 12);
-
 warning off;
-color = 'r';
+arrayMin = min(array(:));
+arrayMax = max(array(:));
 for ind1 = 1:size(array,1)
     for ind2 = 1:size(array,2)
         if ind1 ~= ind2
-            if array(ind1, ind2) > 0
+            if array(ind1, ind2) ~= 0
 
                 aa = [x(ind1) y(ind1)];
                 bb = [x(ind2) y(ind2)];
@@ -187,8 +230,8 @@ for ind1 = 1:size(array,1)
                     pnts = linspace(angles(1),angles(2),round(diff(angles)*10));
                     x2 = sin(pnts)*radius+center(1);
                     y2 = cos(pnts)*radius+center(2);
-                    plot(x2,y2,'-');
-                    0;
+                    col = ceil((array(ind1, ind2)-arrayMin)/(arrayMax-arrayMin)*size(g.colormap,1)+1);
+                    plot(x2,y2,'-', 'color', g.colormap(col, :));
                 end
             end
         end
@@ -203,10 +246,13 @@ for ind1 = 1:size(array,1)
         end
         h = text( xx, yy, 0, str, 'interpreter', 'none', 'fontsize', 8);
     else
-        h = text( x(ind1), y(ind1), 0, g.labels{ind1}, 'interpreter', 'none', 'fontsize', 8);
+        if ~isempty(g.labelsgroup)
+            ind = strmatch(g.labelsgroup{ind1}, groups, 'exact');
+            col = colors{ind}; %mod(ind-1, length(colors))+1};
+        end
+        h = text( x(ind1), y(ind1), 0, [ ' ' g.labels{ind1} ], 'interpreter', 'none', 'fontsize', 8, 'color', col);
+        set(h, 'HorizontalAlignment','left', 'rotation', 90-anglesInit(ind1)/pi*180);
     end
-    %set(h, 'HorizontalAlignment','left', 'rotation', 90-anglesInit(ind1)/pi*180);
-    0;
 end
 if ~strcmpi(g.brainimg, 'off')
     if strcmpi(g.brainimg, 'bilateral')
