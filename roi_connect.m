@@ -110,22 +110,22 @@ function EEG = roi_connect(EEG, varargin)
     end
 
 
-    function EEG = vec2mat(EEG)
-        % convert to matrices
-        nroi = EEG.roi.nROI;
-        iinds = 0;
-        for iroi = 1:nroi
-            for jroi = (iroi+1):nroi
-                iinds = iinds + 1;
-                mim_(iroi, jroi,:) = EEG.roi.MIM(:, iinds);
-                mim_(jroi,iroi,:) = mim_(iroi,jroi,:);
-                trgc_(iroi,jroi,:) = EEG.roi.TRGC(:,iinds,1) - EEG.roi.TRGC(:,iinds,2);
-                trgc_(jroi,iroi,:) = -trgc_(iroi,jroi,:);
-            end
-        end
-        EEG.roi.MIM_matrix = mim_; 
-        EEG.roi.TRGC_matrix = trgc_;
-    end
+%     function EEG = vec2mat(EEG)
+%         % convert to matrices
+%         nroi = EEG.roi.nROI;
+%         iinds = 0;
+%         for iroi = 1:nroi
+%             for jroi = (iroi+1):nroi
+%                 iinds = iinds + 1;
+%                 mim_(iroi, jroi,:) = EEG.roi.MIM(:, iinds);
+%                 mim_(jroi,iroi,:) = mim_(iroi,jroi,:);
+%                 trgc_(iroi,jroi,:) = EEG.roi.TRGC(:,iinds,1) - EEG.roi.TRGC(:,iinds,2);
+%                 trgc_(jroi,iroi,:) = -trgc_(iroi,jroi,:);
+%             end
+%         end
+%         EEG.roi.MIM_matrix = mim_; 
+%         EEG.roi.TRGC_matrix = trgc_;
+%     end
 
     function measure = get_connect_mat( measureOri, nROI, signVal)
         % create a ROI x ROI connectivity matrix, if needed

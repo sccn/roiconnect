@@ -138,7 +138,7 @@ g = finputcheck(options, ...
       'methods'        'cell'     { }                           {};
       'snippet'        'string'   { 'on', 'off' }               'off';
       'snip_length'    'integer'  { }                           60; 
-      'fcsave_format'  'string'   { 'mean_snips', 'all_snips'}  'mean_snips'});
+      'fcsave_format'  'string'   { 'mean_snips', 'all_snips'}  'mean_snips'}, 'pop_roi_connect');
 if ischar(g), error(g); end
 
 % process multiple datasets

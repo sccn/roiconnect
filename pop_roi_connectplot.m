@@ -343,9 +343,6 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
 %                     TRGC = get_connect_mat( TRGCnet, S.nROI, -1);
                     TRGC = S.TRGC;
                 end
-%                 TRGCnet = TRGCnet - permute(TRGCnet, [1 3 2]); 
-%                 TRGCnet = TRGCnet(:,:); 
-%                 TRGCnet = S.GC(:, :, 1) - S.GC(:, :, 2);
 
                 if strcmpi(g.plotmatrix, 'on')
                     matrix = squeeze(mean(TRGC(frq_inds, :, :)));
@@ -374,14 +371,15 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
 
             case { 'mim' 'mic' }
                 if strcmpi(g.measure, 'MIC')
-                    % MI = S.MIC(:, :);
+%                     MI = S.MIC(:, :);
                     MI = S.MIC;
                 else
-                    % MI = S.MIM(:, :);
+%                     MI = S.MIM(:, :);
                     MI = S.MIM;
                 end
 
                 if strcmpi(g.plotmatrix, 'on')
+%                     MI = get_connect_mat(MI, S.nROI, +1);
                     matrix = squeeze(mean(MI(frq_inds, :, :)));
                     roi_plotcoloredlobes(EEG, matrix, titleStr, g.measure, g.hemisphere, g.region);
                 end
@@ -450,19 +448,19 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
     end
 end
 
-function measure = get_connect_mat( measureOri, nROI, signVal)
-    % create a ROI x ROI connectivity matrix, if needed
-    % TRGCmat(f, ii, jj) is net TRGC from jj to ii
-    measure = [];
-    iinds = 0;
-    for iroi = 1:nROI
-        for jroi = (iroi+1):nROI
-            iinds = iinds + 1;
-            measure(:, iroi, jroi) = signVal * measureOri(:, iinds);
-            measure(:, jroi, iroi) = measureOri(:, iinds);
-        end
-    end
-end
+% function measure = get_connect_mat( measureOri, nROI, signVal)
+%     % create a ROI x ROI connectivity matrix, if needed
+%     % TRGCmat(f, ii, jj) is net TRGC from jj to ii
+%     measure = [];
+%     iinds = 0;
+%     for iroi = 1:nROI
+%         for jroi = (iroi+1):nROI
+%             iinds = iinds + 1;
+%             measure(:, iroi, jroi) = signVal * measureOri(:, iinds);
+%             measure(:, jroi, iroi) = measureOri(:, iinds);
+%         end
+%     end
+% end
 
 function [coordinate, seed_idx] = get_seedregion_coordinate(scouts, seed_idx, vc)
     % determine voxel of selected seed region, if needed
