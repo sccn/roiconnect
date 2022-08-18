@@ -51,6 +51,7 @@ end
 g = finputcheck(varargin, { ...
     'freqrange'       {'cell' 'real'}  { [] [] }       {};
     'saveasfile'      'string'         { }             '';
+    'noplot'          'string'         { 'on' 'off' }  'off';
     'precomputed'     'struct'         { }             struct([]);
     'limits'          ''               []              [];
     'slice'           'integer'        []              [5 8 10 15 18]}, 'roi_sourceplot');
@@ -61,7 +62,9 @@ if ~iscell(g.freqrange)
     g.freqrange = { g.freqrange };
 end
 
-figure('paperpositionmode', 'auto', 'position', [1440  200  814 1138]);
+if strcmpi(g.noplot, 'off')
+    figure('paperpositionmode', 'auto', 'position', [1440  200  814 1138]);
+end
 alldata = [];
 for iFreq = 1:length(g.freqrange)
     
@@ -143,31 +146,33 @@ for iFreq = 1:length(g.freqrange)
         fieldVal = sprintf('loreta%1.0fto%1.0fHz_slice%d', g.freqrange{iFreq}(1), g.freqrange{iFreq}(2), g.slice(iSlice));
         alldata.(fieldVal) = res;
         
-        resrgb = ones([size(res) 3]);
-        for iPix1 = 1:size(res,1)
-            for iPix2 = 1:size(res,2)
-                if res(iPix1,iPix2) ~= 0
-                    ind = ceil((res(iPix1,iPix2)-mi)/(mx-mi)*(size(cmap,1)-1))+1;
-                    ind = max(1, ind);
-                    ind = min(size(cmap,1), ind);
-                    resrgb(iPix1,iPix2,:) = cmap(ind,:);
+        if strcmpi(g.noplot, 'off')
+            resrgb = ones([size(res) 3]);
+            for iPix1 = 1:size(res,1)
+                for iPix2 = 1:size(res,2)
+                    if res(iPix1,iPix2) ~= 0
+                        ind = ceil((res(iPix1,iPix2)-mi)/(mx-mi)*(size(cmap,1)-1))+1;
+                        ind = max(1, ind);
+                        ind = min(size(cmap,1), ind);
+                        resrgb(iPix1,iPix2,:) = cmap(ind,:);
+                    end
                 end
             end
-        end
-        
-        subplot(length(g.slice), length(g.freqrange), iFreq + length(g.freqrange)*(iSlice-1));
-        imagesc(resrgb); axis equal; axis off;
-        if iSlice == 1
-            if length(g.freqrange{iFreq}) == 2
-                h = title(sprintf('%1.1f-%1.1f Hz', g.freqrange{iFreq}(1), g.freqrange{iFreq}(2)));
-            else
-                h = title(sprintf('%1.1f Hz', g.freqrange{iFreq}));
+            
+            subplot(length(g.slice), length(g.freqrange), iFreq + length(g.freqrange)*(iSlice-1));
+            imagesc(resrgb); axis equal; axis off;
+            if iSlice == 1
+                if length(g.freqrange{iFreq}) == 2
+                    h = title(sprintf('%1.1f-%1.1f Hz', g.freqrange{iFreq}(1), g.freqrange{iFreq}(2)));
+                else
+                    h = title(sprintf('%1.1f Hz', g.freqrange{iFreq}));
+                end
+                set(h, 'fontsize', 12);
             end
-            set(h, 'fontsize', 12);
         end
     end
 end
-if ~isempty(g.saveasfile)
+if ~isempty(g.saveasfile) && strcmpi(g.noplot, 'off')
     print('-djpeg', g.saveasfile);
     close
 end
