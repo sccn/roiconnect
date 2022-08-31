@@ -79,10 +79,10 @@ for iNet = 1:length(loreta_Networks)
     
     % 3-D plot
     if strcmpi(g.plotmode, '3D') || strcmpi(g.plotmode, 'both')
-        options = {};
+        options = {'brainmovieopt' { 'moviename' '' } };
         if ~strcmpi(g.subplots, 'on') && ~isempty(g.filename)
             tmpFileName = [ g.filename '_' loreta_Networks(iNet).name '_3d' ];
-            options = { 'filename'  tmpFileName };
+            options = { options{:} 'filename'  tmpFileName };
             imgFileName{end+1} = [ tmpFileName '.xhtml' ];
         end
         roi_plotbrainmovie(connectSpecSelect{iNet}(:,:), 'labels', labels, 'threshold', 0.1, options{:});
