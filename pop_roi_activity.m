@@ -233,7 +233,8 @@ end
     'atlas'           'string'              {}               '';
     'resample'        'string'              { 'on' 'off'}    'off';
     'regepochs'       'string'              { 'on' 'off'}    'off';
-    'nPCA'            'real'                {}               3 }, 'pop_roi_activity', 'ignore');
+    'nPCA'            'real'                {}               3;
+    'fooof'           'string'              { 'on' 'off'}    'off'}, 'pop_roi_activity', 'ignore');
 if ischar(g), error(g); end
 
 if strcmpi(g.resample, 'on')

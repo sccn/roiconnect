@@ -87,6 +87,7 @@ g = finputcheck(varargin, { ...
     'roiactivity' 'string' { 'on' 'off' }    'on';
     'channelpower' 'string' { 'on' 'off' }    'off';
     'exportvoxact' 'string' { 'on' 'off' }   'off';
+    'fooof'  'string'  { 'on' 'off'}  'off';
     'outputdir'   'string'  { }              '' }, 'roi_activity');
 if ischar(g), error(g); end
 if isempty(g.leadfield), error('Leadfield is mandatory parameter'); end
@@ -305,6 +306,10 @@ if strcmpi(g.roiactivity, 'on')
         
         [source_roi_data_tmp, nPCAs(iROI)] = roi_getact(source_voxel_data, ind_roi, g.nPCA);
         source_roi_data = cat(2, source_roi_data, source_roi_data_tmp);
+        if strcmpi(g.fooof, 'on')
+            disp(size(source_roi_data));
+            disp(size(source_roi_power));
+        end
     end
 
     % version with nPCA components

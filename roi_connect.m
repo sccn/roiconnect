@@ -87,7 +87,7 @@ function EEG = roi_connect(EEG, varargin)
         end
     end
 
-    % % MIC and MIM use a different function
+    % MIC and MIM use a different function
     if any(ismember(g.methods, 'MIC')) || any(ismember(g.methods, 'MIM'))
         tmpMethods = setdiff(g.methods, { 'CS' 'COH' 'PSD' 'PSDROI' 'GC' 'TRGC' 'wPLI' 'PDC' 'TRPDC' 'DTF' 'TRDTF' });
         conn_mult = data2sctrgcmim(source_roi_data, EEG.srate, g.morder, 0, g.naccu, [], inds, tmpMethods);
