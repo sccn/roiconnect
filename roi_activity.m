@@ -219,15 +219,15 @@ fres = EEG.srate;
 % from the MVGC toolbox, compute frequencies in Hz for a
 frqs = sfreqs(fres, EEG.srate);
 
+% common average reference transform
+H = eye(EEG.nbchan) - ones(EEG.nbchan) ./ EEG.nbchan;
+
+% apply to data and leadfield
+EEG.data = reshape(H*EEG.data(:, :), EEG.nbchan, EEG.pnts, EEG.trials);
+leadfield = reshape(H*leadfield(:, :), EEG.nbchan, nvox, 3);
+
 %% source reconstruction
 if strcmpi(g.model, 'eLoreta')
-    % common average reference transform
-    H = eye(EEG.nbchan) - ones(EEG.nbchan) ./ EEG.nbchan;
-
-    % apply to data and leadfield
-    EEG.data = reshape(H*EEG.data(:, :), EEG.nbchan, EEG.pnts, EEG.trials);
-    leadfield = reshape(H*leadfield(:, :), EEG.nbchan, nvox, 3);
-
     % eLORETA inverse projection kernel
     disp('Computing eLoreta...');
     P_eloreta = mkfilt_eloreta_v2(leadfield, g.modelparams{:});
