@@ -228,13 +228,14 @@ end
 %    'export2icamatrix' 'string' {'on', 'off'}   'off';
 [g, moreargs] = finputcheck(options, { ...
     'leadfield'       { 'string' 'struct' } { { }  {} }      '';
-    'model'           'string'              strComputeShort 'LCMV';
+    'model'           'string'              strComputeShort  'LCMV';
     'modelparams'     'cell'                {}               {};
     'atlas'           'string'              {}               '';
     'resample'        'string'              { 'on' 'off'}    'off';
     'regepochs'       'string'              { 'on' 'off'}    'off';
     'nPCA'            'real'                {}               3;
-    'fooof'           'string'              { 'on' 'off'}    'off'}, 'pop_roi_activity', 'ignore');
+    'fooof'           'string'              { 'on' 'off'}    'off';
+    'fooof_frange'     ''                   {}               [1 30]}, 'pop_roi_activity', 'ignore');
 if ischar(g), error(g); end
 
 if strcmpi(g.resample, 'on')
@@ -255,7 +256,7 @@ end
 
 EEG = roi_activity(EEG, 'leadfield', g.leadfield, 'headmodel', EEG.dipfit.hdmfile, ...
     'model', g.model, 'modelparams', g.modelparams, 'sourcemodel', sourceModelFile, ...
-    'sourcemodel2mni', sourceModel2MNI, 'nPCA', g.nPCA, ...
+    'sourcemodel2mni', sourceModel2MNI, 'nPCA', g.nPCA,'fooof', g.fooof, 'fooof_frange', g.fooof_frange, ...
     'sourcemodelatlas', g.atlas, moreargs{:});
 
 if nargout > 1

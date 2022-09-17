@@ -30,6 +30,9 @@
 %                'off'.
 %  'exportvoxact' - ['on'|'off'] export voxel activity in EEG.roi.source_voxel_data
 %                These array are huge, so the default is 'off'.
+%  'fooof'     - ['on'|'off'] enable FOOOF analysis. Default is 'off'.
+%  'fooof_frange' - [''] FOOOF fitting range. Default is [1 30] like in the
+%                        example.
 %
 % Output:
 %  EEG - EEGLAB dataset with field 'roi' containing connectivity info.
@@ -75,20 +78,21 @@ end
 % decode input parameters
 % -----------------------
 g = finputcheck(varargin, { ...
-    'leadfield'  {'struct' 'string'}  {{} {}}             '';
-    'headmodel'   'string'  { }             ''; % sometimes useful when loading volume to see which voxels are inside/outside
-    'sourcemodel' 'string'  { }             '';
-    'sourcemodel2mni' 'real'    { }         [];
-    'sourcemodelatlas' 'string'    { }      '';
-    'modelparams'   'cell'    { }          { 0.05 };
-    'model'          'string'    { 'eLoretaFieldtrip' 'lcmvFieldtrip' 'eLoreta' 'lcmv' } 'eLoreta';
-    'nPCA'        'integer' { }              3;
-    'downsample'  'integer' { }              1;
-    'roiactivity' 'string' { 'on' 'off' }    'on';
-    'channelpower' 'string' { 'on' 'off' }    'off';
-    'exportvoxact' 'string' { 'on' 'off' }   'off';
-    'fooof'  'string'  { 'on' 'off'}  'off';
-    'outputdir'   'string'  { }              '' }, 'roi_activity');
+    'leadfield'        {'struct' 'string'}  {{} {}}         '';
+    'headmodel'        'string'             { }             ''; % sometimes useful when loading volume to see which voxels are inside/outside
+    'sourcemodel'      'string'             { }             '';
+    'sourcemodel2mni'  'real'               { }             [];
+    'sourcemodelatlas' 'string'             { }             '';
+    'modelparams'      'cell'               { }         { 0.05 };
+    'model'            'string'             { 'eLoretaFieldtrip' 'lcmvFieldtrip' 'eLoreta' 'lcmv' } 'eLoreta';
+    'nPCA'             'integer'            { }              3;
+    'downsample'       'integer'            { }              1;
+    'roiactivity'      'string'             { 'on' 'off' }  'on';
+    'channelpower'     'string'             { 'on' 'off' }  'off';
+    'exportvoxact'     'string'             { 'on' 'off' }  'off';
+    'fooof'            'string'             { 'on' 'off'}   'off';
+    'fooof_frange'     ''                   {}              [1 30];
+    'outputdir'        'string'  { }              '' }, 'roi_activity');
 if ischar(g), error(g); end
 if isempty(g.leadfield), error('Leadfield is mandatory parameter'); end
 
@@ -299,6 +303,14 @@ if strcmpi(g.roiactivity, 'on')
     tmpWelch = squeeze(mean(tmpWelch,2)); % remove trials size freqs x voxels x 3
     tmpWelch = squeeze(mean(tmpWelch,3)); % remove 3rd dim size freqs x voxels
     
+%     fooof settings
+    if strcmpi(g.fooof, 'on')
+        f_range = g.fooof_frange; % freq range where 1/f should be fitted 
+        settings = struct(); % use defaults
+        slope = zeros(1, nROI);
+        PS_corrected2 = zeros(size(frqs, 1), size(frqs, 2), nROI);
+    end
+    
     for iROI = 1:nROI
         ind_roi = cortex.Atlas.Scouts(iROI).Vertices;
         [~, source_roi_power_norm(iROI)] = roi_getpower(source_voxel_data, ind_roi); 
@@ -307,8 +319,25 @@ if strcmpi(g.roiactivity, 'on')
         [source_roi_data_tmp, nPCAs(iROI)] = roi_getact(source_voxel_data, ind_roi, g.nPCA);
         source_roi_data = cat(2, source_roi_data, source_roi_data_tmp);
         if strcmpi(g.fooof, 'on')
-            disp(size(source_roi_data));
-            disp(size(source_roi_power));
+            ps1 = source_roi_power(:,iROI);
+            fooof_result = fooof(frqs, ps1, f_range, settings, true);
+            
+            offset = fooof_result.aperiodic_params(1);
+            slope(iROI) = fooof_result.aperiodic_params(2);
+            y = (-slope(iROI) .* log10(frqs)) + offset;
+            PS_corrected2(:,:,iROI) = 10*log10(ps1)-10*y;
+            
+%             sp = subplot(1,2,1);
+%             plot(log10(frqs),y)
+%             hold on
+%             plot(log10(frqs),log10(ps1))
+% 
+%             rectX = log10(f_range);
+%             rectY = ylim([sp]);
+%             pch = patch(sp,rectX([1 2 2 1]), rectY([1 1 2 2]),'r','EdgeColor','none','FaceAlpha',0.1);
+% 
+%             ylabel('log10(Power)')
+%             xlabel('log10(Frequency)')
         end
     end
 
@@ -340,6 +369,10 @@ EEG.roi.headmodel = g.headmodel;
 EEG.roi.parameters = varargin;
 if exist('P_eloreta', 'var')
     EEG.roi.P_eloreta = single(P_eloreta);
+end
+if strcmpi(g.fooof, 'on')
+    EEG.roi.fooof_results.slope = slope;
+    EEG.roi.fooof_results.PS_corrected2 = PS_corrected2;
 end
 
 % get channel power for comparison
