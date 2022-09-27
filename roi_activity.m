@@ -303,12 +303,12 @@ if strcmpi(g.roiactivity, 'on')
     tmpWelch = squeeze(mean(tmpWelch,2)); % remove trials size freqs x voxels x 3
     tmpWelch = squeeze(mean(tmpWelch,3)); % remove 3rd dim size freqs x voxels
     
-%     fooof settings
+    % fooof settings
     if strcmpi(g.fooof, 'on')
         f_range = g.fooof_frange; % freq range where 1/f should be fitted 
         settings = struct(); % use defaults
         slope = zeros(1, nROI);
-        PS_corrected2 = zeros(size(frqs, 1), size(frqs, 2), nROI);
+        PS_corrected = zeros(size(frqs, 1), size(frqs, 2), nROI);
     end
     
     for iROI = 1:nROI
@@ -325,12 +325,12 @@ if strcmpi(g.roiactivity, 'on')
             offset = fooof_result.aperiodic_params(1);
             slope(iROI) = fooof_result.aperiodic_params(2);
             y = (-slope(iROI) .* log10(frqs)) + offset;
-            PS_corrected2(:,:,iROI) = 10*log10(ps1)-10*y;
+            PS_corrected(:,:,iROI) = 10*log10(ps1)-10*y;
             
 %             sp = subplot(1,2,1);
-%             plot(log10(frqs),y)
-%             hold on
-%             plot(log10(frqs),log10(ps1))
+% %             plot(log10(frqs),y)
+% %             hold on
+%             plot(log10(frqs),log10(squeeze(PS_corrected(:,:,iROI))))
 % 
 %             rectX = log10(f_range);
 %             rectY = ylim([sp]);
@@ -372,7 +372,9 @@ if exist('P_eloreta', 'var')
 end
 if strcmpi(g.fooof, 'on')
     EEG.roi.fooof_results.slope = slope;
-    EEG.roi.fooof_results.PS_corrected2 = PS_corrected2;
+    EEG.roi.fooof_results.offset = offset;
+    EEG.roi.fooof_results.PS = ps1;
+    EEG.roi.fooof_results.PS_corrected = squeeze(PS_corrected);
 end
 
 % get channel power for comparison

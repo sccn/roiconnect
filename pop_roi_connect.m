@@ -22,9 +22,8 @@
 %                       'MIM'   : Multivariate Interaction Measure for each ROI
 %                       'MIC'   : Maximized Imaginary Coherency for each ROI
 %  'snippet'        - ['on'|off]  Option to compute connectivity over snippets. Default is 'off'. 
-%  'snip_length'    - ['on'|'off']  Length of the snippets. Default is 60 [seconds].
-%  'fcsave_format'  - ['mean_snips'|'all_snips']  Option to save mean over
-%  snippets (shape: 101,68,68) or all snippets (shape: n_snips,101,68,68). Default is 'mean_snips.'
+%  'snip_length'    - ['on'|'off']  Length of the snippets. Default is 60 seconds.
+%  'fcsave_format'  - ['mean_snips'|'all_snips']  Option to save mean over snippets (shape: 101,68,68) or all snippets (shape: n_snips,101,68,68). Default is 'mean_snips.'
 %
 % Output:
 %  EEG - EEGLAB dataset with field 'roi' containing connectivity info.

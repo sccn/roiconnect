@@ -279,6 +279,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
 
     % colormap
     load cm17;
+    load cm18;
 
     % frequency range
     if ~isempty(g.freqrange)
@@ -332,7 +333,6 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
 
             case { 'trgc' 'gc' }
                 % calculation of net TRGC scores (i->j minus j->i), recommended procedure
-                % TRGCnet = TRGC_(:, 1:2:end)-TRGC_(:, 2:2:end);
                 % new way to compute net scores
                 if strcmpi(g.measure, 'GC')
 %                     TRGCnet = S.GC(:, :, 1) - S.GC(:, :, 2);
@@ -388,10 +388,12 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
                     if isempty(g.plotcortexseedregion)
                         ami = mean(squeeze(mean(MI(frq_inds, :, :))), 2);
                         allplots_cortex_BS(S.cortex, ami, [min(ami) max(ami)], cm17a, upper(g.measure), g.smooth);
+                        movegui(gcf, 'south')
                     else
                         [coordinate, seed_idx] = get_seedregion_coordinate(EEG.roi.atlas.Scouts, g.plotcortexseedregion, EEG.roi.cortex.Vertices);
                         ami = squeeze(mean(MI(frq_inds, seed_idx,:)));
                         allplots_cortex_BS(S.cortex, ami, [min(ami) max(ami)], cm17a, upper(g.measure), g.smooth, [], {coordinate});
+                        movegui(gcf, 'south')
                     end
                     h = textsc([ upper(g.measure) ' (' titleStr ') '], 'title');
                     set(h, 'fontsize', 20);
@@ -487,12 +489,12 @@ end
         
 function roi_plotcoloredlobes( EEG, matrix, titleStr, measure, hemisphere, region)
     % plot matrix with colored labels sorted by region according to the Desikan-Killiany atlas    
-    load cm17
+    load cm18
     switch lower(measure)
         case {'mim', 'mic', 'coh'}
-            cmap = cm17a;
+            cmap = cm18a;
         otherwise
-            cmap = cm17;
+            cmap = cm18;
     end
     
     % retrieve labels from atlas

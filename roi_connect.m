@@ -87,28 +87,39 @@ function EEG = roi_connect(EEG, varargin)
         end
     end
 
-    % MIC and MIM use a different function
-    if any(ismember(g.methods, 'MIC')) || any(ismember(g.methods, 'MIM'))
-        tmpMethods = setdiff(g.methods, { 'CS' 'COH' 'PSD' 'PSDROI' 'GC' 'TRGC' 'wPLI' 'PDC' 'TRPDC' 'DTF' 'TRDTF' });
+    % MIC, MIM, GC and TRGC use data2strcgmim, remaining metrics use data2spwctrgc
+    if any(ismember(g.methods, 'MIC')) || any(ismember(g.methods, 'MIM')) || any(ismember(g.methods, 'GC')) || any(ismember(g.methods, 'TRGC'))
+        tmpMethods = setdiff(g.methods, { 'CS' 'COH' 'PSD' 'PSDROI' 'wPLI' 'PDC' 'TRPDC' 'DTF' 'TRDTF' });
         conn_mult = data2sctrgcmim(source_roi_data, EEG.srate, g.morder, 0, g.naccu, [], inds, tmpMethods);
         fields = fieldnames(conn_mult);
         for iField = 1:length(fields)
             EEG.roi.(fields{iField}) = conn_mult.(fields{iField});
         end
         for iMethods = 1:length(tmpMethods)
-            MI = EEG.roi.(tmpMethods{iMethods})(:, :);
-            EEG.roi.(tmpMethods{iMethods}) = get_connect_mat( MI, EEG.roi.nROI, +1);
+            if strcmpi(tmpMethods{iMethods}, 'MIM') || strcmpi(tmpMethods{iMethods}, 'MIC')
+                MI = EEG.roi.(tmpMethods{iMethods})(:, :);
+                EEG.roi.(tmpMethods{iMethods}) = get_connect_mat( MI, EEG.roi.nROI, +1);
+            else  % GC/TRGC
+                TRGCnet = EEG.roi.(tmpMethods{iMethods})(:, :, 1) - EEG.roi.(tmpMethods{iMethods})(:, :, 2);
+%                 TRGCnet = EEG.roi.(tmpMethods{iMethods});
+%                 TRGCnet = TRGCnet - permute(TRGCnet, [1 3 2]);
+%                 TRGCnet = TRGCnet(:,:);
+                EEG.roi.(tmpMethods{iMethods}) = get_connect_mat( TRGCnet, EEG.roi.nROI, -1); 
+            end
         end
     end
-    tmpMethods2 = setdiff(g.methods, { 'MIM' 'MIC' });
+    tmpMethods2 = setdiff(g.methods, { 'MIM' 'MIC' 'GC' 'TRGC' });
     if ~isempty(tmpMethods2)
         conn_mult = data2spwctrgc(source_roi_data, EEG.srate, g.morder, 0, g.naccu, [], tmpMethods2);
         fields = fieldnames(conn_mult);
         for iField = 1:length(fields)
             EEG.roi.(fields{iField}) = conn_mult.(fields{iField});
         end
+        for iMethods = 1:length(tmpMethods2)
+            MI = EEG.roi.(tmpMethods2{iMethods})(:, :);
+            EEG.roi.(tmpMethods2{iMethods}) = get_connect_mat( MI, EEG.roi.nROI, +1);
+        end
     end
-
 
 %     function EEG = vec2mat(EEG)
 %         % convert to matrices
