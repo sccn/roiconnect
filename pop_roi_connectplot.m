@@ -636,7 +636,7 @@ end
 
 function roi_largeplot(EEG, mim, trgc, roipsd, titleStr)
     % plot MIM, TRGC and power (barplot) in a single large figure
-    load cm17
+    load cm18
     
     % plot matrix with colored labels sorted by region according to the
     % Desikan-Killiany atlas
@@ -692,8 +692,8 @@ function roi_largeplot(EEG, mim, trgc, roipsd, titleStr)
             ax.YTickLabel{ceil(i)} = sprintf('\\color[rgb]{%f,%f,%f}%s', colors{color_idxx(i)}, ax.YTickLabel{ceil(i)});
         end
     end
-    colormap(plt(1), cm17a)
-    colormap(plt(2), cm17)
+    colormap(plt(1), cm18a)
+    colormap(plt(2), cm18)
     
     % power
     subplot(1,3,3);
