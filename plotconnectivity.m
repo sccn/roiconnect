@@ -57,6 +57,7 @@ linewidth = 1;
 
 g = finputcheck(varargin, { ...
     'labels'      'cell'      { }             {};
+    'labelsgroup'  'cell'      { }             {};
     'axis'        ''          {}              [];
     'colormap'    ''          {}              cool;
     'brainimg'   'string'     {'on' 'off' 'bilateral'}     'bilateral';
@@ -78,6 +79,25 @@ if isempty(g.labels)
         disp('Cannot plot on brain with area labels')
         g.brainimg = 'off';
     end
+end
+
+% colors for labelgroups
+if ~isempty(g.labelsgroup)
+    groups = unique(g.labelsgroup);
+    %               green         yellow              purple    grey
+    colors = { 'r' [0 0.8 0] 'b' [0.7 0.7 0] 'k' 'm' [0.6 0.6 1] [0.5 0.5 0.5]};
+
+    % reorder by group
+    allinds = [];
+    for iGroup = 1:length(groups)
+        inds = strmatch(groups{iGroup}, g.labelsgroup, 'exact');
+        inds = sort(inds);
+        allinds = [ allinds; inds];
+    end
+    g.labelsgroup = g.labelsgroup(allinds);
+    g.labels      = g.labels(allinds);
+    array = array(allinds, :);
+    array = array(:,allinds);
 end
 
 if ~strcmpi(g.brainimg, 'off')
@@ -106,8 +126,6 @@ else
     anglesInit = linspace(0,2*pi,size(array,1)+1) + pi/size(array,1);
     x = sin(anglesInit)*radius;
     y = cos(anglesInit)*radius;
-    x(end) = [];
-    y(end) = [];
 end
 
 % settings
@@ -120,21 +138,6 @@ end
 % if strcmpi(g.colormap, 'bluered'), cmap = redbluecmap; cmap = cmap(end:-1:1,:);
 % else                               cmap = yellowredbluecmap;
 % end
-
-% find channel coordinates
-% ------------------------
-if isempty(g.labels)
-    for iPnt = 1:length(anglesInit)
-        g.labels{iPnt} = sprintf('  Area %d', iPnt);
-    end
-elseif length(x) ~= length(g.labels)
-    error('Wrong number of labels');
-else
-    for iPnt = 1:length(g.labels)
-        g.labels{iPnt} = strrep(g.labels{iPnt}, 'Brodmann area', 'BA');
-        g.labels{iPnt} = [ ' ' g.labels{iPnt} ];
-    end
-end
 
 % make lines between pairs of electrodes
 % --------------------------------------
@@ -163,8 +166,39 @@ end
 axis equal;
 axis off;
 
-plot(x,y,'k');
-plot(x,y,'.','markersize', 12);
+% plot dots
+if ~strcmpi(g.brainimg, 'off')
+    plot(x,y,'k');
+    plot(x,y,'.','markersize', 12);
+else
+    plot(x,y,'k-');
+    x(end) = [];
+    y(end) = []; % remove duplicate last point
+    for iX = 1:length(x)
+        if ~isempty(g.labelsgroup)
+            ind = strmatch(g.labelsgroup{iX}, groups, 'exact');
+            col = colors{ind}; %mod(ind-1, length(colors))+1};
+        else
+            col = 'r';
+        end
+        plot(x(iX),y(iX),'.','markersize', 12, 'color', col);
+    end
+end
+
+% rename labels
+% -------------
+if isempty(g.labels)
+    for iPnt = 1:length(anglesInit)
+        g.labels{iPnt} = sprintf('  Area %d', iPnt);
+    end
+elseif length(x) ~= length(g.labels)
+    error('Wrong number of labels');
+else
+    for iPnt = 1:length(g.labels)
+        g.labels{iPnt} = strrep(g.labels{iPnt}, 'Brodmann area', 'BA');
+        g.labels{iPnt} = [ ' ' g.labels{iPnt} ];
+    end
+end
 
 warning off;
 arrayMin = min(array(:));
@@ -212,7 +246,11 @@ for ind1 = 1:size(array,1)
         end
         h = text( xx, yy, 0, str, 'interpreter', 'none', 'fontsize', 8);
     else
-        h = text( x(ind1), y(ind1), 0, g.labels{ind1}, 'interpreter', 'none', 'fontsize', 8);
+        if ~isempty(g.labelsgroup)
+            ind = strmatch(g.labelsgroup{ind1}, groups, 'exact');
+            col = colors{ind}; %mod(ind-1, length(colors))+1};
+        end
+        h = text( x(ind1), y(ind1), 0, [ ' ' g.labels{ind1} ], 'interpreter', 'none', 'fontsize', 8, 'color', col);
         set(h, 'HorizontalAlignment','left', 'rotation', 90-anglesInit(ind1)/pi*180);
     end
 end
