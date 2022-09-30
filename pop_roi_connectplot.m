@@ -288,6 +288,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
     
     % colormap
     load cm17;
+    load cm18;
 
     % frequency range
     if ~isempty(g.freqrange)
@@ -311,13 +312,8 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
 %         TRGCnet = TRGCnet - permute(TRGCnet, [1 3 2]);
 %         TRGCnet = TRGCnet(:,:);
         
-        TRGCnet = S.TRGC(:, :, 1) - S.TRGC(:, :, 2);
-        TRGC = get_connect_mat( TRGCnet, S.nROI, -1);
-        TRGC_matrix = squeeze(mean(TRGC(frq_inds, :, :)));
-        
-        MI = S.MIM(:, :);
-        MI = get_connect_mat( MI, S.nROI, +1);
-        MIM_matrix = squeeze(mean(MI(frq_inds, :, :)));
+        TRGC_matrix = squeeze(mean(S.TRGC(frq_inds, :, :)));
+        MIM_matrix = squeeze(mean(S.MIM(frq_inds, :, :)));
         
         roi_largeplot(EEG, MIM_matrix, TRGC_matrix, source_roi_power_norm_dB, titleStr)
     else     
@@ -346,19 +342,17 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
 
             case { 'trgc' 'gc' }
                 % calculation of net TRGC scores (i->j minus j->i), recommended procedure
-                % TRGCnet = TRGC_(:, 1:2:end)-TRGC_(:, 2:2:end);
                 % new way to compute net scores
                 if strcmpi(g.measure, 'GC')
-%                     TRGCnet = S.GC; 
-                    TRGCnet = S.GC(:, :, 1) - S.GC(:, :, 2);
+%                     TRGCnet = S.GC(:, :, 1) - S.GC(:, :, 2);
+                    TRGC = S.GC;
                 else
-%                    TRGCnet = S.TRGC; 
-                   TRGCnet = S.TRGC(:, :, 1) - S.TRGC(:, :, 2);
+%                     TRGCnet = S.TRGC(:, :, 1) - S.TRGC(:, :, 2);
+                    TRGC = S.TRGC;
                 end
 %                 TRGCnet = TRGCnet - permute(TRGCnet, [1 3 2]); 
 %                 TRGCnet = TRGCnet(:,:); 
-%                 TRGCnet = S.GC(:, :, 1) - S.GC(:, :, 2);
-                TRGC = get_connect_mat( TRGCnet, S.nROI, -1);
+%                 TRGC = get_connect_mat( TRGCnet, S.nROI, -1);
                 matrix = squeeze(mean(TRGC(frq_inds, :, :),1));
 
                 if strcmpi(g.plotmatrix, 'on') && ~strcmpi(g.noplot, 'on')
@@ -386,11 +380,14 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
 
             case { 'mim' 'mic' }
                 if strcmpi(g.measure, 'MIC')
-                    MI = S.MIC(:, :);
+%                     MI = S.MIC(:, :);
+                    MI = S.MIC;
                 else
-                    MI = S.MIM(:, :);
+%                     MI = S.MIM(:, :);
+                    MI = S.MIM;
                 end
-                MI = get_connect_mat( MI, S.nROI, +1);
+
+%                 MI = get_connect_mat( MI, S.nROI, +1);
                 matrix = squeeze(mean(MI(frq_inds, :, :),1));
 
                 if strcmpi(g.plotmatrix, 'on') && ~strcmpi(g.noplot, 'on')
@@ -401,10 +398,12 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
                     if isempty(g.plotcortexseedregion)
                         ami = mean(squeeze(mean(MI(frq_inds, :, :))), 2);
                         allplots_cortex_BS(S.cortex, ami, [min(ami) max(ami)], cm17a, upper(g.measure), g.smooth);
+                        movegui(gcf, 'south')
                     else
                         [coordinate, seed_idx] = get_seedregion_coordinate(EEG.roi.atlas.Scouts, g.plotcortexseedregion, EEG.roi.cortex.Vertices);
                         ami = squeeze(mean(MI(frq_inds, seed_idx,:)));
                         allplots_cortex_BS(S.cortex, ami, [min(ami) max(ami)], cm17a, upper(g.measure), g.smooth, [], {coordinate});
+                        movegui(gcf, 'south')
                     end
                     h = textsc([ upper(g.measure) ' (' titleStr ') '], 'title');
                     set(h, 'fontsize', 20);
@@ -461,19 +460,19 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
     end
 end
 
-function measure = get_connect_mat( measureOri, nROI, signVal)
-    % create a ROI x ROI connectivity matrix, if needed
-    % TRGCmat(f, ii, jj) is net TRGC from jj to ii
-    measure = [];
-    iinds = 0;
-    for iroi = 1:nROI
-        for jroi = (iroi+1):nROI
-            iinds = iinds + 1;
-            measure(:, iroi, jroi) = signVal * measureOri(:, iinds);
-            measure(:, jroi, iroi) = measureOri(:, iinds);
-        end
-    end
-end
+% function measure = get_connect_mat( measureOri, nROI, signVal)
+%     % create a ROI x ROI connectivity matrix, if needed
+%     % TRGCmat(f, ii, jj) is net TRGC from jj to ii
+%     measure = [];
+%     iinds = 0;
+%     for iroi = 1:nROI
+%         for jroi = (iroi+1):nROI
+%             iinds = iinds + 1;
+%             measure(:, iroi, jroi) = signVal * measureOri(:, iinds);
+%             measure(:, jroi, iroi) = measureOri(:, iinds);
+%         end
+%     end
+% end
 
 function [coordinate, seed_idx] = get_seedregion_coordinate(scouts, seed_idx, vc)
     % determine voxel of selected seed region, if needed
@@ -500,12 +499,12 @@ end
         
 function roi_plotcoloredlobes( EEG, matrix, titleStr, measure, hemisphere, region)
     % plot matrix with colored labels sorted by region according to the Desikan-Killiany atlas    
-    load cm17
+    load cm18
     switch lower(measure)
         case {'mim', 'mic', 'coh'}
-            cmap = cm17a;
+            cmap = cm18a;
         otherwise
-            cmap = cm17;
+            cmap = cm18;
     end
     
     % retrieve labels from atlas
@@ -647,7 +646,7 @@ end
 
 function roi_largeplot(EEG, mim, trgc, roipsd, titleStr)
     % plot MIM, TRGC and power (barplot) in a single large figure
-    load cm17
+    load cm18
     
     % plot matrix with colored labels sorted by region according to the
     % Desikan-Killiany atlas
@@ -703,8 +702,8 @@ function roi_largeplot(EEG, mim, trgc, roipsd, titleStr)
             ax.YTickLabel{ceil(i)} = sprintf('\\color[rgb]{%f,%f,%f}%s', colors{color_idxx(i)}, ax.YTickLabel{ceil(i)});
         end
     end
-    colormap(plt(1), cm17a)
-    colormap(plt(2), cm17)
+    colormap(plt(1), cm18a)
+    colormap(plt(2), cm18)
     
     % power
     subplot(1,3,3);
