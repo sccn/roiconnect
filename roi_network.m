@@ -1,3 +1,10 @@
+% ****************************************************
+% This function is mostly obsolete as it was replaced
+% by roi_networkplot() which can plot any measure
+% (instead of just coherence for this function)
+% It might still be useful for real time calculation
+% ****************************************************
+%
 % roi_network() - compute connectivity between ROIs
 %
 % Usage:
@@ -251,7 +258,7 @@ if ~isempty(opt.processconnect)
         txtFileName = {};
         for iField = 1:length(fields)
             connectTmp = cellfun(@(x)x(:,:,iField), connectSpecSelect, 'uniformoutput', false);
-            [imgFileNameTmp,txtFileNameTmp] = roi_plotnetwork(opt.networkfile, connectTmp, 'title', fields{iField}, 'filename' ,[opt.plotnetworkfile '_' fields{iField} ], 'plotmode', opt.plotmode);
+            [imgFileNameTmp,txtFileNameTmp] = roi_networkplot(opt.networkfile, connectTmp, 'title', fields{iField}, 'filename' ,[opt.plotnetworkfile '_' fields{iField} ], 'plotmode', opt.plotmode);
             imgFileName = [ imgFileName imgFileNameTmp ];
             txtFileName = [ txtFileName txtFileNameTmp ];
         end

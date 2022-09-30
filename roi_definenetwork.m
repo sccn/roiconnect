@@ -16,11 +16,14 @@
 %                     ROIs (see example).
 %   'ignoremissing' - ['on'|'off'] ignore missing names 'on' or issue
 %                     an error 'off'. Default is 'off'.
+%   'connectmat'    - [array] connectivity matrix. When provided return
+%                     the new connectivity with added ROI ('addrois' input)
 %
 % Output:
 %   EEG - EEG structure with EEG.roi.atlas.Scout and EEG.roi.atlas.networks
 %         field updated and now containing new ROI or network.
-%   networks - Same as EEG.roi.atlas.networks
+%   networks   - Same as EEG.roi.atlas.networks
+%   connectmat - Updated connectivity matrix (when provided as input)
 %
 % Example:
 %   DNM = [1 2 3 4 5]';
@@ -35,6 +38,9 @@
 %   A = { 'Brodmann area 31L' 'Brodmann area 31R' }';
 %   DNM = { 'A' 'B' }';
 %   EEG = roi_definenetwork(EEG, table(DNM), 'addrois', table(A,B)); % define network DNM comprising ROI A and B
+%
+% Example:
+%  [EEG, net] = roi_definenetwork(EEG, 'NGNetworkROIs_v4.txt', 'addrois', 'NGNetworkROIs_area_definition_v2.txt', 'ignoremissing', 'on'); 
 %
 % Author: Arnaud Delorme
 
@@ -62,7 +68,7 @@
 % ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 % THE POSSIBILITY OF SUCH DAMAGE.
 
-function [EEG,networks] = roi_definenetwork(EEG, roiTable, varargin)
+function [EEG,networks,connectmat] = roi_definenetwork(EEG, roiTable, varargin)
 
 if nargin < 2
     help roi_definenetwork;
@@ -72,15 +78,32 @@ end
 g = finputcheck(varargin, { ...
     'ignoremissing'    'string'    {'on' 'off'}    'off';
     'addrois'          ''          {}              [];
+    'connectmat'       'float'     {}              [];
     }, 'roi_definenetwork');
 if isstr(g)
     error(g);
 end
 
 if ischar(roiTable)
+    if ~exist(roiTable, 'file')
+        p = fileparts(which('roi_definenetwork'));
+        roiTable2 = fullfile(p, roiTable);
+        if ~exist(roiTable2, 'file')
+            error('File not found %s', roiTable);
+        end
+        roiTable = roiTable2;
+    end
     roiTable = readtable(roiTable);
 end
 if ischar(g.addrois) && ~isempty(g.addrois)
+    if ~exist(g.addrois, 'file')
+        p = fileparts(which('roi_definenetwork'));
+        tmpTable = fullfile(p, g.addrois);
+        if ~exist(tmpTable, 'file')
+            error('File not found %s', g.addrois);
+        end
+        g.addrois = tmpTable;
+    end
     g.addrois = readtable(g.addrois);
 end
 
@@ -91,6 +114,7 @@ catch
 end
 
 % add new ROIs
+connectmat = g.connectmat;
 if ~isempty(g.addrois)
     colNames = fieldnames(g.addrois);
     for iCol = 1:size(g.addrois,2) % scan columns
@@ -104,12 +128,14 @@ if ~isempty(g.addrois)
             for iRow = 1:size(g.addrois,1)
                 val = g.addrois{iRow, iCol}{1};
                 if ~isempty(val)
-                    indTmp = strmatch(val, allLabels, 'exact');
+                    indTmp1 = strmatch(val, allLabels, 'exact');
+                    indTmp2 = strmatch([ 'Brodmann area ' val], allLabels, 'exact');
+                    indTmp = [ indTmp1 indTmp2 ];
                     if length(indTmp) ~= 1
                         if strcmpi(g.ignoremissing, 'off')
                             error('Area %s not found or duplicate', val);
                         else
-                            fprintf('Area %s not found or duplicate, using the first one\n', val);
+                            fprintf('Area %s not found or duplicate, ignoring\n', val);
                             indTmp = [];
                         end
                     else
@@ -119,6 +145,15 @@ if ~isempty(g.addrois)
             end
         end
         EEG.roi.atlas.Scouts(end).Vertices = vertcat(EEG.roi.atlas.Scouts(inds).Vertices);
+        
+        % add 1 row and col to the connectivity matrix if any given as input
+        if ~isempty(connectmat)
+            indNew = size(connectmat,1)+1;
+            for iInd = 1:size(connectmat,1)
+                connectmat(indNew,iInd) = mean(connectmat(setdiff(inds, iInd),iInd));
+                connectmat(iInd,indNew) = mean(connectmat(iInd, setdiff(inds, iInd)));
+            end
+        end
     end
 end
             
@@ -137,7 +172,9 @@ for iCol = 1:size(roiTable,2) % scan columns
         for iRow = 1:size(roiTable,1)
             val = roiTable{iRow, iCol}{1};
             if ~isempty(val)
-                indTmp = strmatch(val, allLabels, 'exact');
+                indTmp1 = strmatch(val, allLabels, 'exact');
+                indTmp2 = strmatch([ 'Brodmann area ' val], allLabels, 'exact');
+                indTmp = [ indTmp1 indTmp2 ];
                 if length(indTmp) ~= 1
                     if strcmpi(g.ignoremissing, 'off')
                         error('Area %s not found or duplicate', val);
