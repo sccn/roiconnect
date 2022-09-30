@@ -9,8 +9,6 @@
 % Optional inputs (choose at least one):
 %  'morder'    - [integer] order of autoregressive model. Default is 20.
 %  'naccu'     - [integer] number of accumulation for stats. Default is 0.
-%  'crossspec' - ['on'|'off'] compute cross-spectrum from which coherence can
-%                be derived. Default is 'on'.
 %  'methods'    - [cell of string 'psd'|'roipsd'|'trgc'|'crossspecimag'|'crossspecpow'|'mic'|'mim']
 %                   'cs'    : cross spectrum
 %                   'coh'   : coherence
@@ -72,6 +70,7 @@ function EEG = roi_connect(EEG, varargin)
         'methods'     'cell'    { }            {} }, 'roi_connect');    
     if ischar(g), error(g); end
     if isempty(g.naccu), g.naccu = 0; end
+    g.methods = upper(g.methods);
     tmpMethods = setdiff(g.methods, {  'CS' 'COH' 'GC' 'TRGC' 'wPLI' 'PDC' 'TRPDC' 'DTF' 'TRDTF' 'MIM' 'MIC'});
     if ~isempty(tmpMethods)
         error('Unknown methods %s', vararg2str(tmpMethods))
