@@ -251,7 +251,7 @@ if ~isempty(opt.processconnect)
         txtFileName = {};
         for iField = 1:length(fields)
             connectTmp = cellfun(@(x)x(:,:,iField), connectSpecSelect, 'uniformoutput', false);
-            [imgFileNameTmp,txtFileNameTmp] = plotconnectivitymultiple(opt.networkfile, connectTmp, 'title', fields{iField}, 'filename' ,[opt.plotnetworkfile '_' fields{iField} ], 'plotmode', opt.plotmode);
+            [imgFileNameTmp,txtFileNameTmp] = roi_plotnetwork(opt.networkfile, connectTmp, 'title', fields{iField}, 'filename' ,[opt.plotnetworkfile '_' fields{iField} ], 'plotmode', opt.plotmode);
             imgFileName = [ imgFileName imgFileNameTmp ];
             txtFileName = [ txtFileName txtFileNameTmp ];
         end
