@@ -12,10 +12,13 @@
 %  'sourcemodel' - [string] source model file
 %
 % Optional inputs:
-%  'elec2mni'    - [9x float] homogeneous transformation matrix to convert
-%                  electrode locations to MNI space.
+%  'elec2mni'        - [9x float] homogeneous transformation matrix to convert
+%                       electrode locations to MNI space.
 %  'sourcemodel2mni' - [9x float] homogeneous transformation matrix to convert
-%                  sourcemodel to MNI space.
+%                      sourcemodel to MNI space.
+%  'fooof'           - ['on'|'off'] enable FOOOF analysis. Default is 'off'.
+%  'fooof_frange'    - [''] FOOOF fitting range. Default is [1 30] like in the
+%                        example.
 %
 % Output:
 %  EEG - EEGLAB dataset with field 'roi' containing connectivity info.
