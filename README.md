@@ -44,6 +44,13 @@ EEG = pop_roi_activity(EEG, 'leadfield',EEG.dipfit.sourcemodel,'model','LCMV','m
 The function performs source reconstruction by calculating a source projection filter and applying it to the sensor data. Power is calculated with the Welch method on the voxel time series and then summed across voxels within regions. To enable region-wise FC computation, the function applies PCA to the time series of every region. It then selects the *n* strongest PCs for every region. The resulting time series is stored in `EEG.roi.source_roi_data`, and power is stored in `EEG.roi.source_roi_power`.
 
 ## Connectivity analysis
+`pop_roi_connect` accepts the following inputs: the EEG struct computed by `pop_roi_activity` and the names of the FC metrics. In addition, you can tell the function to estimate FC on time snippets of 60 s length (default) which can be averaged (default) or used as input for later statistical analyses. The following command line example asks the function to perform FC analysis on snippets using default values (explicitely passed as input parameters in this example). 
+
+```matlab
+EEG = pop_roi_connect(EEG, 'methods', { 'MIM', 'TRGC'}, 'snippet', 'on', 'snip_length', 60, 'fcsave_format', 'mean_snips');
+```
+
+The function computes all FC metrics in a frequency-resolved way, i.e., the output contains FC scores for every region-region frequency combination. We include the option to estimate FC on time snippets to avoid biases due to different data lengths. The output of this function is stored in `EEG.roi.<fc_metric_name>`.
 
 ## Visualization
 
