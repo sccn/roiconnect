@@ -10,6 +10,26 @@ You can choose to access the core functions from the EEGLAB GUI. Experienced use
 Code developed by Stefan Haufe and team, with EEGLAB interface, coregistration, 3-D vizualisation and Fieldtrip integration performed by Arnaud Delorme.
 
 # Installation
+First of all, please make sure to have [EEGLAB](https://github.com/sccn/eeglab#installingcloning) installed. Your project layout should look as follows
+
+```
+eeglab/	 				
+├── functions/ 							
+├── plugins/ 								
+├── sample_data/ 					
+├── sample_locs/		
+├── tutorial_scripts/						
+└── /.../ 					
+```
+The ROIconnect plugin should be installed in the `plugins` folder. The easiest way to do so is to simply clone our repository. Navigate to the `plugins` folder by typing 
+```
+cd <eeglab_install_location>/eeglab/plugins
+``` 
+Next, clone the repository
+```
+git clone https://github.com/arnodelorme/roiconnect.git
+```
+That's it! If you want to run the plugin, please start [EEGLAB](https://github.com/sccn/eeglab#to-use-eeglab) first. You may need to add EEGLAB to the [MATLAB path](https://de.mathworks.com/help/matlab/ref/addpath.html).  
 
 # Key features
 The features of the toolbox are implemented in the following three main functions: `pop_roi_activity`, `pop_roi_connect` and `pop_roi_connectplot`.
@@ -21,7 +41,7 @@ The features of the toolbox are implemented in the following three main function
 EEG = pop_roi_activity(EEG, 'leadfield',EEG.dipfit.sourcemodel,'model','LCMV','modelparams',{0.05},'atlas','LORETA-Talairach-BAs','nPCA',3, 'fooof', 'on', 'fooof_frange', [1 30]);
 ```
 
-The function performs source reconstruction by calculating a source projection filter and applying it to the sensor data. Power is calculated with the Welch method on the voxel time series and then summed across voxels within regions. To enable region-wise FC computation, the function applies PCA to the time series of every region. It then selects the *n* strongest PCs for every region. The resulting time series is stored in `EEG.roi.source_roi_data`, power is stored in `EEG.roi.source_roi_power`.
+The function performs source reconstruction by calculating a source projection filter and applying it to the sensor data. Power is calculated with the Welch method on the voxel time series and then summed across voxels within regions. To enable region-wise FC computation, the function applies PCA to the time series of every region. It then selects the *n* strongest PCs for every region. The resulting time series is stored in `EEG.roi.source_roi_data`, and power is stored in `EEG.roi.source_roi_power`.
 
 # Available features
 
