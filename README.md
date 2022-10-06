@@ -56,15 +56,48 @@ EEG = pop_roi_connect(EEG, 'methods', { 'MIM', 'TRGC'}, 'snippet', 'on', 'snip_l
 The function computes all FC metrics in a frequency-resolved way, i.e., the output contains FC scores for every region-region frequency combination. We include the option to estimate FC on time snippets to avoid biases due to different data lengths. The output of this function is stored in `EEG.roi.<fc_metric_name>`.
 
 ## Visualization
-You can visualize power and FC in different modes by calling `pop_roi_connectplot`. Below are some examples.
+You can visualize power and FC in different modes by calling `pop_roi_connectplot`. Below, we visualize results of one subject from the real data example in [[1]](#1). The left plots show power or FC in left motor imagery, the right plots indicate results in right motor imagery. Due to the nature of the task, we show results in the alpha frequency band but you are free to choose any frequency or frequency band you want. 
 
 ### Power as a region-wise bar plot
+If you wish to visualize power as a barplot only, please make sure to explicitely turn `plotcortex` off because it is turned on by default. 
+```matlab
+EEG = pop_roi_connectplot(EEG, 'measure', 'roipsd', 'plotcortex', 'off', 'plotbarplot', on, 'freqrange', [8 13]) % alpha band;
+```
 
+### Power as a source-level cortical surface topography
+```matlab
+EEG = pop_roi_connectplot(EEG, 'measure', 'roipsd', 'plotcortex', 'on', 'freqrange', [8 13]);
+```
+
+### FC as region-to-region matrix 
+Again, if you do not wish to see the cortex plot, you should explicitely turn `plotcortex` off. 
+
+(plot)
+
+You can additionally filter by hemispheres and regions belonging to specific brain lobes. As an example, let us see how FC of the left/right hemisphere look like for left/right motor imagery.
+
+```matlab
+pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'off', 'plotmatrix', 'on', 'freqrange', [8 13], 'hemisphere', 'left') % left hemisphere, left motor imagery;
+```
+### Net FC as a cortical surface topography
+Here, the mean FC from all regions to all regions is visualized.
+```matlab
+pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'on', 'freqrange', [9 13]);  
+```
+
+### Seed FC as a cortical surface topography
+Here, the FC of a seed region to all other regions is visualized.
 
 # Available features
 
 - ROI connectivity analysis using TRGC and CS
 - Use of surface or volumetric atlases
 - Compatibile with Fieldtrip, Brainstorm and NFT head models
+
+# References
+<a id="1">[1]</a> 
+Pellegrini, F., Delorme, A., Nikulin, V. & Haufe, S. (2022). 
+Identifying best practices for detecting inter-regional functional connectivity from EEG. 
+Communications of the ACM, 11(3), 147-148.
 
 
