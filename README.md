@@ -82,7 +82,7 @@ EEG = pop_roi_connectplot(EEG, 'measure', 'roipsd', 'plotcortex', 'on', 'freqran
 </p>
 
 ### FC as region-to-region matrix 
-Again, if you do not wish to see the cortex plot, you should explicitely turn `plotcortex` off. 
+Again, if you do not wish to see the cortex plot, you should explicitely turn `plotcortex` off. Please click on the figure if you want to see it in full size.
 ```matlab
 EEG = pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'off', 'plotmatrix', 'on', 'freqrange', [8 13]);
 ```
