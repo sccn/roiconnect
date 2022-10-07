@@ -2,7 +2,7 @@
 
 # What is ROIconnect?
 
-ROIconnect is a freely available open-source plugin to [EEGLAB](https://github.com/sccn/eeglab) for EEG data analysis. It allows you to perform functional connectivity analysis between and within regions of interests (ROIs) on source level.  The results can be visualized in 2-D and 3-D. ROIs are defined based on popular fMRI atlases, and source localization is performed through LCMV beamforming and eLORETA. Connectivity analysis is performed between all pairs of brain regions using Granger Causality, Time-reversed Granger Causality, Multivariate Interaction Measure, Maximized Imaginary Coherency, and other methods. Additionally, this plugin is compatible with Fieldtrip, Brainstorm and NFT head models.
+ROIconnect is a freely available open-source plugin to [EEGLAB](https://github.com/sccn/eeglab) for EEG data analysis. It allows you to perform functional connectivity analysis between and within regions of interests (ROIs) on source level.  The results can be visualized in 2-D and 3-D. ROIs are defined based on popular fMRI atlases, and source localization is performed through LCMV beamforming and eLORETA. Connectivity analysis is performed between all pairs of brain regions using Granger Causality, Time-reversed Granger Causality, Multivariate Interaction Measure, Maximized Imaginary Coherency, and other methods. This plugin is compatible with Fieldtrip, Brainstorm and NFT head models.
 
 📚 Check out the following paper to learn about recommended methods and pipelines for connectivity experiments:
 > Pellegrini, F., Delorme, A., Nikulin, V. & Haufe, S., 2022. Identifying best practices for detecting inter-regional functional connectivity from EEG. <preprint_location>.
