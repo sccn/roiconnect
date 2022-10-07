@@ -56,7 +56,7 @@ EEG = pop_roi_connect(EEG, 'methods', { 'MIM', 'TRGC'}, 'snippet', 'on', 'snip_l
 The function computes all FC metrics in a frequency-resolved way, i.e., the output contains FC scores for every region-region frequency combination. We include the option to estimate FC on time snippets to avoid biases due to different data lengths. The output of this function is stored in `EEG.roi.<fc_metric_name>`.
 
 ## Visualization
-You can visualize power and FC in different modes by calling `pop_roi_connectplot`. Below, we show results of one subject from the real data example in [[1]](#1). You can find the MATLAB code and corresponding analyes [here](https://github.com/fpellegrini/MotorImag). The left plots show power or FC in left motor imagery, the right plots indicate results in right motor imagery. Due to the nature of the task, we show results in the alpha frequency band but you are free to choose any frequency or frequency band you want. 
+You can visualize power and FC in different modes by calling `pop_roi_connectplot`. Below, we show results of one subject from the real data example in [[1]](#1). You can find the MATLAB code and corresponding analyses [here](https://github.com/fpellegrini/MotorImag). The left plots show power or FC in left motor imagery, the right plots indicate results in right motor imagery. Due to the nature of the task, we show results in the alpha frequency band but you are free to choose any frequency or frequency band you want. 
 
 :pushpin: If any of the images are too small for you, simply click on them, they will open in full size in another tab.
 
