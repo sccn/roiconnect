@@ -2,7 +2,7 @@
 
 # What is ROIconnect?
 
-ROIconnect is a freely available open-source plugin to [EEGLAB](https://github.com/sccn/eeglab) for EEG data analysis. It allows you to perform functional connectivity analysis between and within regions of interests (ROIs) on source level.  The results can be visualized in 2-D and 3-D. ROIs are defined based on popular fMRI atlases, and source localization is performed through LCMV beamforming and eLORETA. Connectivity analysis is performed between all pairs of brain regions using Granger Causality, Time-reversed Granger Causality, Multivariate Interaction Measure, Maximized Imaginary Coherency, and other methods. This plugin is compatible with Fieldtrip, Brainstorm and NFT head models.
+ROIconnect is a freely available open-source plugin to [EEGLAB](https://github.com/sccn/eeglab) for EEG data analysis. It allows you to perform functional connectivity analysis between regions of interests (ROIs) on source level.  The results can be visualized in 2-D and 3-D. ROIs are defined based on popular fMRI atlases, and source localization can be performed through LCMV beamforming or eLORETA. Connectivity analysis can be performed between all pairs of brain regions using Granger Causality, Time-reversed Granger Causality, Multivariate Interaction Measure, Maximized Imaginary Coherency, and other methods. This plugin is compatible with Fieldtrip, Brainstorm and NFT head models.
 
 📚 Check out the following paper to learn about recommended methods and pipelines for connectivity experiments:
 > Pellegrini, F., Delorme, A., Nikulin, V. & Haufe, S., 2022. Identifying best practices for detecting inter-regional functional connectivity from EEG. <preprint_location>.
@@ -10,7 +10,7 @@ ROIconnect is a freely available open-source plugin to [EEGLAB](https://github.c
 You can choose to access the core functions from the EEGLAB GUI. Experienced users can access additional utilities from the command line. If you do decide to run a function from the command line, please refer to the respective documentation provided in the code. 
 
 
-Code developed by Stefan Haufe and team, with EEGLAB interface, coregistration, 3-D vizualisation and Fieldtrip integration performed by Arnaud Delorme.
+Code developed by Tien Dung Nguyen, Franziska Pellegrini, and Stefan Haufe, with EEGLAB interface, coregistration, 3-D vizualisation and Fieldtrip integration performed by Arnaud Delorme.
 
 # Installation
 First of all, please make sure to have [EEGLAB](https://github.com/sccn/eeglab#installingcloning) installed. Your project layout should look as follows
@@ -47,16 +47,16 @@ EEG = pop_roi_activity(EEG, 'leadfield',EEG.dipfit.sourcemodel,'model','LCMV','m
 The function performs source reconstruction by calculating a source projection filter and applying it to the sensor data. Power is calculated with the Welch method on the voxel time series and then summed across voxels within regions. To enable region-wise FC computation, the function applies PCA to the time series of every region. It then selects the *n* strongest PCs for every region. The resulting time series is stored in `EEG.roi.source_roi_data`, and power is stored in `EEG.roi.source_roi_power`.
 
 ## Connectivity analysis
-`pop_roi_connect` accepts the following inputs: the EEG struct computed by `pop_roi_activity` and the names of the FC metrics. In addition, you can tell the function to estimate FC on time snippets of 60 s length (default) which can be averaged (default) or used as input for later statistical analyses. The following command line example asks the function to perform FC analysis on snippets using default values (explicitely passed as input parameters in this example). 
+`pop_roi_connect` accepts the following inputs: the EEG struct computed by `pop_roi_activity` and the names of the FC metrics. To avoid biases due to data length, we recommend keeping data length for all conditions constant. Thus, you can tell the function to estimate FC on time snippets of 60 s length (default) which can be averaged (default) or used as input for later statistical analyses. The following command line example asks the function to perform FC analysis on snippets using default values (explicitely passed as input parameters in this example). 
 
 ```matlab
 EEG = pop_roi_connect(EEG, 'methods', { 'MIM', 'TRGC'}, 'snippet', 'on', 'snip_length', 60, 'fcsave_format', 'mean_snips');
 ```
 
-The function computes all FC metrics in a frequency-resolved way, i.e., the output contains FC scores for every region-region frequency combination. We include the option to estimate FC on time snippets to avoid biases due to different data lengths. The output of this function is stored in `EEG.roi.<fc_metric_name>`.
+The function computes all FC metrics in a frequency-resolved way, i.e., the output contains FC scores for every region-region-frequency combination. The output of this function is stored in `EEG.roi.<fc_metric_name>`.
 
 ## Visualization
-You can visualize power and FC in different modes by calling `pop_roi_connectplot`. Below, we show results of one subject from the real data example in [[1]](#1). You can find the MATLAB code and corresponding analyses [here](https://github.com/fpellegrini/MotorImag). The left plots show power or FC in left motor imagery, the right plots indicate results in right motor imagery. Due to the nature of the task, we show results in the alpha frequency band but you are free to choose any frequency or frequency band you want. 
+You can visualize power and FC in different modes by calling `pop_roi_connectplot`. Below, we show results of a single subject from the real data example in [[1]](#1). You can find the MATLAB code and corresponding analyses [here](https://github.com/fpellegrini/MotorImag). The plots show power or FC in left motor imagery condition. Due to the nature of the task, we show results in the 8 to 13 Hz frequency band but you are free to choose any frequency or frequency band you want. 
 
 :pushpin: If any of the images are too small for you, simply click on them, they will open in full size in another tab.
 
@@ -68,7 +68,6 @@ EEG = pop_roi_connectplot(EEG, 'measure', 'roipsd', 'plotcortex', 'off', 'plotba
 <p float="middle">
   <img src="https://github.com/Hiyeri/roiconnect/blob/master/resources/power_barplot_left.jpg?raw=true" width="400"/>     
   &nbsp; &nbsp;
-  <img src="https://github.com/Hiyeri/roiconnect/blob/master/resources/power_barplot_right.jpg?raw=true" width="400"/>
 </p>
 
 ### Power as a source-level cortical surface topography
@@ -78,7 +77,6 @@ EEG = pop_roi_connectplot(EEG, 'measure', 'roipsd', 'plotcortex', 'on', 'freqran
 <p float="middle">
   <img src="https://github.com/Hiyeri/roiconnect/blob/master/resources/power_cortex_left.jpg?raw=true" width="400"/>     
   &nbsp; &nbsp;
-  <img src="https://github.com/Hiyeri/roiconnect/blob/master/resources/power_cortex_right.jpg?raw=true" width="400"/>
 </p>
 
 ### FC as region-to-region matrix 
@@ -89,10 +87,9 @@ EEG = pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'off', 'plotmatri
 <p float="middle">
   <img src="https://github.com/Hiyeri/roiconnect/blob/master/resources/FC_MIM_matrix_left.jpg?raw=true" width="400"/>     
   &nbsp; &nbsp;
-  <img src="https://github.com/Hiyeri/roiconnect/blob/master/resources/FC_MIM_matrix_right.jpg?raw=true" width="400"/>
 </p>
 
-You can additionally filter by hemispheres and regions belonging to specific brain lobes. As an example, let us see how FC of the left/right hemisphere look like for left/right motor imagery.
+You can additionally filter by hemispheres and regions belonging to specific brain lobes. As an example, let us see how FC of the left hemisphere look like.
 
 ```matlab
 pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'off', 'plotmatrix', 'on', 'freqrange', [8 13], 'hemisphere', 'left') % left hemisphere, left motor imagery;
@@ -100,7 +97,6 @@ pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'off', 'plotmatrix', 'o
 <p float="middle">
   <img src="https://github.com/Hiyeri/roiconnect/blob/master/resources/FC_MIM_matrix_lefthem_left.jpg?raw=true" width="400"/>     
   &nbsp; &nbsp;
-  <img src="https://github.com/Hiyeri/roiconnect/blob/master/resources/FC_MIM_matrix_righthem_right.jpg?raw=true" width="400"/>
 </p>
 
 ### Net FC as a cortical surface topography
@@ -111,7 +107,6 @@ pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'on', 'freqrange', [8 1
 <p float="middle">
   <img src="https://github.com/Hiyeri/roiconnect/blob/master/resources/FC_MIM_cortex_left.jpg?raw=true" width="400"/>     
   &nbsp; &nbsp;
-  <img src="https://github.com/Hiyeri/roiconnect/blob/master/resources/FC_MIM_cortex_right.jpg?raw=true" width="400"/>
 </p>
 
 ### Seed FC as a cortical surface topography
@@ -122,7 +117,6 @@ pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'on', 'freqrange', [8 1
 <p float="middle">
   <img src="https://github.com/Hiyeri/roiconnect/blob/master/resources/FC_MIM_cortex_seed49_left.jpg?raw=true" width="400"/>     
   &nbsp; &nbsp;
-  <img src="https://github.com/Hiyeri/roiconnect/blob/master/resources/FC_MIM_cortex_seed50_right.jpg?raw=true" width="400"/>
 </p>
 
 
