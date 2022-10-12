@@ -42,7 +42,7 @@
 %
 % Example:
 %   % Requires prior call to pop_roi_connect
-%   matnet = pop_roi_connectplot(EEG, 'measure', 'psd');
+%   matnet = pop_roi_connectplot(EEG, 'measure', 'ROIPSD');
 
 % Copyright (C) Arnaud Delorme, arnodelorme@gmail.com
 %
@@ -338,7 +338,6 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
 
                 if strcmpi(g.plotcortex, 'on') && strcmpi(lower(g.measure), 'roipsd')
                     cortexPlot = 10*log10( mean(EEG.roi.source_roi_power(frq_inds,:)) );
-                    plotOpt.unit = 'Power (dB)';
                 end
 
                 if strcmpi(g.plotbarplot, 'on') && ~strcmpi(g.noplot, 'on')
@@ -423,7 +422,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         end
 
         % plot on cortical surface
-        if strcmpi(g.plotcortex, 'on')
+        if strcmpi(g.plotcortex, 'on') && cortexFlag ~= -1
             cortexTitle = [ plotOpt.labelshort ' (' titleStr ')' ];
             if isempty(g.plotcortexseedregion)
                 allplots_cortex_BS(S.cortex, cortexPlot, [min(cortexPlot) max(cortexPlot)], cm17a, plotOpt.unit, g.smooth);
