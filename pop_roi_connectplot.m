@@ -81,7 +81,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         fprintf(2, 'To plot connectivity in 3-D, install the brainmovie plugin\n');
         plot3dFlag = -1;
     else
-        plot3dFlag = 1;
+        plot3dFlag = 0;
     end
 
 
@@ -93,7 +93,8 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
     %     error('You can only use this function with MNI coordinates - change head model');
     % end
 
-    cortexFlag = isfield(EEG.roi.cortex, 'Faces');
+    cortexFlag = isfield(EEG.roi.cortex, 'Faces')*2-1;
+    areaNames  = [ 'All' { EEG.roi.atlas(1).Scouts.Label } ];
 
     splot = [];
     % splot(end+1).label  = 'Source power spectrum'; % we do not save that information anymore
@@ -106,7 +107,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
     if isfield(EEG.roi, 'source_roi_power')
         splot(end+1).label  = 'ROI based power spectrum';
         splot(end  ).acronym  = 'ROIPSD';
-        splot(end  ).unit   = '?'; % not used yet
+        splot(end  ).unit   = 'Power (dB)'; % not used yet
         splot(end  ).cortex = cortexFlag;
         splot(end  ).matrix = -1;
         splot(end  ).psd    = -1;
@@ -139,7 +140,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         splot(end+1).label    = 'ROI to ROI coherence';
         splot(end  ).labelshort = 'Coherence';
         splot(end  ).acronym  = 'Coh';
-        splot(end  ).unit   = '?';
+        splot(end  ).unit   = 'Coh';
         splot(end  ).cortex = cortexFlag;
         splot(end  ).matrix = 1;
         splot(end  ).psd    = -1;
@@ -150,6 +151,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         splot(end+1).label  = 'ROI to ROI granger causality';
         splot(end  ).labelshort = 'Granger Causality';
         splot(end  ).acronym  = 'GC';
+        splot(end  ).unit   = 'GC';
         splot(end  ).cortex = cortexFlag;
         splot(end  ).matrix = 1;
         splot(end  ).psd    = -1;
@@ -160,7 +162,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         splot(end+1).label  = 'ROI to ROI time-reversed granger causality';
         splot(end  ).labelshort = 'Time-rev. Granger Causality';
         splot(end  ).acronym  = 'TRGC';
-        splot(end  ).unit   = '?'; % not used yet
+        splot(end  ).unit   = 'TRGC'; % not used yet
         splot(end  ).cortex = cortexFlag;
         splot(end  ).matrix = 1;
         splot(end  ).psd    = -1;
@@ -171,21 +173,22 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         splot(end+1).label    = 'ROI to ROI Maximized Imag. Coh.';
         splot(end  ).labelshort = 'Maximized Imag. Coh.';
         splot(end  ).acronym  = 'MIC';
-        splot(end  ).unit   = '?'; % not used yet
+        splot(end  ).unit   = 'MIC'; % not used yet
         splot(end  ).cortex = cortexFlag;
         splot(end  ).matrix = -1;
         splot(end  ).psd    = 0;
-        splot(end  ).plot3d = -1;
+        splot(end  ).plot3d = plot3dFlag;
     end
 
     if isfield(EEG.roi, 'MIM')
         splot(end+1).label    = 'ROI to ROI Multivariate Interaction Measure';
         splot(end  ).labelshort = 'Multivariate Interaction Measure';
         splot(end  ).acronym  = 'MIM';
-        splot(end  ).unit   = '?'; % not used yet
+        splot(end  ).unit   = 'MIM'; % not used yet
         splot(end  ).cortex = cortexFlag;
-        splot(end  ).matrix = -1;
+        splot(end  ).matrix = 1;
         splot(end  ).psd    = 0;
+        splot(end  ).plot3d = plot3dFlag;
     end
    
 
@@ -207,11 +210,13 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         
         fcregions = {'all', 'cingulate', 'prefrontal', 'frontal', 'temporal', 'parietal', 'central', 'occipital'};
         plotrow = [1 1];
-        uigeom = { [1 1] [1 1] 1 [1 1] plotrow [5 3 2] [3.5 1.5 1 1] plotrow };
+        uigeom = { [1 1] [1 1] [1 0.5 0.2] 1 [1 1] plotrow [1] [3.3 1.5 1.1 1.2] plotrow };
         uilist = {{ 'style' 'text' 'string' 'Select a measure to plot' 'fontweight' 'bold'} ...
             { 'style' 'popupmenu' 'string' {splot.label} 'callback' cb_select 'value' 4 'tag' 'selection' } ...
+            { 'style' 'text' 'string' 'Only from/to region' } ...
+            { 'style' 'popupmenu' 'string' areaNames 'tag' 'seed_region'} ...
             { 'style' 'text' 'string' 'Frequency range in Hz [min max]:'} ...
-            { 'style' 'edit' 'string' ''} ...
+            { 'style' 'edit' 'string' '' 'tag' 'freqs'} {} ...
             {} ...
             { 'style' 'text' 'string' 'Measure to plot' 'fontweight' 'bold' } ...
             { 'style' 'text' 'string' 'Measure parameters' 'fontweight' 'bold' } ...
@@ -219,12 +224,10 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
             { 'style' 'checkbox' 'string' '3d static brainmovie' 'tag' 'plot3d' 'value' 1 } ...
             { 'style' 'edit'     'string' '''thresholdper'', 0.8' 'tag' 'plot3dparams' } ...
             ...
-            { 'style' 'checkbox' 'string' 'Connectivity of each area' 'tag' 'cortex' 'value' 1 } ...
-            { 'style' 'text' 'string' 'Index of seed region:' 'fontweight' 'bold' } ...
-            { 'style' 'edit' 'string' '' 'tag' 'seed_region'} ...
+            { 'style' 'checkbox' 'string' 'Connectivity on cortex (requires surface atlas)' 'tag' 'cortex' 'value' 1 } ...
             ...
             { 'style' 'checkbox' 'string' 'Matrix representation' 'tag' 'matrix' 'enable' 'off' } ...
-            { 'style' 'popupmenu' 'string' fcregions 'callback' cb_select 'value' 3 'tag' 'region' } ....
+            { 'style' 'popupmenu' 'string' fcregions 'callback' cb_select 'value' 1 'tag' 'region' } ....
             { 'style' 'checkbox' 'string' 'left' 'tag' 'hemisphere_left' 'value' 1 } ...
             { 'style' 'checkbox' 'string' 'right' 'tag' 'hemisphere_right' 'value' 1 } ...
             ...
@@ -237,15 +240,15 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
 
         options = {};
         options = { options{:} 'measure'   splot(result{1}).acronym };
-        options = { options{:} 'freqrange' eval( [ '[' result{2} ']' ] ) };
+        options = { options{:} 'freqrange' eval( [ '[' outs.freqs ']' ] ) };
         options = { options{:} 'plotcortex' fastif(outs.cortex, 'on', 'off') };
         options = { options{:} 'plotcortexparams' {} };
-        options = { options{:} 'plotcortexseedregion' str2num(result{6}) };
+        options = { options{:} 'plotcortexseedregion' outs.seed_region-1 };
         options = { options{:} 'plotmatrix' fastif(outs.matrix, 'on', 'off') };
         options = { options{:} 'plotpsd'    fastif(outs.psd   , 'on', 'off') };
         options = { options{:} 'plot3d'     fastif(outs.plot3d, 'on', 'off') };
         options = { options{:} 'plot3dparams' eval( [ '{' outs.plot3dparams '}' ] ) };
-        options = { options{:} 'region' fcregions{result{8}} };
+        options = { options{:} 'region' fcregions{outs.region} };
         % choose which hemisphere to plot
         if outs.hemisphere_left == 1 && outs.hemisphere_right == 0
             options = { options{:} 'hemisphere' 'left' };
@@ -275,6 +278,9 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         'largeplot',            'string'   { 'on'  'off'  }        'off';
         'plotpsd',              'string'   { 'on' 'off' }          'off' }, 'pop_roi_connectplot');
     if ischar(g), error(g); end
+    if isequal(g.plotcortexseedregion, 0)
+        g.plotcortexseedregion = [];
+    end
     S = EEG.roi;
 
     % colormap
@@ -287,6 +293,9 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
     else
         frq_inds = 1:length(S.freqs);
         titleStr = 'broadband';
+    end
+    if length(frq_inds) == 1
+        error('Cannot plot a single frequency, select frequency range instead');
     end
 
     % plotting options
@@ -312,6 +321,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         
         roi_largeplot(EEG, MIM_matrix, TRGC_matrix, source_roi_power_norm_dB, titleStr)
     else     
+        matrix = [];
         switch lower(g.measure)
             case { 'psd' 'roipsd' }
                 if strcmpi(g.measure, 'psd')
@@ -321,13 +331,9 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
                     error('This option is obsolete');
                 end
 
-                if strcmpi(g.plotcortex, 'on')
-                    if strcmpi(lower(g.measure), 'roipsd')
-                        source_roi_power_norm_dB = 10*log10( mean(EEG.roi.source_roi_power(frq_inds,:)) );
-                        allplots_cortex_BS(S.cortex, source_roi_power_norm_dB, [min(source_roi_power_norm_dB) max(source_roi_power_norm_dB)], cm17a, 'power [dB]', g.smooth);
-                        h = textsc([ 'ROI source power (' titleStr ')' ], 'title');
-                        set(h, 'fontsize', 20);
-                    end
+                if strcmpi(g.plotcortex, 'on') && strcmpi(lower(g.measure), 'roipsd')
+                    cortexPlot = 10*log10( mean(EEG.roi.source_roi_power(frq_inds,:)) );
+                    plotOpt.unit = 'Power (dB)';
                 end
 
                 if strcmpi(g.plotbarplot, 'on')
@@ -350,31 +356,9 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
 %                 TRGCnet = TRGCnet(:,:); 
 %                 TRGCnet = S.GC(:, :, 1) - S.GC(:, :, 2);
                 TRGC = get_connect_mat( TRGCnet, S.nROI, -1);
-
-                if strcmpi(g.plotmatrix, 'on')
-                    matrix = squeeze(mean(TRGC(frq_inds, :, :)));
-                    roi_plotcoloredlobes(EEG, matrix, titleStr, g.measure, g.hemisphere, g.region);
-                end
-
-                if strcmpi(g.plot3d, 'on')
-                    atrgc = squeeze(mean(TRGC(frq_inds, :, :)));
-                    roi_plotbrainmovie(atrgc, 'cortex', EEG.roi.cortex, 'atlas', EEG.roi.atlas, g.plot3dparams{:});
-                end
-
-                if strcmpi(g.plotcortex, 'on')
-                    if isempty(g.plotcortexseedregion)
-                        atrgc = mean(squeeze(mean(TRGC(frq_inds, :, :))), 2);
-                        allplots_cortex_BS(S.cortex, atrgc, [-max(abs(atrgc)) max(abs(atrgc))], cm17, upper(g.measure), g.smooth);
-                        movegui(gcf, 'south')
-                    else
-                        [coordinate, seed_idx] = get_seedregion_coordinate(EEG.roi.atlas.Scouts, g.plotcortexseedregion, EEG.roi.cortex.Vertices);
-                        atrgc = squeeze(mean(TRGC(frq_inds, seed_idx, :)));
-                        allplots_cortex_BS(S.cortex, atrgc, [-max(abs(atrgc)) max(abs(atrgc))], cm17, upper(g.measure), g.smooth, [], {coordinate});
-                        movegui(gcf, 'south')
-                    end
-                    h = textsc([ upper(g.measure) ' (' titleStr '); Red = net sender; Blue = net receiver' ], 'title');
-                    set(h, 'fontsize', 20);
-                end
+                matrix = squeeze(mean(TRGC(frq_inds, :, :)));
+                cortexPlot  = mean(matrix, 2);
+                cortexTitle = [ upper(g.measure) ' (' titleStr '); Red = net sender; Blue = net receiver' ];
 
             case { 'mim' 'mic' }
                 if strcmpi(g.measure, 'MIC')
@@ -383,68 +367,73 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
                     MI = S.MIM(:, :);
                 end
                 MI = get_connect_mat( MI, S.nROI, +1);
-
-                if strcmpi(g.plotmatrix, 'on')
-                    matrix = squeeze(mean(MI(frq_inds, :, :)));
-                    roi_plotcoloredlobes(EEG, matrix, titleStr, g.measure, g.hemisphere, g.region);
-                end
-
-                if strcmpi(g.plotcortex, 'on')
-                    if isempty(g.plotcortexseedregion)
-                        ami = mean(squeeze(mean(MI(frq_inds, :, :))), 2);
-                        allplots_cortex_BS(S.cortex, ami, [min(ami) max(ami)], cm17a, upper(g.measure), g.smooth);
-                    else
-                        [coordinate, seed_idx] = get_seedregion_coordinate(EEG.roi.atlas.Scouts, g.plotcortexseedregion, EEG.roi.cortex.Vertices);
-                        ami = squeeze(mean(MI(frq_inds, seed_idx,:)));
-                        allplots_cortex_BS(S.cortex, ami, [min(ami) max(ami)], cm17a, upper(g.measure), g.smooth, [], {coordinate});
-                    end
-                    h = textsc([ upper(g.measure) ' (' titleStr ') '], 'title');
-                    set(h, 'fontsize', 20);
-                end
+                matrix = squeeze(mean(MI(frq_inds, :, :)));
+                cortexPlot = mean(matrix, 2);
 
             case { 'crossspecpow' 'coh' 'crossspecimag' }
                 if strcmpi(g.measure, 'coh')
                     PS = abs(S.COH); % do not know what to do here
                     PS = squeeze(mean(mean(reshape(PS, S.srate+1, S.nPCA, S.nROI, S.nPCA, S.nROI), 2), 4));
                     PSarea2area = squeeze(mean(PS(frq_inds, :, :)));
-                    PSmean = mean(PSarea2area, 2);
+                    cortexPlot = mean(PSarea2area, 2);
                 elseif strcmpi(g.measure, 'crossspecimag')
                     PS = abs(imag(cs2coh(S.CS)));
                     PS = squeeze(mean(mean(reshape(PS, S.srate+1, S.nPCA, S.nROI, S.nPCA, S.nROI), 2), 4));
                     PSarea2area = squeeze(mean(PS(frq_inds, :, :)));
-                    PSmean = mean(PSarea2area, 2);
+                    cortexPlot = mean(PSarea2area, 2);
                 else
                     PS = cs2psd(S.CS);
                     PS2 = squeeze(mean(mean(reshape(PS, S.srate+1, S.nPCA, S.nROI, S.nPCA, S.nROI), 2), 4));
                     PSarea2area = squeeze(mean(PS2(frq_inds, :, :)));
                     apow = squeeze(sum(sum(reshape(PS(frq_inds, :), [], S.nPCA, S.nROI), 1), 2)).*S.source_roi_power_norm';
-                    PSmean = 10*log10(apow);
+                    cortexPlot = 10*log10(apow);
                 end
+                plotPSDFreq = S.freqs(frq_inds);
+                plotPSD     = PS(frq_inds, :);
+                matrix      = PSarea2area;
+        end
 
-                if strcmpi(g.plotmatrix, 'on')
-                    matrix = squeeze(mean(PS(frq_inds, :, :)));
-                    figure; imagesc(matrix); colorbar
-                    xlabel('ROI index (see Atlas for more info)');
-                    h = title([ plotOpt.label ' (' titleStr ')']);
-                    set(h, 'fontsize', 16);
-                end
+        % get seed
+        if ~isempty(g.plotcortexseedregion)
+            [coordinate, seed_idx] = get_seedregion_coordinate(EEG.roi.atlas.Scouts, g.plotcortexseedregion, EEG.roi.cortex.Vertices);
+            seedMask = zeros(size(matrix));
+            seedMask(seed_idx, :) = 1;
+            seedMask(:,seed_idx) = 1;
+        else
+            seedMask = ones(size(matrix));
+        end
 
-                if strcmpi(g.plotcortex, 'on')
-                    allplots_cortex_BS(S.cortex, PSmean, [min(PSmean) max(PSmean)], cm17a, plotOpt.unit, g.smooth);
-                    h = textsc([ plotOpt.labelshort ' (' titleStr ')' ], 'title');
-                    set(h, 'fontsize', 20);
-                end
+        % frequency plot
+        if strcmpi(g.plotpsd, 'on')
+            figure; semilogy(plotPSDFreq, plotPSD); grid on
+            h = textsc(plotOpt.label, 'title');
+            set(h, 'fontsize', 20);
+        end
 
-                if strcmpi(g.plot3d, 'on')
-                    roi_plotbrainmovie(PSarea2area, 'cortex', EEG.roi.cortex, 'atlas', EEG.roi.atlas, g.plot3dparams{:});
-                end
+        % plot on matrix
+        if strcmpi(g.plotmatrix, 'on') && ~isempty(matrix)
+            matrix = matrix.*seedMask; 
+            roi_plotcoloredlobes(EEG, matrix, titleStr, g.measure, g.hemisphere, g.region);
+        end
 
-                if strcmpi(g.plotpsd, 'on')
-                    figure; semilogy(S.freqs(frq_inds), PS(frq_inds, :)); grid on
-                    h = textsc(plotOpt.label, 'title');
-                    set(h, 'fontsize', 20);
-                end
+        % plot on cortical surface
+        if strcmpi(g.plotcortex, 'on')
+            cortexTitle = [ plotOpt.labelshort ' (' titleStr ')' ];
+            if isempty(g.plotcortexseedregion)
+                allplots_cortex_BS(S.cortex, cortexPlot, [min(cortexPlot) max(cortexPlot)], cm17a, plotOpt.unit, g.smooth);
+            else
+                cortexTitle = [ cortexTitle ' for area ' int2str(seed_idx)];
+                cortexPlot = squeeze(matrix(seed_idx,:));
+                allplots_cortex_BS(S.cortex, cortexPlot, [min(cortexPlot) max(cortexPlot)], cm17a, plotOpt.unit, g.smooth, [], {coordinate});
+            end
+            h = textsc(cortexTitle, 'title');
+            set(h, 'fontsize', 20);
+        end
 
+        % plot 3D
+        if strcmpi(g.plot3d, 'on') && ~isempty(matrix)
+            PSarea2area = matrix.*seedMask;
+            roi_plotbrainmovie(matrix, 'cortex', EEG.roi.cortex, 'atlas', EEG.roi.atlas, g.plot3dparams{:});
         end
     end
 
@@ -588,7 +577,7 @@ function roi_plotcoloredlobes( EEG, matrix, titleStr, measure, hemisphere, regio
 
         % create dummy plot and add custom legend
         f = figure();
-        f.WindowState = 'maximized';
+        %f.WindowState = 'maximized';
         hold on
         n_dummy_labels = 7;
         x = 1:10;
