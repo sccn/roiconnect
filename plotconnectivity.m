@@ -170,7 +170,7 @@ axis off;
 
 % plot dots
 if ~strcmpi(g.brainimg, 'off')
-    plot(x,y,'k');
+    plot(x,y,'k.');
     plot(x,y,'.','markersize', 12);
 else
     plot(x,y,'k-');

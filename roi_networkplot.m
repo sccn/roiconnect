@@ -132,15 +132,17 @@ end
 % get value of matrix based on measure for the frequency of interest
 % ------------------------------------------------------------------
 fprintf('Thresold of %1.2f (all connectivity values below the threshold are removed)\n', g.threshold);
-if ~iscell(measure)
+if ischar(measure)
     matrix = pop_roi_connectplot(EEG, 'measure', measure, 'noplot', 'on', addopts{:});
-else
+elseif iscell(measure)
     if length(measure) ~= length(networks)
         error('When a cell array, "measure" should have as many element as networks');
     end
     if ~isempty(addopts)
         error('Unknown option "%s"', addopts{1});
     end
+else
+    matrix = measure;
 end
 
 if strcmpi(g.subplots, 'on')

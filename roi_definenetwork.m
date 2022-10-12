@@ -93,7 +93,7 @@ if ischar(roiTable)
         end
         roiTable = roiTable2;
     end
-    roiTable = readtable(roiTable);
+    roiTable = readtable(roiTable,'Delimiter', char(9));
 end
 if ischar(g.addrois) && ~isempty(g.addrois)
     if ~exist(g.addrois, 'file')
