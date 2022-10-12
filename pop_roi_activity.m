@@ -126,20 +126,20 @@ if ~isstruct(EEG)
     return;
 end             
         
-if ~isfield(EEG.dipfit, 'sourcemodel') || isempty(EEG.dipfit.sourcemodel)
+if ~isfield(EEG(1).dipfit, 'sourcemodel') || isempty(EEG(1).dipfit.sourcemodel)
     strDipfit   = 'Use DIPFIT leadfield matrix (none present right now)';
     defaultFile = '';
 else
     strDipfit   = 'Use pre-calculated DIPFIT Leadfield matrix';
-    defaultFile = EEG.dipfit.sourcemodel.file;
+    defaultFile = EEG(1).dipfit.sourcemodel.file;
 end
 strComputeShort = { 'LCMV' 'LCMVFieldtrip' 'eLoreta' 'eLoretaFieldtrip' };
 
 if nargin < 2
     
     options = {};
-    if EEG.trials == 1
-        if EEG.srate > 128
+    if EEG(1).trials == 1
+        if EEG(1).srate > 128
             res = questdlg2( [ 'This function is optimized to process 2-sec data epochs' 10 ...
                 'at a sampling rate of about 100 Hz. Do you want to resample the data and' 10 ...
                 'extract 2-sec data segments? (make sure your dataset is saved)' ], 'Warning ROI connect', 'Cancel', 'No', 'Yes', 'Yes');
@@ -156,7 +156,7 @@ if nargin < 2
                 options = { options{:} 'regepochs' 'on' };
             end
         end
-    elseif EEG.srate > 128
+    elseif EEG(1).srate > 128
         res = questdlg2( [ 'This function is optimized to process data epochs' 10 ...
             'at a sampling rate of about 100 Hz. Do you want to resample the data?' 10 ...
             '(make sure your dataset is saved)' ], 'Warning ROI connect', 'Cancel', 'No', 'Yes', 'Yes');
@@ -197,9 +197,9 @@ if nargin < 2
 
     % 
     if out.leadfieldselect == 1
-         options = { options{:} 'leadfield' EEG.dipfit.sourcemodel };
+         options = { options{:} 'leadfield' EEG(1).dipfit.sourcemodel };
     else
-         options = { options{:} 'leadfield' EEG.dipfit.leadfield };
+         options = { options{:} 'leadfield' EEG(1).dipfit.leadfield };
     end
     try
         modelParams = eval( [ '{' out.modelparams '}' ] );
