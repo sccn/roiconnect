@@ -687,7 +687,7 @@ function roi_plotcoloredlobes( EEG, matrix, titleStr, measure, hemisphere, regio
 
     % create dummy plot and add custom legend
     f = figure();
-    f.WindowState = 'maximized';
+    %f.WindowState = 'maximized';
     hold on
     n_dummy_labels = 7;
     x = 1:10;
