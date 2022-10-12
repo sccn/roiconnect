@@ -358,7 +358,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
 %                 TRGCnet = TRGCnet - permute(TRGCnet, [1 3 2]); 
 %                 TRGCnet = TRGCnet(:,:); 
 %                 TRGCnet = S.GC(:, :, 1) - S.GC(:, :, 2);
-                TRGC = get_connect_mat( TRGCnet, S.nROI, -1);
+%                 TRGC = get_connect_mat( TRGCnet, S.nROI, -1);
                 matrix = squeeze(mean(TRGC(frq_inds, :, :)));
                 cortexPlot  = mean(matrix, 2);
                 cortexTitle = [ upper(g.measure) ' (' titleStr '); Red = net sender; Blue = net receiver' ];
@@ -371,7 +371,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
 %                     MI = S.MIM(:, :);
                     MI = S.MIM;
                 end
-                MI = get_connect_mat( MI, S.nROI, +1);
+%                 MI = get_connect_mat( MI, S.nROI, +1);
                 matrix = squeeze(mean(MI(frq_inds, :, :)));
                 cortexPlot = mean(matrix, 2);
 
@@ -513,116 +513,16 @@ end
 
 function roi_plotpower(EEG, source_roi_power_norm_dB, titleStr)
     [colors, color_idxx, roi_idxx, labels_dk_cell_idx, ~] = get_colored_labels(EEG);
-    
-    if strcmpi(measure, 'roipsd')  % plot barplot for power
-        barh(matrix(roi_idxx));
-        set(gca, 'YDir', 'reverse');
-        set(gca,'ytick',[1:68],'yticklabel',labels_dk_cell_idx(1:68), 'fontweight','bold','fontsize', 9, 'TickLength',[0.015, 0.02], 'LineWidth',0.7);
-        h = title([ 'ROI source power' ' (' titleStr ')' ]);
-        set(h, 'fontsize', 16);
-        ylabel('power [dB]')
-        ax = gca;
-        for i=1:numel(roi_idxx)
-            ax.YTickLabel{ceil(i)} = sprintf('\\color[rgb]{%f,%f,%f}%s', colors{color_idxx(i)}, ax.YTickLabel{ceil(i)});
-        end
-        pos = get(gcf, 'Position');
-        set(gcf, 'Position', [pos(1) pos(2) pos(3) pos(4)*1.8])
-        movegui(gcf, 'south') % remove after
-        
-    else  % create fc matrix
-        % assign region input to an index
-        [GC, GR] = groupcounts(roi_loc);
-        switch lower(region)
-            case 'cingulate'
-                region_idx = 1;
-            case 'prefrontal'
-                region_idx = 2;
-            case 'frontal'
-                region_idx = 3;
-            case 'temporal'
-                region_idx = 4;
-            case 'parietal'
-                region_idx = 5;
-            case 'central'
-                region_idx = 6;
-            case 'occipital'
-                region_idx = 7;
-            otherwise
-                region_idx = 99;
-        end
 
-        matrix = matrix(roi_idxx, roi_idxx);  % sort matrix according to color scheme
-        % reduce matrix to only keep components corresponding to selected region
-        if not(region_idx == 99)
-            if region_idx == 1
-                start_idx = 1;
-            else
-                start_idx = 1 + sum(GC(1:region_idx-1));
-            end
-            end_idx = start_idx + GC(region_idx) - 1;
-            matrix = matrix(start_idx:end_idx, start_idx:end_idx);  
-            labels_dk_cell_idx = labels_dk_cell_idx(start_idx:end_idx);
-            color_idxx = color_idxx(start_idx:end_idx);
-        end
-        n_roi_labels = size(matrix, 1); % only 68 if no region is selected
-        
-        % hemisphere parameters to determine which labels to use 
-        if strcmpi(hemisphere, 'left')
-            hem_idx = {1 2 2};  % use labels 1:2:68 (first two values), only use 1/2 of the labels (3rd value)
-        elseif strcmpi(hemisphere, 'right')
-            hem_idx = {2 2 2};  % use labels 2:2:68 (first two values), only use 1/2 of the labels (3rd value)
-        else
-            hem_idx = {1 1 1};  % use labels 1:1:68 (first two values, all labels), use 1/1 of the labels (3rd value, all labels)
-        end
-
-        % create dummy plot and add custom legend
-        f = figure();
-        %f.WindowState = 'maximized';
-        hold on
-        n_dummy_labels = 7;
-        x = 1:10;
-        for k=1:n_dummy_labels
-            plot(x, x*k, '-', 'LineWidth', 9, 'Color', colors{k});
-        end
-
-        % labels on dummy plot for positioning
-        xlim([0 n_roi_labels])
-        ylim([0 n_roi_labels])
-        set(gca,'xtick',[1:n_roi_labels],'xticklabel',labels_dk_cell_idx(hem_idx{1}:hem_idx{2}:n_roi_labels));
-        ax = gca;
-        for i=hem_idx{1}:hem_idx{2}:n_roi_labels   
-            ax.XTickLabel{ceil(i/hem_idx{3})} = sprintf('\\color[rgb]{%f,%f,%f}%s', colors{color_idxx(i)}, ax.XTickLabel{ceil(i/2)});
-        end
-        xtickangle(90)
-        pos = get(gca, 'Position');
-        legend('Cingulate', 'Prefrontal', 'Frontal', 'Temporal', 'Parietal', 'Central', 'Occipital', 'Location', 'southeastoutside'); % modify legend position
-        set(gca, 'Position', pos, 'DataAspectRatio',[1 1 1], 'visible', 'off')
-
-        % plot matrix over the dummy plot and keep the legend
-        axes('pos', [pos(1) pos(2) pos(3) pos(4)])
-        if strcmp(hemisphere, 'left') || strcmp(hemisphere, 'right')
-            matrix(hem_idx{1}:hem_idx{2}:n_roi_labels,:) = [];  % reduce matrix
-            matrix(:,hem_idx{1}:hem_idx{2}:n_roi_labels) = [];
-            imagesc(matrix); colormap(cmap);  
-        else
-            imagesc(matrix); colormap(cmap);
-
-        end
-        cb = colorbar;
-        set(cb, 'Location', 'southoutside')
-        set(gca, 'Position', pos, 'DataAspectRatio',[1 1 1], 'visible', 'on')
-
-        % add colored labels with display option
-        set(gca,'ytick',[1:n_roi_labels],'yticklabel',labels_dk_cell_idx(hem_idx{1}:hem_idx{2}:n_roi_labels), 'fontweight','bold', 'fontsize', 9, 'TickLength',[0.015, 0.02], 'LineWidth',0.75);
-        set(gca,'xtick',[1:n_roi_labels],'xticklabel',labels_dk_cell_idx(hem_idx{1}:hem_idx{2}:n_roi_labels));
-        ax = gca;
-        for i=hem_idx{1}:hem_idx{2}:n_roi_labels  
-            ax.XTickLabel{ceil(i/hem_idx{3})} = sprintf('\\color[rgb]{%f,%f,%f}%s', colors{color_idxx(i)}, ax.XTickLabel{ceil(i/hem_idx{3})});
-            ax.YTickLabel{ceil(i/hem_idx{3})} = sprintf('\\color[rgb]{%f,%f,%f}%s', colors{color_idxx(i)}, ax.YTickLabel{ceil(i/hem_idx{3})});
-        end
-        h = title([ 'ROI to ROI ' upper(measure) ' (' titleStr ')' ]);
-        set(h, 'fontsize', 16);
-        xtickangle(90)
+    barh(source_roi_power_norm_dB(roi_idxx));
+    set(gca, 'YDir', 'reverse');
+    set(gca,'ytick',[1:68],'yticklabel',labels_dk_cell_idx(1:68), 'fontweight','bold','fontsize', 9, 'TickLength',[0.015, 0.02], 'LineWidth',0.7);
+    h = title([ 'ROI source power' ' (' titleStr ')' ]);
+    set(h, 'fontsize', 16);
+    ylabel('power [dB]')
+    ax = gca;
+    for i=1:numel(roi_idxx)
+        ax.YTickLabel{ceil(i)} = sprintf('\\color[rgb]{%f,%f,%f}%s', colors{color_idxx(i)}, ax.YTickLabel{ceil(i)});
     end
     pos = get(gcf, 'Position');
     set(gcf, 'Position', [pos(1) pos(2) pos(3) pos(4)*1.8])

@@ -5,7 +5,7 @@
 ROIconnect is a freely available open-source plugin to [EEGLAB](https://github.com/sccn/eeglab) for EEG data analysis. It allows you to perform functional connectivity analysis between regions of interests (ROIs) on source level.  The results can be visualized in 2-D and 3-D. ROIs are defined based on popular fMRI atlases, and source localization can be performed through LCMV beamforming or eLORETA. Connectivity analysis can be performed between all pairs of brain regions using Granger Causality, Time-reversed Granger Causality, Multivariate Interaction Measure, Maximized Imaginary Coherency, and other methods. This plugin is compatible with Fieldtrip, Brainstorm and NFT head models.
 
 📚 Check out the following paper to learn about recommended methods and pipelines for connectivity experiments:
-> Pellegrini, F., Delorme, A., Nikulin, V. & Haufe, S., 2022. Identifying best practices for detecting inter-regional functional connectivity from EEG. <preprint_location>.
+> Pellegrini, F., Delorme, A., Nikulin, V. & Haufe, S., 2022. Identifying best practices for detecting inter-regional functional connectivity from EEG. bioRxiv 2022.10.05.510753. https://doi.org/10.1101/2022.10.05.510753
 
 You can choose to access the core functions from the EEGLAB GUI. Experienced users can access additional utilities from the command line. If you do decide to run a function from the command line, please refer to the respective documentation provided in the code. 
 
@@ -124,7 +124,7 @@ pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'on', 'freqrange', [8 1
 <a id="1">[1]</a> 
 Pellegrini, F., Delorme, A., Nikulin, V. & Haufe, S. (2022). 
 Identifying best practices for detecting inter-regional functional connectivity from EEG. 
-<preprint_location>.
+bioRxiv 2022.10.05.510753. https://doi.org/10.1101/2022.10.05.510753
 
 <a id="2">[2]</a> 
 https://github.com/fpellegrini/FCsim
