@@ -33,12 +33,16 @@
 %  'region'               - ['all'|'cingulate'|'prefrontal'|'frontal'|'temporal'|'parietal'|'central'|'occipital'] region selection for ROI to ROI matrix. Default is 'all'
 %  'largeplot'            - ['on'|'off'] plot MIM, TRGC and Power in a single large plot. Default is 'off'
 %  'plotpsd'              - ['on'|'off'] plot PSD (for 'crossspecpow' only). Default is 'off'
+%  'noplot'               - ['on'|'off'] when 'on', disable all plotting. Default is 'off'
+%
+% Output
+%  matnet - connectivity matrix (nROI x nROI)
 %
 % Author: Stefan Haufe and Arnaud Delorme, 2019
 %
 % Example:
 %   % Requires prior call to pop_roi_connect
-%   EEG = pop_roi_connectplot(EEG, 'measure', 'psd');
+%   matnet = pop_roi_connectplot(EEG, 'measure', 'psd');
 
 % Copyright (C) Arnaud Delorme, arnodelorme@gmail.com
 %
@@ -125,7 +129,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         splot(end  ).plot3d = plot3dFlag;
     end
 
-    if isfield(EEG.roi, 'COH')
+    if isfield(EEG.roi, 'CS')
         splot(end+1).label    = 'ROI to ROI imaginary part of cross-spectrum';
         splot(end  ).labelshort = 'Img. part of cross-spectrum';
         splot(end  ).acronym  = 'crossspecimag';
@@ -272,6 +276,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         'plot3d'                'string'   { 'on' 'off' }          'off';
         'plot3dparams'          'cell'     { }                     {};
         'plotmatrix'            'string'   { 'on' 'off' }          'off';
+        'noplot'                'string'   { 'on' 'off' }          'off';
         'plotbarplot'           'string'   { 'on' 'off'}           'off';
         'hemisphere'            'string'   {'all' 'left' 'right'}  'all';
         'region'                'string'   { 'all', 'cingulate', 'prefrontal', 'frontal', 'temporal', 'parietal', 'central', 'occipital' }  'all';
@@ -283,8 +288,13 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
     end
     S = EEG.roi;
 
+    if isempty(g.measure)
+        error('You must define a measure to plot');
+    end
+    
     % colormap
     load cm17;
+    load cm18;
 
     % frequency range
     if ~isempty(g.freqrange)
@@ -311,13 +321,8 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
 %         TRGCnet = TRGCnet - permute(TRGCnet, [1 3 2]);
 %         TRGCnet = TRGCnet(:,:);
         
-        TRGCnet = S.TRGC(:, :, 1) - S.TRGC(:, :, 2);
-        TRGC = get_connect_mat( TRGCnet, S.nROI, -1);
-        TRGC_matrix = squeeze(mean(TRGC(frq_inds, :, :)));
-        
-        MI = S.MIM(:, :);
-        MI = get_connect_mat( MI, S.nROI, +1);
-        MIM_matrix = squeeze(mean(MI(frq_inds, :, :)));
+        TRGC_matrix = squeeze(mean(S.TRGC(frq_inds, :, :)));
+        MIM_matrix = squeeze(mean(S.MIM(frq_inds, :, :)));
         
         roi_largeplot(EEG, MIM_matrix, TRGC_matrix, source_roi_power_norm_dB, titleStr)
     else     
@@ -336,21 +341,20 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
                     plotOpt.unit = 'Power (dB)';
                 end
 
-                if strcmpi(g.plotbarplot, 'on')
+                if strcmpi(g.plotbarplot, 'on') && ~strcmpi(g.noplot, 'on')
                     source_roi_power_norm_dB = 10*log10( mean(EEG.roi.source_roi_power(frq_inds,:)) );
                     roi_plotcoloredlobes(EEG, source_roi_power_norm_dB, titleStr, g.measure, g.hemisphere, g.region);
                 end
 
             case { 'trgc' 'gc' }
                 % calculation of net TRGC scores (i->j minus j->i), recommended procedure
-                % TRGCnet = TRGC_(:, 1:2:end)-TRGC_(:, 2:2:end);
                 % new way to compute net scores
                 if strcmpi(g.measure, 'GC')
-%                     TRGCnet = S.GC; 
-                    TRGCnet = S.GC(:, :, 1) - S.GC(:, :, 2);
+%                     TRGCnet = S.GC(:, :, 1) - S.GC(:, :, 2);
+                    TRGC = S.GC;
                 else
-%                    TRGCnet = S.TRGC; 
-                   TRGCnet = S.TRGC(:, :, 1) - S.TRGC(:, :, 2);
+%                     TRGCnet = S.TRGC(:, :, 1) - S.TRGC(:, :, 2);
+                    TRGC = S.TRGC;
                 end
 %                 TRGCnet = TRGCnet - permute(TRGCnet, [1 3 2]); 
 %                 TRGCnet = TRGCnet(:,:); 
@@ -362,9 +366,11 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
 
             case { 'mim' 'mic' }
                 if strcmpi(g.measure, 'MIC')
-                    MI = S.MIC(:, :);
+%                     MI = S.MIC(:, :);
+                    MI = S.MIC;
                 else
-                    MI = S.MIM(:, :);
+%                     MI = S.MIM(:, :);
+                    MI = S.MIM;
                 end
                 MI = get_connect_mat( MI, S.nROI, +1);
                 matrix = squeeze(mean(MI(frq_inds, :, :)));
@@ -384,7 +390,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
                 else
                     PS = cs2psd(S.CS);
                     PS2 = squeeze(mean(mean(reshape(PS, S.srate+1, S.nPCA, S.nROI, S.nPCA, S.nROI), 2), 4));
-                    PSarea2area = squeeze(mean(PS2(frq_inds, :, :)));
+                    PSarea2area = squeeze(mean(PS2(frq_inds, :, :),1));
                     apow = squeeze(sum(sum(reshape(PS(frq_inds, :), [], S.nPCA, S.nROI), 1), 2)).*S.source_roi_power_norm';
                     cortexPlot = 10*log10(apow);
                 end
@@ -442,19 +448,19 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
     end
 end
 
-function measure = get_connect_mat( measureOri, nROI, signVal)
-    % create a ROI x ROI connectivity matrix, if needed
-    % TRGCmat(f, ii, jj) is net TRGC from jj to ii
-    measure = [];
-    iinds = 0;
-    for iroi = 1:nROI
-        for jroi = (iroi+1):nROI
-            iinds = iinds + 1;
-            measure(:, iroi, jroi) = signVal * measureOri(:, iinds);
-            measure(:, jroi, iroi) = measureOri(:, iinds);
-        end
-    end
-end
+% function measure = get_connect_mat( measureOri, nROI, signVal)
+%     % create a ROI x ROI connectivity matrix, if needed
+%     % TRGCmat(f, ii, jj) is net TRGC from jj to ii
+%     measure = [];
+%     iinds = 0;
+%     for iroi = 1:nROI
+%         for jroi = (iroi+1):nROI
+%             iinds = iinds + 1;
+%             measure(:, iroi, jroi) = signVal * measureOri(:, iinds);
+%             measure(:, jroi, iroi) = measureOri(:, iinds);
+%         end
+%     end
+% end
 
 function [coordinate, seed_idx] = get_seedregion_coordinate(scouts, seed_idx, vc)
     % determine voxel of selected seed region, if needed
@@ -481,12 +487,12 @@ end
         
 function roi_plotcoloredlobes( EEG, matrix, titleStr, measure, hemisphere, region)
     % plot matrix with colored labels sorted by region according to the Desikan-Killiany atlas    
-    load cm17
+    load cm18
     switch lower(measure)
         case {'mim', 'mic', 'coh'}
-            cmap = cm17a;
+            cmap = cm18a;
         otherwise
-            cmap = cm17;
+            cmap = cm18;
     end
     
     % retrieve labels from atlas
@@ -628,7 +634,7 @@ end
 
 function roi_largeplot(EEG, mim, trgc, roipsd, titleStr)
     % plot MIM, TRGC and power (barplot) in a single large figure
-    load cm17
+    load cm18
     
     % plot matrix with colored labels sorted by region according to the
     % Desikan-Killiany atlas
@@ -684,8 +690,8 @@ function roi_largeplot(EEG, mim, trgc, roipsd, titleStr)
             ax.YTickLabel{ceil(i)} = sprintf('\\color[rgb]{%f,%f,%f}%s', colors{color_idxx(i)}, ax.YTickLabel{ceil(i)});
         end
     end
-    colormap(plt(1), cm17a)
-    colormap(plt(2), cm17)
+    colormap(plt(1), cm18a)
+    colormap(plt(2), cm18)
     
     % power
     subplot(1,3,3);

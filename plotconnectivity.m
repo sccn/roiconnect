@@ -115,13 +115,15 @@ if ~strcmpi(g.brainimg, 'off')
         if isempty(indCoord)
             disp('Could not find brain areas, plotting on circle')
             g.brainimg = 'off';
+            break;
             indLab = length(g.labels);
         else
             x(indLab) = coords{2,indCoord};
             y(indLab) = coords{3,indCoord};
         end
     end
-else
+end
+if strcmpi(g.brainimg, 'off')
     plotImg = false;
     anglesInit = linspace(0,2*pi,size(array,1)+1) + pi/size(array,1);
     x = sin(anglesInit)*radius;
@@ -230,7 +232,8 @@ for ind1 = 1:size(array,1)
                     pnts = linspace(angles(1),angles(2),round(diff(angles)*10));
                     x2 = sin(pnts)*radius+center(1);
                     y2 = cos(pnts)*radius+center(2);
-                    col = ceil((array(ind1, ind2)-arrayMin)/(arrayMax-arrayMin)*size(g.colormap,1)+1);
+                    value0to1 = (array(ind1, ind2)-arrayMin)/(arrayMax-arrayMin);
+                    col = ceil( value0to1*( size(g.colormap,1)-1 ) )+1;
                     plot(x2,y2,'-', 'color', g.colormap(col, :));
                 end
             end
@@ -249,6 +252,8 @@ for ind1 = 1:size(array,1)
         if ~isempty(g.labelsgroup)
             ind = strmatch(g.labelsgroup{ind1}, groups, 'exact');
             col = colors{ind}; %mod(ind-1, length(colors))+1};
+        else
+            col = 'k';
         end
         h = text( x(ind1), y(ind1), 0, [ ' ' g.labels{ind1} ], 'interpreter', 'none', 'fontsize', 8, 'color', col);
         set(h, 'HorizontalAlignment','left', 'rotation', 90-anglesInit(ind1)/pi*180);

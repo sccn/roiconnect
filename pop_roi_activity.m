@@ -12,10 +12,13 @@
 %  'sourcemodel' - [string] source model file
 %
 % Optional inputs:
-%  'elec2mni'    - [9x float] homogeneous transformation matrix to convert
-%                  electrode locations to MNI space.
+%  'elec2mni'        - [9x float] homogeneous transformation matrix to convert
+%                       electrode locations to MNI space.
 %  'sourcemodel2mni' - [9x float] homogeneous transformation matrix to convert
-%                  sourcemodel to MNI space.
+%                      sourcemodel to MNI space.
+%  'fooof'           - ['on'|'off'] enable FOOOF analysis. Default is 'off'.
+%  'fooof_frange'    - [''] FOOOF fitting range. Default is [1 30] like in the
+%                        example.
 %
 % Output:
 %  EEG - EEGLAB dataset with field 'roi' containing connectivity info.
@@ -228,12 +231,14 @@ end
 %    'export2icamatrix' 'string' {'on', 'off'}   'off';
 [g, moreargs] = finputcheck(options, { ...
     'leadfield'       { 'string' 'struct' } { { }  {} }      '';
-    'model'           'string'              strComputeShort 'LCMV';
+    'model'           'string'              strComputeShort  'LCMV';
     'modelparams'     'cell'                {}               {};
     'atlas'           'string'              {}               '';
     'resample'        'string'              { 'on' 'off'}    'off';
     'regepochs'       'string'              { 'on' 'off'}    'off';
-    'nPCA'            'real'                {}               3 }, 'pop_roi_activity', 'ignore');
+    'nPCA'            'real'                {}               3;
+    'fooof'           'string'              { 'on' 'off'}    'off';
+    'fooof_frange'     ''                   {}               [1 30]}, 'pop_roi_activity', 'ignore');
 if ischar(g), error(g); end
 
 if strcmpi(g.resample, 'on')
@@ -254,7 +259,7 @@ end
 
 EEG = roi_activity(EEG, 'leadfield', g.leadfield, 'headmodel', EEG.dipfit.hdmfile, ...
     'model', g.model, 'modelparams', g.modelparams, 'sourcemodel', sourceModelFile, ...
-    'sourcemodel2mni', sourceModel2MNI, 'nPCA', g.nPCA, ...
+    'sourcemodel2mni', sourceModel2MNI, 'nPCA', g.nPCA,'fooof', g.fooof, 'fooof_frange', g.fooof_frange, ...
     'sourcemodelatlas', g.atlas, moreargs{:});
 
 if nargout > 1
