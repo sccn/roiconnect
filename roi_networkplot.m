@@ -221,10 +221,10 @@ for iNet = 1:length(networks)
     
 end
 
-if strcmpi(g.subplots, 'on') && ~isempty(g.title)
-    h = textsc(g.title, 'title');
-    set(h, 'fontsize', 16, 'fontweight', 'bold');
-end
+% if strcmpi(g.subplots, 'on') && ~isempty(g.title)
+%     h = textsc(g.title, 'title');
+%     set(h, 'fontsize', 16, 'fontweight', 'bold');
+% end
 
 if ~isempty(g.filename)
     print('-djpeg', g.filename);
