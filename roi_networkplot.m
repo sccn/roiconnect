@@ -92,6 +92,7 @@ end
     'exporttxt'   'string'    {'on' 'off'}    'on';
     'title'       'string'    {}              '';
     'columns'     'integer'   {}              [];
+    'limits'      'float'     {}              [];
     'plotmode'    'string'    {'2D' '3D' 'both' }  '2D';
     'filename'    'string'    {}              '';
     'threshold'   'float'     {}              0.1;
@@ -190,11 +191,7 @@ for iNet = 1:length(networks)
     
     % 2-D plot
     if strcmpi(g.plotmode, '2D') || strcmpi(g.plotmode, 'both')
-        if iNet == 1
-            lim = plotconnectivity(networkMat(:,:), 'labels', labels, 'axis', gca, 'threshold', g.threshold);
-        else
-            plotconnectivity(networkMat(:,:), 'labels', labels, 'axis', gca, 'threshold', g.threshold, 'limits', []);
-        end
+        plotconnectivity(networkMat(:,:), 'labels', labels, 'axis', gca, 'threshold', g.threshold, 'limits', g.limits);
         h = title(tmpTitle, 'interpreter', 'none');
         pos = get(h, 'position');
         set(h, 'position', pos + [0 0.1 0]);
