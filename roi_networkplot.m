@@ -91,6 +91,8 @@ end
     'subplots'    'string'    {'on' 'off'}    'off';
     'exporttxt'   'string'    {'on' 'off'}    'on';
     'title'       'string'    {}              '';
+    'columns'     'integer'   {}              [];
+    'limits'      'float'     {}              [];
     'plotmode'    'string'    {'2D' '3D' 'both' }  '2D';
     'filename'    'string'    {}              '';
     'threshold'   'float'     {}              0.1;
@@ -132,21 +134,27 @@ end
 % get value of matrix based on measure for the frequency of interest
 % ------------------------------------------------------------------
 fprintf('Thresold of %1.2f (all connectivity values below the threshold are removed)\n', g.threshold);
-if ~iscell(measure)
+if ischar(measure)
     matrix = pop_roi_connectplot(EEG, 'measure', measure, 'noplot', 'on', addopts{:});
-else
+elseif iscell(measure)
     if length(measure) ~= length(networks)
         error('When a cell array, "measure" should have as many element as networks');
     end
     if ~isempty(addopts)
         error('Unknown option "%s"', addopts{1});
     end
+else
+    matrix = measure;
 end
 
 if strcmpi(g.subplots, 'on')
-    figure('position', [100 100 1000 700], 'paperpositionmode', 'auto');
-    ncol = ceil(sqrt(length(networks)));
+    if isempty(g.columns)
+        ncol = ceil(sqrt(length(networks)));
+    else
+        ncol = g.columns;
+    end
     nrow = ceil(length(networks)/ncol);
+    figure('position', [100 100 350*ncol 350*nrow], 'paperpositionmode', 'auto');
 end
 
 imgFileName = {};
@@ -183,7 +191,7 @@ for iNet = 1:length(networks)
     
     % 2-D plot
     if strcmpi(g.plotmode, '2D') || strcmpi(g.plotmode, 'both')
-        plotconnectivity(networkMat(:,:), 'labels', labels, 'axis', gca, 'threshold', g.threshold);
+        plotconnectivity(networkMat(:,:), 'labels', labels, 'axis', gca, 'threshold', g.threshold, 'limits', g.limits);
         h = title(tmpTitle, 'interpreter', 'none');
         pos = get(h, 'position');
         set(h, 'position', pos + [0 0.1 0]);
@@ -219,10 +227,10 @@ for iNet = 1:length(networks)
     
 end
 
-if strcmpi(g.subplots, 'on') && ~isempty(g.title)
-    h = textsc(g.title, 'title');
-    set(h, 'fontsize', 16, 'fontweight', 'bold');
-end
+% if strcmpi(g.subplots, 'on') && ~isempty(g.title)
+%     h = textsc(g.title, 'title');
+%     set(h, 'fontsize', 16, 'fontweight', 'bold');
+% end
 
 if ~isempty(g.filename)
     print('-djpeg', g.filename);

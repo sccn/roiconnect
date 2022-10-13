@@ -93,7 +93,7 @@ if ischar(roiTable)
         end
         roiTable = roiTable2;
     end
-    roiTable = readtable(roiTable);
+    roiTable = readtable(roiTable,'Delimiter', char(9));
 end
 if ischar(g.addrois) && ~isempty(g.addrois)
     if ~exist(g.addrois, 'file')
@@ -117,8 +117,9 @@ end
 connectmat = g.connectmat;
 if ~isempty(g.addrois)
     colNames = fieldnames(g.addrois);
+    ROIinds = cell(1, size(g.addrois,2));
+
     for iCol = 1:size(g.addrois,2) % scan columns
-        
         EEG.roi.atlas.Scouts(end+1).Label = colNames{iCol};
         
         inds = [];
@@ -144,16 +145,12 @@ if ~isempty(g.addrois)
                 end
             end
         end
+        ROIinds{iCol} = inds;
         EEG.roi.atlas.Scouts(end).Vertices = vertcat(EEG.roi.atlas.Scouts(inds).Vertices);
-        
-        % add 1 row and col to the connectivity matrix if any given as input
-        if ~isempty(connectmat)
-            indNew = size(connectmat,1)+1;
-            for iInd = 1:size(connectmat,1)
-                connectmat(indNew,iInd) = mean(connectmat(setdiff(inds, iInd),iInd));
-                connectmat(iInd,indNew) = mean(connectmat(iInd, setdiff(inds, iInd)));
-            end
-        end
+    end
+    
+    if ~isempty(connectmat)
+        connectmat = augmentConnectivity(connectmat, ROIinds);
     end
 end
             
@@ -192,3 +189,42 @@ for iCol = 1:size(roiTable,2) % scan columns
 end
 
 EEG.roi.atlas.networks = networks;
+
+% % augment connectivity rows/cols A, B, C, D
+% % new areas (A,B) and (C,D)
+% % The connectivity between (A,B) and (C,D) is ( A->C + A->D + B->C + B->D )/4 
+% % equals (4 -2 +1 -1)/4 = 0.5 in the example below
+% connectmat = [ 0 1 4 -2; 1 0 1 -1; 4 1 0 1; -2 -1 1 0];
+% ROIinds = { [1 2] [ 3 4] }
+% newconnectmat = augmentConnectivity(connectmat,ROIinds)
+
+function newconnectmat = augmentConnectivity(connectmat,ROIinds)
+
+nVals = size(connectmat,1);
+newconnectmat = zeros(nVals+length(ROIinds), nVals+length(ROIinds));
+newconnectmat(1:nVals,1:nVals) = connectmat;
+
+for iCol = 1:length(ROIinds)
+    newconnectmat(nVals+iCol,1:nVals) =  mean(connectmat(ROIinds{iCol},:),1);
+    newconnectmat(1:nVals,nVals+iCol) =  mean(connectmat(:,ROIinds{iCol}),2);
+end
+for iCol1 = 1:length(ROIinds)
+    for iCol2 = 1:length(ROIinds)
+        if iCol1 ~= iCol2
+            newconnectmat(nVals+iCol1,nVals+iCol2) =  mean(newconnectmat(nVals+iCol1,ROIinds{iCol2}));
+            if 0
+                % brute force check (but slower)
+                tot = 0;
+                for iRoi1 = ROIinds{iCol1}(:)'
+                    for iRoi2 = ROIinds{iCol2}(:)'
+                        tot = tot + connectmat(iRoi1, iRoi2);
+                    end
+                end
+                tot = tot/length(ROIinds{iCol1})/length(ROIinds{iCol2});
+                if abs(tot - newconnectmat(nVals+iCol1,nVals+iCol2)) > 1e-15
+                    error('Non equal value');
+                end
+            end
+        end
+    end
+end
