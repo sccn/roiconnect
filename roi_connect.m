@@ -70,7 +70,6 @@ function EEG = roi_connect(EEG, varargin)
         'methods'     'cell'    { }            {} }, 'roi_connect');    
     if ischar(g), error(g); end
     if isempty(g.naccu), g.naccu = 0; end
-    g.methods = upper(g.methods);
     tmpMethods = setdiff(g.methods, {  'CS' 'COH' 'GC' 'TRGC' 'wPLI' 'PDC' 'TRPDC' 'DTF' 'TRDTF' 'MIM' 'MIC'});
     if ~isempty(tmpMethods)
         error('Unknown methods %s', vararg2str(tmpMethods))
