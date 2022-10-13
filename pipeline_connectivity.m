@@ -18,7 +18,7 @@ eeglabp = fileparts(which('eeglab.m'));
 EEG = pop_loadset('filename','eeglab_data_epochs_ica.set','filepath',fullfile(eeglabp, 'sample_data/'));
 EEG = pop_resample( EEG, 100);
 EEG = pop_epoch( EEG, { }, [-0.5 1.5], 'newname', 'EEG Data epochs epochs', 'epochinfo', 'yes');
-EEG = pop_select( EEG, 'trial',1:2);
+EEG = pop_select( EEG, 'trial',1:30);
 [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG);
 eeglab redraw;
 
@@ -34,6 +34,7 @@ EEG = pop_roi_activity(EEG, 'leadfield',EEG.dipfit.sourcemodel,'model','LCMV','m
 
 measures = { 'CS' 'COH' 'DTF'  'wPLI'  'PDC'  'MIM'  'MIC' 'GC' };
 measures = { 'CS' 'COH' 'wPLI'  'PDC'  'MIM'  'MIC' 'GC' };
+measures = { 'CS' 'COH' 'MIM' 'GC' };
 
 for iMeasure = 1:length(measures)
     tic
