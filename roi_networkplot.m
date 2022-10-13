@@ -91,6 +91,7 @@ end
     'subplots'    'string'    {'on' 'off'}    'off';
     'exporttxt'   'string'    {'on' 'off'}    'on';
     'title'       'string'    {}              '';
+    'columns'     'integer'   {}              [];
     'plotmode'    'string'    {'2D' '3D' 'both' }  '2D';
     'filename'    'string'    {}              '';
     'threshold'   'float'     {}              0.1;
@@ -146,9 +147,13 @@ else
 end
 
 if strcmpi(g.subplots, 'on')
-    figure('position', [100 100 1000 700], 'paperpositionmode', 'auto');
-    ncol = ceil(sqrt(length(networks)));
+    if isempty(g.columns)
+        ncol = ceil(sqrt(length(networks)));
+    else
+        ncol = g.columns;
+    end
     nrow = ceil(length(networks)/ncol);
+    figure('position', [100 100 350*ncol 350*nrow], 'paperpositionmode', 'auto');
 end
 
 imgFileName = {};
@@ -185,7 +190,11 @@ for iNet = 1:length(networks)
     
     % 2-D plot
     if strcmpi(g.plotmode, '2D') || strcmpi(g.plotmode, 'both')
-        plotconnectivity(networkMat(:,:), 'labels', labels, 'axis', gca, 'threshold', g.threshold);
+        if iNet == 1
+            lim = plotconnectivity(networkMat(:,:), 'labels', labels, 'axis', gca, 'threshold', g.threshold);
+        else
+            plotconnectivity(networkMat(:,:), 'labels', labels, 'axis', gca, 'threshold', g.threshold, 'limits', []);
+        end
         h = title(tmpTitle, 'interpreter', 'none');
         pos = get(h, 'position');
         set(h, 'position', pos + [0 0.1 0]);

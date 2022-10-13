@@ -45,7 +45,7 @@
 % plotconnectivity(rand(8,8), 'brainimg', 'bilateral', 'labels', { 'Dorso_lateral_prefrontal_cortex_L' 'Parietal_lobe_L' 'Thalamus_L' 'Visual_cortex_L' 'Dorso_lateral_prefrontal_cortex_R' 'Parietal_lobe_R' 'Thalamus_R' 'Visual_cortex_R' });
 % plotconnectivity(rand(4,4), 'brainimg', 'bilateral', 'labels', { 'Dorso_lateral_prefrontal_cortex_L' 'Parietal_lobe_L' 'Thalamus_L' 'Visual_cortex_L' });
 
-function plotconnectivity(array, varargin)
+function limits = plotconnectivity(array, varargin)
 
 if nargin < 2
     help plotconnectivity
@@ -60,12 +60,14 @@ g = finputcheck(varargin, { ...
     'labelsgroup'  'cell'      { }             {};
     'axis'        ''          {}              [];
     'colormap'    ''          {}              cool;
+    'limits'      'real'      {}              [];
     'brainimg'   'string'     {'on' 'off' 'bilateral'}     'bilateral';
     'threshold'   'real'      {}              0.25;
     }, 'roi_network');
 if isstr(g)
     error(g);
 end
+limits = g.limits;
 
 if g.threshold > 0
     array(abs(array) < g.threshold) = 0;
@@ -203,8 +205,12 @@ else
 end
 
 warning off;
-arrayMin = min(array(:));
-arrayMax = max(array(:));
+if isempty(limits)
+    limits(2) = max(array(:));
+    arrayTmp = array(:);
+    arrayTmp(arrayTmp == 0) = Inf;
+    limits(1) = min(arrayTmp(:));
+end
 for ind1 = 1:size(array,1)
     for ind2 = 1:size(array,2)
         if ind1 ~= ind2
@@ -216,8 +222,12 @@ for ind1 = 1:size(array,1)
 
                 center = distance*4*2*(aa+bb)/2;
                 radius = sqrt(sum(abs(aa-center).^2));
+                value0to1 = (array(ind1, ind2)-limits(1))/(limits(2)-limits(1));
+                col = ceil( value0to1*( size(g.colormap,1)-1 ) )+1;
+                col = max(col,1);
+                col = min(col,size(g.colormap,1));
                 if sum(abs(center)) < 1e-8 || ~strcmpi(g.brainimg, 'off')
-                    plot([aa(1) bb(1)],[aa(2) bb(2)],'-');
+                    plot([aa(1) bb(1)],[aa(2) bb(2)],'-', 'color', g.colormap(col, :), 'linewidth', 2);
                 else
                     angle1 = atan2(aa(1)-center(1), aa(2)-center(2));
                     angle2 = atan2(bb(1)-center(1), bb(2)-center(2));
@@ -232,8 +242,6 @@ for ind1 = 1:size(array,1)
                     pnts = linspace(angles(1),angles(2),round(diff(angles)*10));
                     x2 = sin(pnts)*radius+center(1);
                     y2 = cos(pnts)*radius+center(2);
-                    value0to1 = (array(ind1, ind2)-arrayMin)/(arrayMax-arrayMin);
-                    col = ceil( value0to1*( size(g.colormap,1)-1 ) )+1;
                     plot(x2,y2,'-', 'color', g.colormap(col, :));
                 end
             end
