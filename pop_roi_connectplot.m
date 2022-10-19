@@ -542,6 +542,9 @@ function roi_plotcoloredlobes( EEG, matrix, titleStr, measure, hemisphere, group
     end
     [colors, color_idxx, roi_idxx, labels_dk_cell_idx, roi_loc] = get_colored_labels(EEG);
     
+    clim_min = min(matrix, [], 'all');
+    clim_max = max(matrix, [], 'all');
+    
     % assign region input to an index
     [GC, GR] = groupcounts(roi_loc);
     switch lower(region)
@@ -653,8 +656,13 @@ function roi_plotcoloredlobes( EEG, matrix, titleStr, measure, hemisphere, group
     else
         imagesc(matrix); colormap(cmap);
     end
-    
     cb = colorbar;
+    tf = isMATLABReleaseOlderThan("R2022a");
+    if tf
+        caxis([clim_min clim_max])
+    else
+        clim([clim_min clim_max])
+    end
     set(cb, 'Location', 'southoutside')
     set(gca, 'Position', pos, 'DataAspectRatio',[1 1 1], 'visible', 'on')
 
