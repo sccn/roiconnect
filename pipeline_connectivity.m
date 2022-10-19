@@ -36,10 +36,13 @@ measures = { 'CS' 'COH' 'DTF'  'wPLI'  'PDC'  'MIM'  'MIC' 'GC' };
 measures = { 'CS' 'COH' 'wPLI'  'PDC'  'MIM'  'MIC' 'GC' };
 measures = { 'CS' 'COH' 'MIM' 'GC' };
 
+EEG_no_connect = EEG;
+EEG = pop_roi_connect(EEG_no_connect, 'methods', {'MIM'});
+
 for iMeasure = 1:length(measures)
     tic
-    EEG = pop_roi_connect(EEG, 'methods', measures(iMeasure));
+    EEG = pop_roi_connect(EEG_no_connect, 'methods', measures(iMeasure));
     t(iMeasure) = toc
 end
 
-pop_roi_connectplot(EEG, 'measure', 'crossspecimag');
+pop_roi_connectplot(EEG, 'measure', 'MIM');

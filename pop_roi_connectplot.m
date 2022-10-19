@@ -371,7 +371,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
 %                     MI = S.MIM(:, :);
                     MI = S.MIM;
                 end
-                MI = get_connect_mat( MI, S.nROI, +1);
+%                 MI = get_connect_mat( MI, S.nROI, +1);
                 matrix = squeeze(mean(MI(frq_inds, :, :)));
                 cortexPlot = mean(matrix, 2);
 
@@ -607,17 +607,29 @@ function roi_plotcoloredlobes( EEG, matrix, titleStr, measure, hemisphere, regio
     pos = get(gca, 'Position');
     legend('Cingulate', 'Prefrontal', 'Frontal', 'Temporal', 'Parietal', 'Central', 'Occipital', 'Location', 'southeastoutside'); % modify legend position
     set(gca, 'Position', pos, 'DataAspectRatio',[1 1 1], 'visible', 'off')
+    axes('pos', [pos(1) pos(2) pos(3) pos(4)]) % plot matrix over the dummy plot and keep the legend
 
-    % plot matrix over the dummy plot and keep the legend
-    axes('pos', [pos(1) pos(2) pos(3) pos(4)])
-    if strcmp(hemisphere, 'left') || strcmp(hemisphere, 'right')
-        matrix(hem_idx{1}:hem_idx{2}:n_roi_labels,:) = [];  % reduce matrix
-        matrix(:,hem_idx{1}:hem_idx{2}:n_roi_labels) = [];
+%     if strcmp(hemisphere, 'left') || strcmp(hemisphere, 'right')
+%         matrix(hem_idx{1}:hem_idx{2}:n_roi_labels,:) = [];  
+%         matrix(:,hem_idx{1}:hem_idx{2}:n_roi_labels) = [];
+%         imagesc(matrix); colormap(cmap);  
+%     else
+%         imagesc(matrix); colormap(cmap);
+%     end
+
+    % reduce matrix to keep only one hemisphere if needed
+    if strcmp(hemisphere, 'left')
+        matrix = matrix(hem_idx{1}:hem_idx{2}:n_roi_labels,:);
+        matrix(:,2:2:end) = []; 
         imagesc(matrix); colormap(cmap);  
+    elseif strcmp(hemisphere, 'right')
+        matrix = matrix(hem_idx{1}:hem_idx{2}:n_roi_labels,:);
+        matrix(:,1:2:end) = [];
+        imagesc(matrix); colormap(cmap);
     else
         imagesc(matrix); colormap(cmap);
-
     end
+    
     cb = colorbar;
     set(cb, 'Location', 'southoutside')
     set(gca, 'Position', pos, 'DataAspectRatio',[1 1 1], 'visible', 'on')
