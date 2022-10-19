@@ -53,7 +53,7 @@ The function performs source reconstruction by calculating a source projection f
 EEG = pop_roi_connect(EEG, 'methods', { 'MIM', 'TRGC'}, 'snippet', 'on', 'snip_length', 60, 'fcsave_format', 'mean_snips');
 ```
 
-The function computes all FC metrics in a frequency-resolved way, i.e., the output contains FC scores for every region-region-frequency combination. The output of this function is stored in `EEG.roi.<fc_metric_name>`.
+The function computes all FC metrics in a frequency-resolved way, i.e., the output contains FC scores for every frequency-region-region combination. The output of this function is stored in `EEG.roi.<fc_metric_name>`.
 
 ## Visualization
 You can visualize power and FC in different modes by calling `pop_roi_connectplot`. Below, we show results of a single subject from the real data example in [[1]](#1). You can find the MATLAB code and corresponding analyses [here](https://github.com/fpellegrini/MotorImag). The plots show power or FC in left motor imagery condition. Due to the nature of the task, we show results in the 8 to 13 Hz frequency band but you are free to choose any frequency or frequency band you want. 
