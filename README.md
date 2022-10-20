@@ -55,6 +55,9 @@ EEG = pop_roi_connect(EEG, 'methods', { 'MIM', 'TRGC'}, 'snippet', 'on', 'snip_l
 
 The function computes all FC metrics in a frequency-resolved way, i.e., the output contains FC scores for every frequency-region-region combination. The output of this function is stored in `EEG.roi.<fc_metric_name>`.
 
+> **Note**<br>
+> Snippet analysis IS NOT equivalent to epoching. We discovered that the data length imposes a bias on the connectivity estimate. We therefore recommend keeping the data length (i.e. snippet length, default 60 s) constant across all experimental conditions that should be compared. This is most relevant for iCOH and MIM/MIC. By default, the snippet analysis is turned off (default: `'snippet', 'off'`). For more details, click [here](https://github.com/arnodelorme/roiconnect/pull/14#issuecomment-1263531505).
+
 ## Visualization
 You can visualize power and FC in different modes by calling `pop_roi_connectplot`. Below, we show results of a single subject from the real data example in [[1]](#1). You can find the MATLAB code and corresponding analyses [here](https://github.com/fpellegrini/MotorImag). The plots show power or FC in left motor imagery condition. Due to the nature of the task, we show results in the 8 to 13 Hz frequency band but you are free to choose any frequency or frequency band you want. 
 
