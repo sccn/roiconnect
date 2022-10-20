@@ -355,10 +355,6 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
 %                     TRGCnet = S.TRGC(:, :, 1) - S.TRGC(:, :, 2);
                     TRGC = S.TRGC;
                 end
-%                 TRGCnet = TRGCnet - permute(TRGCnet, [1 3 2]); 
-%                 TRGCnet = TRGCnet(:,:); 
-%                 TRGCnet = S.GC(:, :, 1) - S.GC(:, :, 2);
-%                 TRGC = get_connect_mat( TRGCnet, S.nROI, -1);
                 matrix = squeeze(mean(TRGC(frq_inds, :, :)));
                 cortexPlot  = mean(matrix, 2);
                 cortexTitle = [ upper(g.measure) ' (' titleStr '); Red = net sender; Blue = net receiver' ];
@@ -371,27 +367,23 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
 %                     MI = S.MIM(:, :);
                     MI = S.MIM;
                 end
-                MI = get_connect_mat( MI, S.nROI, +1);
                 matrix = squeeze(mean(MI(frq_inds, :, :)));
                 cortexPlot = mean(matrix, 2);
 
             case { 'crossspecpow' 'coh' 'crossspecimag' }
                 if strcmpi(g.measure, 'coh')
                     PS = abs(S.COH); % do not know what to do here
-                    PS = squeeze(mean(mean(reshape(PS, S.srate+1, S.nPCA, S.nROI, S.nPCA, S.nROI), 2), 4));
                     PSarea2area = squeeze(mean(PS(frq_inds, :, :)));
                     cortexPlot = mean(PSarea2area, 2);
                 elseif strcmpi(g.measure, 'crossspecimag')
                     PS = abs(imag(cs2coh(S.CS)));
-                    PS = squeeze(mean(mean(reshape(PS, S.srate+1, S.nPCA, S.nROI, S.nPCA, S.nROI), 2), 4));
                     PSarea2area = squeeze(mean(PS(frq_inds, :, :)));
                     cortexPlot = mean(PSarea2area, 2);
                 else
                     PS = cs2psd(S.CS);
-                    PS2 = squeeze(mean(mean(reshape(PS, S.srate+1, S.nPCA, S.nROI, S.nPCA, S.nROI), 2), 4));
-                    PSarea2area = squeeze(mean(PS2(frq_inds, :, :),1));
-                    apow = squeeze(sum(sum(reshape(PS(frq_inds, :), [], S.nPCA, S.nROI), 1), 2)).*S.source_roi_power_norm';
+                    apow = squeeze(sum(sum(reshape(PS(frq_inds, :), [], S.nROI), 1), 2)).*S.source_roi_power_norm';
                     cortexPlot = 10*log10(apow);
+                    PSarea2area = [];
                 end
                 plotPSDFreq = S.freqs(frq_inds);
                 plotPSD     = PS(frq_inds, :);
@@ -444,20 +436,6 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
 
     if nargin < 2
         com = sprintf('pop_roi_connectplot(EEG, %s);', vararg2str( options ));
-    end
-end
-
-function measure = get_connect_mat( measureOri, nROI, signVal)
-    % create a ROI x ROI connectivity matrix, if needed
-    % TRGCmat(f, ii, jj) is net TRGC from jj to ii
-    measure = [];
-    iinds = 0;
-    for iroi = 1:nROI
-        for jroi = (iroi+1):nROI
-            iinds = iinds + 1;
-            measure(:, iroi, jroi) = signVal * measureOri(:, iinds);
-            measure(:, jroi, iroi) = measureOri(:, iinds);
-        end
     end
 end
 

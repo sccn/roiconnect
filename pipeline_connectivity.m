@@ -35,6 +35,7 @@ EEG = pop_roi_activity(EEG, 'leadfield',EEG.dipfit.sourcemodel,'model','LCMV','m
 measures = { 'CS' 'COH' 'DTF'  'wPLI'  'PDC'  'MIM'  'MIC' 'GC' };
 measures = { 'CS' 'COH' 'wPLI'  'PDC'  'MIM'  'MIC' 'GC' };
 measures = { 'CS' 'COH' 'MIM' 'GC' };
+measures = { 'CS' 'COH' 'MIM' };
 
 for iMeasure = 1:length(measures)
     tic
