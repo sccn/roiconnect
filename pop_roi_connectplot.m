@@ -452,7 +452,7 @@ function [coordinate, seed_idx] = get_seedregion_coordinate(scouts, seed_idx, vc
     % assign region index to selected seed region (passed as index)
     if ~isempty(seed_idx)
         % ball not visible for these regions when plotting the mean voxel
-        manual_region_idxs = [2, 16, 18, 25, 26, 31, 32, 45, 49, 50, 55, 59, 60, 61, 64]; 
+        manual_region_idxs = [2, 16, 18, 25, 26, 31, 32, 45, 49, 50, 55, 56, 59, 60, 61, 64]; 
         pos_idx = scouts(seed_idx).Vertices;
         pos = vc(pos_idx,:);
         if seed_idx == 1
