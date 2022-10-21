@@ -93,16 +93,6 @@ EEG = pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'off', 'plotmatri
   &nbsp; &nbsp;
 </p>
 
-You can additionally filter by hemispheres and regions belonging to specific brain lobes. As an example, let us see how FC of the left hemisphere looks like.
-
-```matlab
-pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'off', 'plotmatrix', 'on', 'freqrange', [8 13], 'hemisphere', 'left') % left hemisphere, left motor imagery;
-```
-<p float="middle">
-  <img src="https://github.com/Hiyeri/roiconnect/blob/master/resources/FC_MIM_matrix_lefthem_left.jpg?raw=true" width="400"/>     
-  &nbsp; &nbsp;
-</p>
-
 If you wish to group the matrix by hemispheres, you can do so by running the code below.
 ```matlab
 pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'off', 'plotmatrix', 'on', 'freqrange', [8 13], 'grouphemispheres', 'on');
@@ -110,6 +100,16 @@ pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'off', 'plotmatrix', 'o
 
 <p float="middle">
   <img src="https://github.com/Hiyeri/roiconnect/blob/master/resources/FC_MIM_matrix_groupedhems_left.jpg?raw=true" width="400"/>     
+  &nbsp; &nbsp;
+</p>
+
+You can additionally filter by hemispheres and regions belonging to specific brain lobes. As an example, let us see how FC of the left hemisphere looks like.
+
+```matlab
+pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'off', 'plotmatrix', 'on', 'freqrange', [8 13], 'hemisphere', 'left') % left hemisphere, left motor imagery;
+```
+<p float="middle">
+  <img src="https://github.com/Hiyeri/roiconnect/blob/master/resources/FC_MIM_matrix_lefthem_left.jpg?raw=true" width="400"/>     
   &nbsp; &nbsp;
 </p>
 
