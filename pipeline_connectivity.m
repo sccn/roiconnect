@@ -35,6 +35,7 @@ EEG = pop_roi_activity(EEG, 'leadfield',EEG.dipfit.sourcemodel,'model','LCMV','m
 measures = { 'CS' 'COH' 'DTF'  'wPLI'  'PDC'  'MIM'  'MIC' 'GC' };
 measures = { 'CS' 'COH' 'wPLI'  'PDC'  'MIM'  'MIC' 'GC' };
 measures = { 'CS' 'COH' 'MIM' 'GC' };
+measures = { 'CS' 'COH' 'MIM' };
 
 EEG_no_connect = EEG;
 EEG = pop_roi_connect(EEG_no_connect, 'methods', {'MIM'});
