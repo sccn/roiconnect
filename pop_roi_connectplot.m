@@ -427,11 +427,13 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         if strcmpi(g.plotcortex, 'on') && cortexFlag ~= -1
             cortexTitle = [ plotOpt.labelshort ' (' titleStr ')' ];
             if isempty(g.plotcortexseedregion)
-                allplots_cortex_BS(S.cortex, cortexPlot, [min(cortexPlot) max(cortexPlot)], cm17a, plotOpt.unit, g.smooth);
+                allplots_cortex_BS(S.cortex, cortexPlot, [min(cortexPlot) max(cortexPlot)], cm17a, upper(g.measure), g.smooth);
+%                 allplots_cortex_BS(S.cortex, cortexPlot, [min(cortexPlot) max(cortexPlot)], cm17a, plotOpt.unit, g.smooth);
             else
                 cortexTitle = [ cortexTitle ' for area ' int2str(seed_idx)];
                 cortexPlot = squeeze(matrix(seed_idx,:));
-                allplots_cortex_BS(S.cortex, cortexPlot, [min(cortexPlot) max(cortexPlot)], cm17a, plotOpt.unit, g.smooth, [], {coordinate});
+                allplots_cortex_BS(S.cortex, cortexPlot, [min(cortexPlot) max(cortexPlot)], cm17a, upper(g.measure), g.smooth, [], {coordinate});
+%                 allplots_cortex_BS(S.cortex, cortexPlot, [min(cortexPlot) max(cortexPlot)], cm17a, plotOpt.unit, g.smooth, [], {coordinate});
             end
             h = textsc(cortexTitle, 'title');
             set(h, 'fontsize', 20);
