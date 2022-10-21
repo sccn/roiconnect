@@ -1,4 +1,4 @@
-[![GitHub stars](https://img.shields.io/github/stars/arnodelorme/roiconnect?color=green&logo=GitHub)](https://github.com/arnodelorme/roiconnect/issues) [![GitHub issues](https://img.shields.io/github/issues/arnodelorme/roiconnect?color=%23fa251e)](https://github.com/arnodelorme/roiconnect/issues) [![GitHub pulls](https://img.shields.io/github/issues-pr-raw/arnodelorme/roiconnect)](https://github.com/arnodelorme/roiconnect/issues-pr-raw) [![GitHub forks](https://img.shields.io/github/forks/arnodelorme/roiconnect?style=social)](https://github.com/arnodelorme/roiconnect/forks) [![GitHub contributors](https://img.shields.io/github/contributors/arnodelorme/roiconnect?style=social)](https://github.com/arnodelorme/roiconnect/contributors)
+[![GitHub stars](https://img.shields.io/github/stars/arnodelorme/roiconnect?color=green&logo=GitHub)](https://github.com/arnodelorme/roiconnect/issues) [![GitHub issues](https://img.shields.io/github/issues/arnodelorme/roiconnect?color=%23fa251e)](https://github.com/arnodelorme/roiconnect/issues) [![GitHub pulls](https://img.shields.io/github/issues-pr-raw/arnodelorme/roiconnect)](https://github.com/arnodelorme/roiconnect/pulls) [![GitHub forks](https://img.shields.io/github/forks/arnodelorme/roiconnect?style=social)](https://github.com/arnodelorme/roiconnect/forks) [![GitHub contributors](https://img.shields.io/github/contributors/arnodelorme/roiconnect?style=social)](https://github.com/arnodelorme/roiconnect/contributors)
 
 # What is ROIconnect?
 
@@ -53,12 +53,16 @@ The function performs source reconstruction by calculating a source projection f
 EEG = pop_roi_connect(EEG, 'methods', { 'MIM', 'TRGC'}, 'snippet', 'on', 'snip_length', 60, 'fcsave_format', 'mean_snips');
 ```
 
-The function computes all FC metrics in a frequency-resolved way, i.e., the output contains FC scores for every region-region-frequency combination. The output of this function is stored in `EEG.roi.<fc_metric_name>`.
+The function computes all FC metrics in a frequency-resolved way, i.e., the output contains FC scores for every frequency-region-region combination. The output of this function is stored in `EEG.roi.<fc_metric_name>`.
+
+> **Note**<br>
+> Snippet analysis IS NOT equivalent to epoching. We discovered that the data length imposes a bias on the connectivity estimate. We therefore recommend keeping the data length (i.e. snippet length, default 60 s) constant across all experimental conditions that should be compared. This is most relevant for iCOH and MIM/MIC. By default, the snippet analysis is turned off (default: `'snippet', 'off'`). For more details, click [here](https://github.com/arnodelorme/roiconnect/pull/14#issuecomment-1263531505).
 
 ## Visualization
 You can visualize power and FC in different modes by calling `pop_roi_connectplot`. Below, we show results of a single subject from the real data example in [[1]](#1). You can find the MATLAB code and corresponding analyses [here](https://github.com/fpellegrini/MotorImag). The plots show power or FC in left motor imagery condition. Due to the nature of the task, we show results in the 8 to 13 Hz frequency band but you are free to choose any frequency or frequency band you want. 
 
-:pushpin: If any of the images are too small for you, simply click on them, they will open in full size in another tab.
+:pushpin: If any of the images are too small for you, simply click on them, they will open in full size in another tab.<br>
+:round_pushpin: Plotting is particularly optimized for PSD, MIM/MIC and GC/TRGC. The matrix plots are only available for the Desikan-Killiany atlas (68 ROIs). We are currently working on a generalized solution for all atlases. 
 
 ### Power as a region-wise bar plot
 If you wish to visualize power as a barplot only, please make sure to explicitely turn `plotcortex` off because it is turned on by default. 
@@ -89,7 +93,17 @@ EEG = pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'off', 'plotmatri
   &nbsp; &nbsp;
 </p>
 
-You can additionally filter by hemispheres and regions belonging to specific brain lobes. As an example, let us see how FC of the left hemisphere look like.
+If you wish to group the matrix by hemispheres, you can do so by running the code below.
+```matlab
+pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'off', 'plotmatrix', 'on', 'freqrange', [8 13], 'grouphemispheres', 'on');
+```
+
+<p float="middle">
+  <img src="https://github.com/Hiyeri/roiconnect/blob/master/resources/FC_MIM_matrix_groupedhems_left.jpg?raw=true" width="400"/>     
+  &nbsp; &nbsp;
+</p>
+
+You can additionally filter by hemispheres and regions belonging to specific brain lobes. As an example, let us see how FC of the left hemisphere looks like.
 
 ```matlab
 pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'off', 'plotmatrix', 'on', 'freqrange', [8 13], 'hemisphere', 'left') % left hemisphere, left motor imagery;
@@ -118,7 +132,6 @@ pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'on', 'freqrange', [8 1
   <img src="https://github.com/Hiyeri/roiconnect/blob/master/resources/FC_MIM_cortex_seed49_left.jpg?raw=true" width="400"/>     
   &nbsp; &nbsp;
 </p>
-
 
 # References
 <a id="1">[1]</a> 

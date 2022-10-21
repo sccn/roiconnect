@@ -30,6 +30,7 @@
 %  'plotmatrix'           - ['on'|'off'] plot results as ROI to ROI matrix. Default is 'off'
 %  'plotbarplot'          - ['on'|'off'] plot ROI based power spectrum as barplot. Default is 'off'
 %  'hemisphere'           - ['all'|'left'|'right'] hemisphere options for ROI to ROI matrix. Default is 'all'
+%  'grouphemispheres'      - ['on'|'off'] group ROIs by hemispheres (left hemisphere, then right hemisphere). Default is 'off'
 %  'region'               - ['all'|'cingulate'|'prefrontal'|'frontal'|'temporal'|'parietal'|'central'|'occipital'] region selection for ROI to ROI matrix. Default is 'all'
 %  'largeplot'            - ['on'|'off'] plot MIM, TRGC and Power in a single large plot. Default is 'off'
 %  'plotpsd'              - ['on'|'off'] plot PSD (for 'crossspecpow' only). Default is 'off'
@@ -279,6 +280,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         'noplot'                'string'   { 'on' 'off' }          'off';
         'plotbarplot'           'string'   { 'on' 'off'}           'off';
         'hemisphere'            'string'   {'all' 'left' 'right'}  'all';
+        'grouphemispheres'      'string'   { 'on' 'off'}           'off';
         'region'                'string'   { 'all', 'cingulate', 'prefrontal', 'frontal', 'temporal', 'parietal', 'central', 'occipital' }  'all';
         'largeplot',            'string'   { 'on'  'off'  }        'off';
         'plotpsd',              'string'   { 'on' 'off' }          'off' }, 'pop_roi_connectplot');
@@ -295,7 +297,10 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
     % colormap
     load cm17;
     load cm18;
-
+    
+    % replace low-resolution with high-resolution cortex
+    load cortex;
+    
     % frequency range
     if ~isempty(g.freqrange)
         frq_inds = find(S.freqs >= g.freqrange(1) & S.freqs < g.freqrange(2));
@@ -410,18 +415,21 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         % plot on matrix
         if strcmpi(g.plotmatrix, 'on') && ~isempty(matrix)
             matrix = matrix.*seedMask; 
-            roi_plotcoloredlobes(EEG, matrix, titleStr, g.measure, g.hemisphere, g.region);
+            roi_plotcoloredlobes(EEG, matrix, titleStr, g.measure, g.hemisphere, g.grouphemispheres, g.region);
         end
 
         % plot on cortical surface
         if strcmpi(g.plotcortex, 'on') && cortexFlag ~= -1
             cortexTitle = [ plotOpt.labelshort ' (' titleStr ')' ];
             if isempty(g.plotcortexseedregion)
-                allplots_cortex_BS(S.cortex, cortexPlot, [min(cortexPlot) max(cortexPlot)], cm17a, plotOpt.unit, g.smooth);
+                allplots_cortex_BS(cortex_highres, cortexPlot, [min(cortexPlot) max(cortexPlot)], cm17a, upper(g.measure), g.smooth);
+%                 allplots_cortex_BS(S.cortex, cortexPlot, [min(cortexPlot) max(cortexPlot)], cm17a, plotOpt.unit, g.smooth);
             else
                 cortexTitle = [ cortexTitle ' for area ' int2str(seed_idx)];
                 cortexPlot = squeeze(matrix(seed_idx,:));
-                allplots_cortex_BS(S.cortex, cortexPlot, [min(cortexPlot) max(cortexPlot)], cm17a, plotOpt.unit, g.smooth, [], {coordinate});
+                allplots_cortex_BS(S.cortex, cortexPlot, [min(cortexPlot) max(cortexPlot)], cm17a, upper(g.measure), g.smooth, [], {coordinate});
+%                 allplots_cortex_BS(cortex_highres, cortexPlot, [min(cortexPlot) max(cortexPlot)], cm17a, upper(g.measure), g.smooth, [], {coordinate});
+%                 allplots_cortex_BS(S.cortex, cortexPlot, [min(cortexPlot) max(cortexPlot)], cm17a, plotOpt.unit, g.smooth, [], {coordinate});
             end
             h = textsc(cortexTitle, 'title');
             set(h, 'fontsize', 20);
@@ -507,7 +515,7 @@ function roi_plotpower(EEG, source_roi_power_norm_dB, titleStr)
     movegui(gcf, 'south') % remove after
 end
         
-function roi_plotcoloredlobes( EEG, matrix, titleStr, measure, hemisphere, region)
+function roi_plotcoloredlobes( EEG, matrix, titleStr, measure, hemisphere, grouphems, region)
     % plot matrix with colored labels sorted by region according to the Desikan-Killiany atlas    
     load cm18
     switch lower(measure)
@@ -517,6 +525,9 @@ function roi_plotcoloredlobes( EEG, matrix, titleStr, measure, hemisphere, regio
             cmap = cm18;
     end
     [colors, color_idxx, roi_idxx, labels_dk_cell_idx, roi_loc] = get_colored_labels(EEG);
+    
+    clim_min = min(matrix, [], 'all');
+    clim_max = max(matrix, [], 'all');
     
     % assign region input to an index
     [GC, GR] = groupcounts(roi_loc);
@@ -538,9 +549,10 @@ function roi_plotcoloredlobes( EEG, matrix, titleStr, measure, hemisphere, regio
         otherwise
             region_idx = 99;
     end
-
-    matrix = matrix(roi_idxx, roi_idxx);  % sort matrix according to color scheme
+    
+    % sort matrix according to color scheme
     % reduce matrix to only keep components corresponding to selected region
+    matrix = matrix(roi_idxx, roi_idxx); 
     if not(region_idx == 99)
         if region_idx == 1
             start_idx = 1;
@@ -585,18 +597,56 @@ function roi_plotcoloredlobes( EEG, matrix, titleStr, measure, hemisphere, regio
     pos = get(gca, 'Position');
     legend('Cingulate', 'Prefrontal', 'Frontal', 'Temporal', 'Parietal', 'Central', 'Occipital', 'Location', 'southeastoutside'); % modify legend position
     set(gca, 'Position', pos, 'DataAspectRatio',[1 1 1], 'visible', 'off')
+    axes('pos', [pos(1) pos(2) pos(3) pos(4)]) % plot matrix over the dummy plot and keep the legend
+    
+    % group by hemispheres (left first, then right)
+    if strcmp(grouphems, 'on')
+        % sort matrix
+        mat_left_row = matrix(1:2:end,:);
+        mat_right_row = matrix(2:2:end,:);
+        matrix = [mat_left_row; mat_right_row]; % sort rows
+        mat_left_col = matrix(:,1:2:end);
+        mat_right_col = matrix(:,2:2:end);
+        matrix = horzcat(mat_left_col, mat_right_col); % sort columns
+        
+        % sort labels
+        lc = {labels_dk_cell_idx; transpose(color_idxx)};
+        for i = 1:length(lc)
+            left = lc{i}(1:2:end);
+            right = lc{i}(2:2:end);
+            lc{i} = [left right];
+        end
+        labels_dk_cell_idx = lc{1};
+        color_idxx = transpose(lc{2});
+    end
 
-    % plot matrix over the dummy plot and keep the legend
-    axes('pos', [pos(1) pos(2) pos(3) pos(4)])
-    if strcmp(hemisphere, 'left') || strcmp(hemisphere, 'right')
-        matrix(hem_idx{1}:hem_idx{2}:n_roi_labels,:) = [];  % reduce matrix
-        matrix(:,hem_idx{1}:hem_idx{2}:n_roi_labels) = [];
+%     if strcmp(hemisphere, 'left') || strcmp(hemisphere, 'right')
+%         matrix(hem_idx{1}:hem_idx{2}:n_roi_labels,:) = [];  
+%         matrix(:,hem_idx{1}:hem_idx{2}:n_roi_labels) = [];
+%         imagesc(matrix); colormap(cmap);  
+%     else
+%         imagesc(matrix); colormap(cmap);
+%     end
+
+    % reduce matrix to keep only one hemisphere
+    if strcmp(hemisphere, 'left')
+        matrix = matrix(hem_idx{1}:hem_idx{2}:n_roi_labels,:);
+        matrix(:,2:2:end) = []; 
         imagesc(matrix); colormap(cmap);  
+    elseif strcmp(hemisphere, 'right')
+        matrix = matrix(hem_idx{1}:hem_idx{2}:n_roi_labels,:);
+        matrix(:,1:2:end) = [];
+        imagesc(matrix); colormap(cmap);
     else
         imagesc(matrix); colormap(cmap);
-
     end
     cb = colorbar;
+    tf = isMATLABReleaseOlderThan("R2022a");
+    if tf
+        caxis([clim_min clim_max])
+    else
+        clim([clim_min clim_max])
+    end
     set(cb, 'Location', 'southoutside')
     set(gca, 'Position', pos, 'DataAspectRatio',[1 1 1], 'visible', 'on')
 

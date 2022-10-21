@@ -30,12 +30,16 @@ EEG = pop_dipfit_settings( EEG, 'hdmfile',fullfile(eeglabp, 'plugins','dipfit','
 EEG = pop_leadfield(EEG, 'sourcemodel',fullfile(eeglabp,'plugins','dipfit','LORETA-Talairach-BAs.mat'), ...
     'sourcemodel2mni',[0 -24 -45 0 0 -1.5708 1000 1000 1000] ,'downsample',1);
 
+% EEG = pop_leadfield(EEG, 'sourcemodel',fullfile(eeglabp,'functions','supportfiles','head_modelColin27_5003_Standard-10-5-Cap339.mat'), ...
+%     'sourcemodel2mni',[0 -24 -45 0 0 -1.5708 1000 1000 1000] ,'downsample',1);
+
 EEG = pop_roi_activity(EEG, 'leadfield',EEG.dipfit.sourcemodel,'model','LCMV','modelparams',{0.05},'atlas','LORETA-Talairach-BAs','nPCA',3);
 
 measures = { 'CS' 'COH' 'DTF'  'wPLI'  'PDC'  'MIM'  'MIC' 'GC' };
 measures = { 'CS' 'COH' 'wPLI'  'PDC'  'MIM'  'MIC' 'GC' };
 measures = { 'CS' 'COH' 'MIM' 'GC' };
 measures = { 'CS' 'COH' 'MIM' };
+measures = { 'TRGC' 'MIM' };
 
 for iMeasure = 1:length(measures)
     tic
@@ -43,4 +47,4 @@ for iMeasure = 1:length(measures)
     t(iMeasure) = toc
 end
 
-pop_roi_connectplot(EEG, 'measure', 'crossspecimag');
+pop_roi_connectplot(EEG, 'measure', 'MIM', 'plotmatrix', 'on', 'plotcortex', 'on');
