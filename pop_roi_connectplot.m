@@ -297,7 +297,10 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
     % colormap
     load cm17;
     load cm18;
-
+    
+    % replace low-resolution with high-resolution cortex
+    load cortex;
+    
     % frequency range
     if ~isempty(g.freqrange)
         frq_inds = find(S.freqs >= g.freqrange(1) & S.freqs < g.freqrange(2));
@@ -419,12 +422,13 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         if strcmpi(g.plotcortex, 'on') && cortexFlag ~= -1
             cortexTitle = [ plotOpt.labelshort ' (' titleStr ')' ];
             if isempty(g.plotcortexseedregion)
-                allplots_cortex_BS(S.cortex, cortexPlot, [min(cortexPlot) max(cortexPlot)], cm17a, upper(g.measure), g.smooth);
+                allplots_cortex_BS(cortex_highres, cortexPlot, [min(cortexPlot) max(cortexPlot)], cm17a, upper(g.measure), g.smooth);
 %                 allplots_cortex_BS(S.cortex, cortexPlot, [min(cortexPlot) max(cortexPlot)], cm17a, plotOpt.unit, g.smooth);
             else
                 cortexTitle = [ cortexTitle ' for area ' int2str(seed_idx)];
                 cortexPlot = squeeze(matrix(seed_idx,:));
                 allplots_cortex_BS(S.cortex, cortexPlot, [min(cortexPlot) max(cortexPlot)], cm17a, upper(g.measure), g.smooth, [], {coordinate});
+%                 allplots_cortex_BS(cortex_highres, cortexPlot, [min(cortexPlot) max(cortexPlot)], cm17a, upper(g.measure), g.smooth, [], {coordinate});
 %                 allplots_cortex_BS(S.cortex, cortexPlot, [min(cortexPlot) max(cortexPlot)], cm17a, plotOpt.unit, g.smooth, [], {coordinate});
             end
             h = textsc(cortexTitle, 'title');
@@ -448,7 +452,7 @@ function [coordinate, seed_idx] = get_seedregion_coordinate(scouts, seed_idx, vc
     % assign region index to selected seed region (passed as index)
     if ~isempty(seed_idx)
         % ball not visible for these regions when plotting the mean voxel
-        manual_region_idxs = [2, 16, 18, 25, 26, 31, 32, 45, 49, 50, 55, 56, 59, 60, 61, 64]; 
+        manual_region_idxs = [2, 16, 18, 25, 26, 31, 32, 45, 49, 50, 56, 59, 60, 61, 64]; 
         pos_idx = scouts(seed_idx).Vertices;
         pos = vc(pos_idx,:);
         if seed_idx == 1
