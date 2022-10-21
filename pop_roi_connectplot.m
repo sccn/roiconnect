@@ -30,7 +30,7 @@
 %  'plotmatrix'           - ['on'|'off'] plot results as ROI to ROI matrix. Default is 'off'
 %  'plotbarplot'          - ['on'|'off'] plot ROI based power spectrum as barplot. Default is 'off'
 %  'hemisphere'           - ['all'|'left'|'right'] hemisphere options for ROI to ROI matrix. Default is 'all'
-%  'grouphemisphere'      - ['on'|'off'] group ROIs by hemispheres (left hemisphere, then right hemisphere). Default is 'off'
+%  'grouphemispheres'      - ['on'|'off'] group ROIs by hemispheres (left hemisphere, then right hemisphere). Default is 'off'
 %  'region'               - ['all'|'cingulate'|'prefrontal'|'frontal'|'temporal'|'parietal'|'central'|'occipital'] region selection for ROI to ROI matrix. Default is 'all'
 %  'largeplot'            - ['on'|'off'] plot MIM, TRGC and Power in a single large plot. Default is 'off'
 %  'plotpsd'              - ['on'|'off'] plot PSD (for 'crossspecpow' only). Default is 'off'

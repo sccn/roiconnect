@@ -47,4 +47,4 @@ for iMeasure = 1:length(measures)
     t(iMeasure) = toc
 end
 
-pop_roi_connectplot(EEG, 'measure', 'TRGC', 'plotmatrix', 'on', 'plotcortex', 'on');
+pop_roi_connectplot(EEG, 'measure', 'MIM', 'plotmatrix', 'on', 'plotcortex', 'on');
