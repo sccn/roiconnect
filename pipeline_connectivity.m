@@ -40,6 +40,7 @@ measures = { 'CS' 'COH' 'wPLI'  'PDC'  'MIM'  'MIC' 'GC' };
 measures = { 'CS' 'COH' 'MIM' 'GC' };
 measures = { 'CS' 'COH' 'MIM' };
 measures = { 'TRGC' 'MIM' };
+measures = { 'MIM' };
 
 for iMeasure = 1:length(measures)
     tic

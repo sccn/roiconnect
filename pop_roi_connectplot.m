@@ -479,8 +479,8 @@ function [colors, color_idxx, roi_idxx, labels_dk_cell_idx, roi_loc] = get_color
     end
     labels = cellstr(labels);
     
-    % assign labels to colors
     colors = {[0,0,0]/255, [163, 107, 64]/255, [171, 163, 71]/255, [217, 37, 88]/255, [113, 15, 82]/255,[35, 103, 81]/255,[2, 45, 126]/255,};
+    % assign labels to colors
     roi_loc ={'LT';'RT';'LL';'RL';'LF';'RF';'LO';'RO';'LT';'RT';'LPF';'RPF';'LT';'RT';'LP';'RP';'LT';'RT';'LT';'RT';'LL';'RL';'LO';'RO';'LPF';'RPF';'LO';'RO';'LPF';'RPF';'LT';'RT';'LC';'RC';'LT';'RT';'LF';'RF';'LPF';'RPF';'LF';'RF';'LO';'RO';'LC';'RC';'LL';'RL';'LC';'RC';'LP';'RP';'LL';'RL';'LF';'RF';'LF';'RF';'LP';'RP';'LT';'RT';'LP';'RP';'LT';'RT';'LT';'RT'};
     roi_loc = string(roi_loc);
     roi_loc = strrep(roi_loc, 'PF', '2');
@@ -495,14 +495,21 @@ function [colors, color_idxx, roi_idxx, labels_dk_cell_idx, roi_loc] = get_color
     roi_loc = strrep(roi_loc, 'R', '');
     [color_idxx,roi_idxx] = sort(str2double(roi_loc));
     labels_dk_cell_idx = labels(roi_idxx);
+    
+    % color assignment only if Desikan-Killiany atlas is used
+    if size(labels, 2) ~= 68
+        color_idxx = ones(1, size(labels,2));
+        labels_dk_cell_idx = labels;
+    end
 end
 
 function roi_plotpower(EEG, source_roi_power_norm_dB, titleStr)
     [colors, color_idxx, roi_idxx, labels_dk_cell_idx, ~] = get_colored_labels(EEG);
+    n_roi_labels = size(labels_dk_cell_idx, 2);
 
     barh(source_roi_power_norm_dB(roi_idxx));
     set(gca, 'YDir', 'reverse');
-    set(gca,'ytick',[1:68],'yticklabel',labels_dk_cell_idx(1:68), 'fontweight','bold','fontsize', 9, 'TickLength',[0.015, 0.02], 'LineWidth',0.7);
+    set(gca,'ytick',[1:n_roi_labels],'yticklabel',labels_dk_cell_idx(1:end), 'fontweight','bold','fontsize', 9, 'TickLength',[0.015, 0.02], 'LineWidth',0.7);
     h = title([ 'ROI source power' ' (' titleStr ')' ]);
     set(h, 'fontsize', 16);
     ylabel('power [dB]')
@@ -516,6 +523,18 @@ function roi_plotpower(EEG, source_roi_power_norm_dB, titleStr)
 end
         
 function roi_plotcoloredlobes( EEG, matrix, titleStr, measure, hemisphere, grouphems, region)
+    % check if Desikan-Killiany atlas is used
+    n_roi_labels = size(matrix, 1); % only end if no region is selected 
+    if n_roi_labels == 68
+        isDKatlas = true;
+    else
+        isDKatlas = false;
+    end
+    
+    if ~strcmpi(region, 'all') && isDKatlas == 0
+        error('Region plotting is only supported for the Desikan-Killiany atlas.');
+    end
+    
     % plot matrix with colored labels sorted by region according to the Desikan-Killiany atlas    
     load cm18
     switch lower(measure)
@@ -552,27 +571,29 @@ function roi_plotcoloredlobes( EEG, matrix, titleStr, measure, hemisphere, group
     
     % sort matrix according to color scheme
     % reduce matrix to only keep components corresponding to selected region
-    matrix = matrix(roi_idxx, roi_idxx); 
-    if not(region_idx == 99)
-        if region_idx == 1
-            start_idx = 1;
-        else
-            start_idx = 1 + sum(GC(1:region_idx-1));
+    if isDKatlas == 1
+        matrix = matrix(roi_idxx, roi_idxx); 
+        if not(region_idx == 99)
+            if region_idx == 1
+                start_idx = 1;
+            else
+                start_idx = 1 + sum(GC(1:region_idx-1));
+            end
+            end_idx = start_idx + GC(region_idx) - 1;
+            matrix = matrix(start_idx:end_idx, start_idx:end_idx);  
+            labels_dk_cell_idx = labels_dk_cell_idx(start_idx:end_idx);
+            color_idxx = color_idxx(start_idx:end_idx);
         end
-        end_idx = start_idx + GC(region_idx) - 1;
-        matrix = matrix(start_idx:end_idx, start_idx:end_idx);  
-        labels_dk_cell_idx = labels_dk_cell_idx(start_idx:end_idx);
-        color_idxx = color_idxx(start_idx:end_idx);
+        n_roi_labels = size(matrix, 1);
     end
-    n_roi_labels = size(matrix, 1); % only 68 if no region is selected
 
     % hemisphere parameters to determine which labels to use 
     if strcmpi(hemisphere, 'left')
-        hem_idx = {1 2 2};  % use labels 1:2:68 (first two values), only use 1/2 of the labels (3rd value)
+        hem_idx = {1 2 2};  % use labels 1:2:end (first two values), only use 1/2 of the labels (3rd value)
     elseif strcmpi(hemisphere, 'right')
-        hem_idx = {2 2 2};  % use labels 2:2:68 (first two values), only use 1/2 of the labels (3rd value)
+        hem_idx = {2 2 2};  % use labels 2:2:end (first two values), only use 1/2 of the labels (3rd value)
     else
-        hem_idx = {1 1 1};  % use labels 1:1:68 (first two values, all labels), use 1/1 of the labels (3rd value, all labels)
+        hem_idx = {1 1 1};  % use labels 1:1:end (first two values, all labels), use 1/1 of the labels (3rd value, all labels)
     end
 
     % create dummy plot and add custom legend
@@ -595,7 +616,9 @@ function roi_plotcoloredlobes( EEG, matrix, titleStr, measure, hemisphere, group
     end
     xtickangle(90)
     pos = get(gca, 'Position');
-    legend('Cingulate', 'Prefrontal', 'Frontal', 'Temporal', 'Parietal', 'Central', 'Occipital', 'Location', 'southeastoutside'); % modify legend position
+    if isDKatlas == 1
+        legend('Cingulate', 'Prefrontal', 'Frontal', 'Temporal', 'Parietal', 'Central', 'Occipital', 'Location', 'southeastoutside'); % modify legend position
+    end
     set(gca, 'Position', pos, 'DataAspectRatio',[1 1 1], 'visible', 'off')
     axes('pos', [pos(1) pos(2) pos(3) pos(4)]) % plot matrix over the dummy plot and keep the legend
     
@@ -620,14 +643,6 @@ function roi_plotcoloredlobes( EEG, matrix, titleStr, measure, hemisphere, group
         color_idxx = transpose(lc{2});
     end
 
-%     if strcmp(hemisphere, 'left') || strcmp(hemisphere, 'right')
-%         matrix(hem_idx{1}:hem_idx{2}:n_roi_labels,:) = [];  
-%         matrix(:,hem_idx{1}:hem_idx{2}:n_roi_labels) = [];
-%         imagesc(matrix); colormap(cmap);  
-%     else
-%         imagesc(matrix); colormap(cmap);
-%     end
-
     % reduce matrix to keep only one hemisphere
     if strcmp(hemisphere, 'left')
         matrix = matrix(hem_idx{1}:hem_idx{2}:n_roi_labels,:);
@@ -647,12 +662,20 @@ function roi_plotcoloredlobes( EEG, matrix, titleStr, measure, hemisphere, group
     else
         clim([clim_min clim_max])
     end
-    set(cb, 'Location', 'southoutside')
+    if isDKatlas == 1
+        set(cb, 'Location', 'southoutside')
+    else
+        set(cb, 'Location', 'eastoutside')
+    end
     set(gca, 'Position', pos, 'DataAspectRatio',[1 1 1], 'visible', 'on')
 
     % add colored labels with display option
-    set(gca,'ytick',[1:n_roi_labels],'yticklabel',labels_dk_cell_idx(hem_idx{1}:hem_idx{2}:n_roi_labels), 'fontweight','bold', 'fontsize', 9, 'TickLength',[0.015, 0.02], 'LineWidth',0.75);
-    set(gca,'xtick',[1:n_roi_labels],'xticklabel',labels_dk_cell_idx(hem_idx{1}:hem_idx{2}:n_roi_labels));
+    if isDKatlas == 1
+        set(gca,'ytick',[1:n_roi_labels],'yticklabel',labels_dk_cell_idx(hem_idx{1}:hem_idx{2}:n_roi_labels), 'fontweight','bold', 'fontsize', 9, 'TickLength',[0.015, 0.02], 'LineWidth',0.75);
+    else
+        set(gca,'ytick',[1:n_roi_labels],'yticklabel',labels_dk_cell_idx(hem_idx{1}:hem_idx{2}:n_roi_labels), 'fontsize', 7, 'TickLength',[0.015, 0.02], 'LineWidth',0.75);
+    end
+        set(gca,'xtick',[1:n_roi_labels],'xticklabel',labels_dk_cell_idx(hem_idx{1}:hem_idx{2}:n_roi_labels));
     ax = gca;
     for i=hem_idx{1}:hem_idx{2}:n_roi_labels  
         ax.XTickLabel{ceil(i/hem_idx{3})} = sprintf('\\color[rgb]{%f,%f,%f}%s', colors{color_idxx(i)}, ax.XTickLabel{ceil(i/hem_idx{3})});
@@ -667,6 +690,7 @@ function roi_largeplot(EEG, mim, trgc, roipsd, titleStr)
     % plot MIM, TRGC and power (barplot) in a single large figure
     load cm18
     [colors, color_idxx, roi_idxx, labels_dk_cell_idx, ~] = get_colored_labels(EEG);
+    n_roi_labels = size(labels_dk_cell_idx, 2);
     
     f = figure();
     f.WindowState = 'maximized';
@@ -682,8 +706,8 @@ function roi_largeplot(EEG, mim, trgc, roipsd, titleStr)
         img_sorted = img(roi_idxx, roi_idxx);
         imagesc(img_sorted)
 
-        set(gca,'ytick',[1:68],'yticklabel',labels_dk_cell_idx(1:68), 'fontsize', 5, 'TickLength',[0.015, 0.02], 'LineWidth',0.75);
-        set(gca,'xtick',[1:68],'xticklabel',labels_dk_cell_idx(1:68));
+        set(gca,'ytick',[1:n_roi_labels],'yticklabel',labels_dk_cell_idx(1:end), 'fontsize', 5, 'TickLength',[0.015, 0.02], 'LineWidth',0.75);
+        set(gca,'xtick',[1:n_roi_labels],'xticklabel',labels_dk_cell_idx(1:end));
         h = title([ 'ROI to ROI ' fc_names{k} ' (' titleStr ')' ]);
         set(h, 'fontsize', 16);
         hcb = colorbar;
@@ -704,7 +728,7 @@ function roi_largeplot(EEG, mim, trgc, roipsd, titleStr)
     barh(roipsd(roi_idxx));
 
     set(gca, 'YDir', 'reverse');
-    set(gca,'ytick',[1:68],'yticklabel',labels_dk_cell_idx(1:68), 'fontweight','bold','fontsize', 9, 'TickLength',[0.015, 0.02], 'LineWidth',0.7);
+    set(gca,'ytick',[1:n_roi_labels],'yticklabel',labels_dk_cell_idx(1:end), 'fontweight','bold','fontsize', 9, 'TickLength',[0.015, 0.02], 'LineWidth',0.7);
     h = title([ 'ROI source power' ' (' titleStr ')' ]);
     set(h, 'fontsize', 16);
     ylabel('power [dB]')
@@ -720,8 +744,9 @@ function roi_largeplot(EEG, mim, trgc, roipsd, titleStr)
     for k=1:numel(h)
         h(k) = plot(NaN, NaN, '-', 'LineWidth', 8, 'Color', colors{k});
     end
-
-    lgd = legend(h, 'Cingulate', 'Prefrontal', 'Frontal', 'Temporal', 'Parietal', 'Central', 'Occipital');
-    lgd.FontSize = 10;
-    set(lgd, 'Position', [0.44 0.06 0.25 0.25]);
+    if n_roi_labels == 68
+        lgd = legend(h, 'Cingulate', 'Prefrontal', 'Frontal', 'Temporal', 'Parietal', 'Central', 'Occipital');
+        lgd.FontSize = 10;
+        set(lgd, 'Position', [0.44 0.06 0.25 0.25]);
+    end
 end
