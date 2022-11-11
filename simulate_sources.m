@@ -1,5 +1,7 @@
 % Requires EEGLAB, ROIconnect, and SIFT installed (SIFT is used to simulate the sources)
 % Simulate 2 sources in the temporal cortex
+%
+% Arnaud Delorme, November 2022
 
 clear
 eeglab
