@@ -25,6 +25,7 @@ else
     end
 end
 
+% coordinate transformation
 % cortex.Vertices = cortex.Vertices(:, [2 1 3]);
 % cortex.Vertices(:, 1) = -cortex.Vertices(:, 1);
 

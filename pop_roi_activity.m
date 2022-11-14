@@ -12,10 +12,13 @@
 %  'sourcemodel' - [string] source model file
 %
 % Optional inputs:
-%  'elec2mni'    - [9x float] homogeneous transformation matrix to convert
-%                  electrode locations to MNI space.
+%  'elec2mni'        - [9x float] homogeneous transformation matrix to convert
+%                       electrode locations to MNI space.
 %  'sourcemodel2mni' - [9x float] homogeneous transformation matrix to convert
-%                  sourcemodel to MNI space.
+%                      sourcemodel to MNI space.
+%  'fooof'           - ['on'|'off'] enable FOOOF analysis. Default is 'off'.
+%  'fooof_frange'    - [''] FOOOF fitting range. Default is [1 30] like in the
+%                        example.
 %
 % Output:
 %  EEG - EEGLAB dataset with field 'roi' containing connectivity info.
@@ -123,20 +126,20 @@ if ~isstruct(EEG)
     return;
 end             
         
-if ~isfield(EEG.dipfit, 'sourcemodel') || isempty(EEG.dipfit.sourcemodel)
+if ~isfield(EEG(1).dipfit, 'sourcemodel') || isempty(EEG(1).dipfit.sourcemodel)
     strDipfit   = 'Use DIPFIT leadfield matrix (none present right now)';
     defaultFile = '';
 else
     strDipfit   = 'Use pre-calculated DIPFIT Leadfield matrix';
-    defaultFile = EEG.dipfit.sourcemodel.file;
+    defaultFile = EEG(1).dipfit.sourcemodel.file;
 end
 strComputeShort = { 'LCMV' 'LCMVFieldtrip' 'eLoreta' 'eLoretaFieldtrip' };
 
 if nargin < 2
     
     options = {};
-    if EEG.trials == 1
-        if EEG.srate > 128
+    if EEG(1).trials == 1
+        if EEG(1).srate > 128
             res = questdlg2( [ 'This function is optimized to process 2-sec data epochs' 10 ...
                 'at a sampling rate of about 100 Hz. Do you want to resample the data and' 10 ...
                 'extract 2-sec data segments? (make sure your dataset is saved)' ], 'Warning ROI connect', 'Cancel', 'No', 'Yes', 'Yes');
@@ -153,7 +156,7 @@ if nargin < 2
                 options = { options{:} 'regepochs' 'on' };
             end
         end
-    elseif EEG.srate > 128
+    elseif EEG(1).srate > 128
         res = questdlg2( [ 'This function is optimized to process data epochs' 10 ...
             'at a sampling rate of about 100 Hz. Do you want to resample the data?' 10 ...
             '(make sure your dataset is saved)' ], 'Warning ROI connect', 'Cancel', 'No', 'Yes', 'Yes');
@@ -194,9 +197,9 @@ if nargin < 2
 
     % 
     if out.leadfieldselect == 1
-         options = { options{:} 'leadfield' EEG.dipfit.sourcemodel };
+         options = { options{:} 'leadfield' EEG(1).dipfit.sourcemodel };
     else
-         options = { options{:} 'leadfield' EEG.dipfit.leadfield };
+         options = { options{:} 'leadfield' EEG(1).dipfit.leadfield };
     end
     try
         modelParams = eval( [ '{' out.modelparams '}' ] );
@@ -228,12 +231,14 @@ end
 %    'export2icamatrix' 'string' {'on', 'off'}   'off';
 [g, moreargs] = finputcheck(options, { ...
     'leadfield'       { 'string' 'struct' } { { }  {} }      '';
-    'model'           'string'              strComputeShort 'LCMV';
+    'model'           'string'              strComputeShort  'LCMV';
     'modelparams'     'cell'                {}               {};
     'atlas'           'string'              {}               '';
     'resample'        'string'              { 'on' 'off'}    'off';
     'regepochs'       'string'              { 'on' 'off'}    'off';
-    'nPCA'            'real'                {}               3 }, 'pop_roi_activity', 'ignore');
+    'nPCA'            'real'                {}               3;
+    'fooof'           'string'              { 'on' 'off'}    'off';
+    'fooof_frange'     ''                   {}               [1 30]}, 'pop_roi_activity', 'ignore');
 if ischar(g), error(g); end
 
 if strcmpi(g.resample, 'on')
@@ -254,7 +259,7 @@ end
 
 EEG = roi_activity(EEG, 'leadfield', g.leadfield, 'headmodel', EEG.dipfit.hdmfile, ...
     'model', g.model, 'modelparams', g.modelparams, 'sourcemodel', sourceModelFile, ...
-    'sourcemodel2mni', sourceModel2MNI, 'nPCA', g.nPCA, ...
+    'sourcemodel2mni', sourceModel2MNI, 'nPCA', g.nPCA,'fooof', g.fooof, 'fooof_frange', g.fooof_frange, ...
     'sourcemodelatlas', g.atlas, moreargs{:});
 
 if nargout > 1
