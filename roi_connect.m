@@ -88,7 +88,14 @@ function EEG = roi_connect(EEG, varargin)
     % MIC, MIM, GC and TRGC use data2strcgmim, remaining metrics use data2spwctrgc
     if any(ismember(g.methods, 'MIC')) || any(ismember(g.methods, 'MIM')) || any(ismember(g.methods, 'GC')) || any(ismember(g.methods, 'TRGC'))
         tmpMethods = setdiff(g.methods, { 'CS' 'COH' 'PSD' 'PSDROI' 'wPLI' 'PDC' 'TRPDC' 'DTF' 'TRDTF' });
-        conn_mult = data2sctrgcmim(source_roi_data, EEG.srate, g.morder, 0, g.naccu, [], inds, tmpMethods);
+%         conn_mult = data2sctrgcmim(source_roi_data, EEG.pnts, g.morder, 0, g.naccu, [], inds, tmpMethods);
+        conn_mult = data2sctrgcmim(source_roi_data, EEG.pnts, g.morder, 0, g.naccu, [], inds, {'CS'});
+        CS = conn_mult.CS;
+        conn_mult1 = data2spwctrgc(source_roi_data, EEG.pnts, g.morder, 0, g.naccu, [], {'CS', 'wPLI'});
+        CS1 = conn_mult1.CS;
+        norm(abs(CS1(:))-abs(CS(:)), 'fro')
+        
+
         fields = fieldnames(conn_mult);
         for iField = 1:length(fields)
             EEG.roi.(fields{iField}) = conn_mult.(fields{iField});

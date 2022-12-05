@@ -77,7 +77,8 @@ function [S, wPLI] = tsdata_to_cpsd(X,fres,method,window,noverlap,nw,ntapers)
 X = demean(X);
 X = permute(X,[2 1 3]); % transpose row, col (works for single-trial data too)
 
-nfft = 2*fres;
+% nfft = 2*fres;
+nfft = fres;
 
 if nargin < 3 || isempty(method)
     method = 'WELCH'; % default is WELCH
@@ -111,7 +112,7 @@ if strcmpi(method,'MT')
 
     S = 0; numer = 0; denom = 0;
     for r = 1:N % works for single-trial too
-        XX = cpsd_mt(X(:,:,r),n,fres+1,window,noverlap,nchunks,taparray);
+        XX = cpsd_mt(X(:,:,r),n,fres,window,noverlap,nchunks,taparray);
         S = S + XX;
         numer = numer + imag(XX);
         denom = denom + abs(imag(XX));
@@ -150,9 +151,10 @@ end
 
 function S = cpsd_mt(X,n,h,window,noverlap,nchunks,taparray)
 
-nfft = 2*(h-1);
+nfft = h;
 
-S = complex(zeros(h,n,n)); % output array
+% S = complex(zeros(h,n,n)); % output array
+S = complex(zeros(floor(nfft/2)+1,n,n)); % output array
 
 winstep = window-noverlap;
 ntapers = size(taparray,2);
@@ -165,8 +167,8 @@ for k = 1:nchunks
 
     % compute periodogram
 
-    P = fft(taparray.*permute(XSEG(:,:,ones(1,ntapers)),[1 3 2]),nfft);
-    P = P(1:h,:,:);
+    P = fft(taparray.*permute(XSEG(:,:,ones(1,ntapers)),[1 3 2]),floor(nfft/2)+1);
+%     P = P(1:h,:,:);
 
     % now make cross-products of them to fill cross-spectrum matrix
 
@@ -182,9 +184,9 @@ S = S/nchunks;
 
 function S = cpsd_welch(X,n,h,window,noverlap)
 
-nfft = 2*(h-1);
+nfft = h;
 
-S = complex(zeros(n,n,h));
+% S = complex(zeros(n,n,h));
 
 for i = 1:n
     S(i,i,:) = pwelch(X(:,i),window,noverlap,nfft);          % auto-spectra
