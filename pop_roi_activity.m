@@ -12,12 +12,10 @@
 %  'sourcemodel' - [string] source model file
 %
 % Optional inputs:
-%  'nepochs'  - [integer] number of data epoch. Default is 60. When
-%               processing continuous data, when  60 epochs cannot be extracted 
-%               (not enough data), then the overlap is increased (starting
-%               with no overlap). When EEG contains data epochs, no epochs
-%               are extracted but epochs are (1) randomly selected if there
-%               are more than 'nepochs' or bootstraped if there are less.
+%  'nepochs'  - [integer] number of data epoch. This is useful when
+%               comparing conditions. if not enough epochs can be extracted
+%               an error is returned. If there are too many, they are
+%               selected randomly.
 %  'epochlen' - [float] epoch length (default is 2 seconds). ROIconnect
 %                  has not been tested with other epoch lenghts.
 %  'resample' - [integer] resample to the desired sampling rate. Default
@@ -149,21 +147,21 @@ if nargin < 2
                                'and extract 2-sec data segments. Do you want to proceed?' ], 'Warning ROI connect', 'Cancel', 'Yes', 'Yes');
             if strcmpi(res, 'Cancel'), return; end
             if strcmpi(res, 'yes')
-                options = { options{:} 'resample' 'on' 'regepochs' 'on' };
+                options = { options{:} 'resample' 100 };
             end
         else
             res = questdlg2( [ 'This function will delete all events and extract 2-sec' 10 ...
                              'data segments. Do you want to proceed?' ], 'Warning ROI connect', 'Cancel', 'Yes', 'Yes');
             if strcmpi(res, 'Cancel'), return; end
             if strcmpi(res, 'yes')
-                options = { options{:} 'regepochs' 'on' };
+                options = { options{:} };
             end
         end
     elseif EEG(end).srate > 128
         res = questdlg2( 'This function will resample data at 100 Hz. Do you want to proceed?', 'Warning ROI connect', 'Cancel', 'Yes', 'Yes');
         if strcmpi(res, 'Cancel'), return; end
         if strcmpi(res, 'yes')
-            options = { options{:} 'resample' 'on' };
+            options = { options{:} 'resample' 100 };
         end
     end
                      
@@ -176,12 +174,13 @@ if nargin < 2
     cb_load   = 'pop_roi_activity(''cb_load'', gcbf);';
 
     rowg = [0.1 0.5 1 0.2];
+    rowg2 = [0.1 0.8 0.2 0.7];
     strLeadfield = { strDipfit 'Use custom source model aligned to MNI (Brainstorm, Fieldtrip etc...)' };
     strCompute   = { 'Compute distributed source solution using ROIconnect LCMV' ...
                      'Compute distributed source solution using Fieldtrip LCMV' ...
                      'Compute distributed source solution using ROIconnect eLoreta' ...
                      'Compute distributed source solution using Fieldtrip eLoreta'  };
-    uigeom = { 1 1 rowg rowg 1 1 rowg 1 1 [0.1 0.8 0.2 0.7] [0.1 0.8 0.2 0.7] };
+    uigeom = { 1 1 rowg rowg 1 1 rowg 1 1 rowg2 rowg2 };
     uilist = { { 'style' 'text' 'string' 'Head and source model parameters' 'fontweight' 'bold'} ...
         { 'style' 'popupmenu' 'string' strLeadfield 'tag' 'leadfieldselect' 'callback' cb_select }  ...
         {} { 'style' 'text' 'string' 'Source model file:'  } { 'style' 'edit' 'string' defaultFile 'tag' 'leadfield'   'enable'  'off'   } { 'style' 'pushbutton' 'string' '...' 'tag' 'but' 'callback' cb_load }  ...
@@ -238,8 +237,8 @@ end
     'model'           'string'              strComputeShort  'LCMV';
     'modelparams'     'cell'                {}               {};
     'atlas'           'string'              {}               '';
-    'resample'        'string'              { 'on' 'off'}    'off';
-    'regepochs'       'string'              { 'on' 'off'}    'off';
+    'resample'        'real'                {}               100;
+    'regepochs'       'string'              { 'on' 'off'}    'off'; % ignored
     'nPCA'            'real'                {}               3;
     'nepochs'         'real'                {}               60;
     'epochlen'        'real'                {}               2;
@@ -248,7 +247,7 @@ end
 if ischar(g), error(g); end
 
 if ~isempty(g.resample) && ~isequal(EEG.srate, g.resample)
-    EEG = pop_resample(EEG, 100);
+    EEG = pop_resample(EEG, g.resample);
 end
 if EEG.trials == 1
     EEGTMP.trials = 0;
