@@ -13,6 +13,11 @@
 %  'sourcemodel' - [string] source model file also containing Atlas info.
 % 
 % Optional inputs:
+%  'model'     - ['eLoretaFieldtrip'|'lcmvFieldtrip'|'eLoreta'|'lcmv'] distributed
+%                source localization method. Default is 'lcvm'
+%                (Beamforming) from ROIconnect. 'eLoretaFieldtrip' and 
+%                'lcmvFieldtrip' are alternative implementations in
+%                Fieldtrip that should return similar results.
 %  'sourcemodel2mni' - [9x float] homogeneous transformation matrix to convert
 %                  sourcemodel to MNI space.
 %  'sourcemodelatlas' - [string] name of Atlas to use (must be contained
@@ -84,7 +89,7 @@ g = finputcheck(varargin, { ...
     'sourcemodel2mni'  'real'               { }             [];
     'sourcemodelatlas' 'string'             { }             '';
     'modelparams'      'cell'               { }         { 0.05 };
-    'model'            'string'             { 'eLoretaFieldtrip' 'lcmvFieldtrip' 'eLoreta' 'lcmv' } 'eLoreta';
+    'model'            'string'             { 'eLoretaFieldtrip' 'lcmvFieldtrip' 'eLoreta' 'lcmv' } 'lcmv';
     'nPCA'             'integer'            { }              3;
     'downsample'       'integer'            { }              1;
     'roiactivity'      'string'             { 'on' 'off' }  'on';
