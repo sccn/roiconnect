@@ -88,11 +88,17 @@ for iFreq = 1:length(g.freqrange)
     % transform to volume
     if ischar(sourcemodel)
         sourceProjtmp = load('-mat', sourcemodel);
+    else
+        sourceProjtmp = sourcemodel;
+    end
+    if ~isfield(sourceProjtmp, 'Vertices')
+        sourceProjtmp.Vertices = sourceProjtmp.pos;
     end
     xl = [min(sourceProjtmp.Vertices(:,1)) max(sourceProjtmp.Vertices(:,1)) ];
     yl = [min(sourceProjtmp.Vertices(:,2)) max(sourceProjtmp.Vertices(:,2)) ];
     zl = [min(sourceProjtmp.Vertices(:,3)) max(sourceProjtmp.Vertices(:,3)) ];
-    volMat = zeros(diff(xl)/5+1, diff(yl)/5+1, diff(zl)/5+1);
+    downscale = 5;
+    volMat = zeros(ceil(diff(xl)/downscale+1), ceil(diff(yl)/downscale+1), ceil(diff(zl)/downscale+1));
     clear sourcemodelout;
     sourcemodelout.dim = size(volMat);
     [r,c,v] = ind2sub(size(volMat),find(volMat == 0));
@@ -104,9 +110,9 @@ for iFreq = 1:length(g.freqrange)
     allInds = zeros(size(sourceProjtmp.Vertices));
     allIndVolume = zeros(length(sourceProjtmp.Vertices),1);
     for iVert = 1:length(sourceProjtmp.Vertices)
-        xVal = (sourceProjtmp.Vertices(iVert,1)-xl(1))/5+1;
-        yVal = (sourceProjtmp.Vertices(iVert,2)-yl(1))/5+1;
-        zVal = (sourceProjtmp.Vertices(iVert,3)-zl(1))/5+1;
+        xVal = round((sourceProjtmp.Vertices(iVert,1)-xl(1))/downscale)+1;
+        yVal = round((sourceProjtmp.Vertices(iVert,2)-yl(1))/downscale)+1;
+        zVal = round((sourceProjtmp.Vertices(iVert,3)-zl(1))/downscale)+1;
         ind = sub2ind(size(volMat), xVal, yVal, zVal);
         volMat(xVal, yVal, zVal) = mean(sourceact(iVert,indFreq), 2);
         allIndVolume(iVert) = ind;
