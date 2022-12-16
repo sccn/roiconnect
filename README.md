@@ -46,6 +46,10 @@ EEG = pop_roi_activity(EEG, 'leadfield',EEG.dipfit.sourcemodel,'model','LCMV','m
 
 The function performs source reconstruction by calculating a source projection filter and applying it to the sensor data. Power is calculated with the Welch method on the voxel time series and then summed across voxels within regions. To enable region-wise FC computation, the function applies PCA to the time series of every region. It then selects the *n* strongest PCs for every region. The resulting time series is stored in `EEG.roi.source_roi_data`, and power is stored in `EEG.roi.source_roi_power`.
 
+Note that the function require the data to be about 100 Hz, so it queries the user for resampling data. It also extract data segment of 2 seconds I have change the automatic epoch (segment) extraction for continuous data and also added a parameter for the number of epochs. Connectivity values vary with the length of the data so we always want to have the same number of epochs.
+
+Say we set the number of epochs to 60 (2 second epochs). When you provide continuous data, then non-overlapping epochs are extracted. If there are more than 60, then the function selects 60 randomly. If there are less than 60, then the function increases the epoch overlap and try to extract data epochs again. If you provide data epochs as input (single trial ERPs), and there are not enough of them, they are bootstraped to reach the desired number.
+
 ## Connectivity analysis
 `pop_roi_connect` accepts the following inputs: the EEG struct computed by `pop_roi_activity` and the names of the FC metrics. To avoid biases due to data length, we recommend keeping data length for all conditions constant. Thus, you can tell the function to estimate FC on time snippets of 60 s length (default) which can be averaged (default) or used as input for later statistical analyses. The following command line example asks the function to perform FC analysis on snippets using default values (explicitely passed as input parameters in this example). 
 
