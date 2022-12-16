@@ -43,6 +43,8 @@
 % Example:
 %   % Requires prior call to pop_roi_connect
 %   matnet = pop_roi_connectplot(EEG, 'measure', 'ROIPSD');
+%
+% See also: STD_ROI_CONNECTPLOT, ROI_ACTIVITY, POP_ROI_ACTIVITY, POP_LEADFIELD
 
 % Copyright (C) Arnaud Delorme, arnodelorme@gmail.com
 %

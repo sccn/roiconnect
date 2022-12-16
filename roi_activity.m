@@ -22,7 +22,6 @@
 %                  sourcemodel to MNI space.
 %  'sourcemodelatlas' - [string] name of Atlas to use (must be contained
 %                       in Atlas field of the sourcemodel file.
-%  'morder'    - [interger] Autoregressive model order (default is 20)
 %  'nPCA'      - [interger] Number of PCA component for each ROI. Each ROI
 %                is made of many voxel. Instead of averaging their activity,
 %                this function takes the x first PCA components, then use
