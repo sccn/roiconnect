@@ -78,7 +78,7 @@ end
 g = finputcheck(varargin, { ...
     'ignoremissing'    'string'    {'on' 'off'}    'off';
     'addrois'          ''          {}              [];
-    'connectmat'       'float'     {}              [];
+    'connectmat'       ''          {}              [];
     }, 'roi_definenetwork');
 if isstr(g)
     error(g);
@@ -104,7 +104,7 @@ if ischar(g.addrois) && ~isempty(g.addrois)
         end
         g.addrois = tmpTable;
     end
-    g.addrois = readtable(g.addrois);
+    g.addrois = readtable(g.addrois,'delimiter', char(9));
 end
 
 try
@@ -149,11 +149,24 @@ if ~isempty(g.addrois)
         EEG.roi.atlas.Scouts(end).Vertices = vertcat(EEG.roi.atlas.Scouts(inds).Vertices);
     end
     
+    % add ROIs to connectivity matrix by combining info from origin ROIs (not ideal, better compute it directly)
     if ~isempty(connectmat)
-        connectmat = augmentConnectivity(connectmat, ROIinds);
+        if iscell(connectmat)
+            for iMat = 1:length(connectmat)
+                connectmat{iMat} = augmentConnectivity(connectmat{iMat}, ROIinds);
+            end
+        else
+            connectmat = augmentConnectivity(connectmat, ROIinds);
+        end
     end
 end
-            
+
+% only add ROIs - return
+if isempty(roiTable) 
+    networks = [];
+    return;
+end
+
 % define networks
 networks = [];
 colNames = fieldnames(roiTable);
