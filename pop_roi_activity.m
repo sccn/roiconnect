@@ -12,10 +12,6 @@
 %  'sourcemodel' - [string] source model file
 %
 % Optional inputs:
-%  'nepochs'  - [integer] number of data epoch. This is useful when
-%               comparing conditions. if not enough epochs can be extracted
-%               an error is returned. If there are too many, they are
-%               selected randomly.
 %  'epochlen' - [float] epoch length (default is 2 seconds). ROIconnect
 %                  has not been tested with other epoch lenghts.
 %  'resample' - [integer] resample to the desired sampling rate. Default
@@ -108,6 +104,7 @@ if ~isstruct(EEG)
     
     % update Atlas list
     leadFieldFile = get(findobj(fig, 'tag', 'leadfield'), 'string');
+    iVal = 1;
     if ~isempty(leadFieldFile)
         try
             tmp = load('-mat', leadFieldFile);
@@ -120,12 +117,16 @@ if ~isstruct(EEG)
             disp('Error reading Atlas list');
             atlasList = ' ';
         end
+
+        if contains(leadFieldFile, 'Talairach')
+            iVal = 2;
+        end
     else
         atlasList = ' ';
     end
     userdata{2} = atlasList;
     set(fig, 'userdata', userdata);
-    set(findobj(fig, 'tag', 'atlaslist'), 'string', atlasList);
+    set(findobj(fig, 'tag', 'atlaslist'), 'string', atlasList, 'value', iVal);
     return;
 end             
         
@@ -174,13 +175,13 @@ if nargin < 2
     cb_load   = 'pop_roi_activity(''cb_load'', gcbf);';
 
     rowg = [0.1 0.5 1 0.2];
-    rowg2 = [0.1 0.8 0.2 0.7];
+    rowg2 = [0.1 1 0.2 0.5];
     strLeadfield = { strDipfit 'Use custom source model aligned to MNI (Brainstorm, Fieldtrip etc...)' };
     strCompute   = { 'Compute distributed source solution using ROIconnect LCMV' ...
                      'Compute distributed source solution using Fieldtrip LCMV' ...
                      'Compute distributed source solution using ROIconnect eLoreta' ...
                      'Compute distributed source solution using Fieldtrip eLoreta'  };
-    uigeom = { 1 1 rowg rowg 1 1 rowg 1 1 rowg2 rowg2 };
+    uigeom = { 1 1 rowg rowg 1 1 rowg 1 1 rowg2 };
     uilist = { { 'style' 'text' 'string' 'Head and source model parameters' 'fontweight' 'bold'} ...
         { 'style' 'popupmenu' 'string' strLeadfield 'tag' 'leadfieldselect' 'callback' cb_select }  ...
         {} { 'style' 'text' 'string' 'Source model file:'  } { 'style' 'edit' 'string' defaultFile 'tag' 'leadfield'   'enable'  'off'   } { 'style' 'pushbutton' 'string' '...' 'tag' 'but' 'callback' cb_load }  ...
@@ -190,7 +191,6 @@ if nargin < 2
         {} { 'style' 'text' 'string' 'Model parameters:' } { 'style' 'edit' 'string' '0.05'  'tag' 'modelparams' } {}  ...
         {} ...
         { 'style' 'text' 'string' 'Other parameters' 'fontweight' 'bold'} ...
-        {} { 'style' 'text' 'string' 'Number of 2-s windows:'  } { 'style' 'edit' 'string' '60' 'tag' 'epochs' } { }  ...
         {} { 'style' 'text' 'string' 'Number of dimentions per ROI:'  } { 'style' 'edit' 'string' '3' 'tag' 'pca' } {}  ...
         };
     
@@ -213,7 +213,6 @@ if nargin < 2
         'modelparams'  modelParams ...
         'atlas' usrdat{2}{out.atlaslist} ...
         'nPCA'  str2num(out.pca) ...
-        'nepochs'  str2num(out.epochs) ...
         };
 else
     options = varargin;
@@ -222,7 +221,6 @@ end
 % process multiple datasets
 % -------------------------
 if length(EEG) > 1
-    % check that the dipfit settings are the same
     if nargin < 2
         [ EEG, com ] = eeg_eval( 'pop_roi_activity', EEG, 'warning', 'on', 'params', options );
     else
@@ -240,7 +238,6 @@ end
     'resample'        'real'                {}               100;
     'regepochs'       'string'              { 'on' 'off'}    'off'; % ignored
     'nPCA'            'real'                {}               3;
-    'nepochs'         'real'                {}               60;
     'epochlen'        'real'                {}               2;
     'fooof'           'string'              { 'on' 'off'}    'off';
     'fooof_frange'     ''                   {}               [1 30]}, 'pop_roi_activity', 'ignore');
@@ -250,35 +247,8 @@ if ~isempty(g.resample) && ~isequal(EEG.srate, g.resample)
     EEG = pop_resample(EEG, g.resample);
 end
 if EEG.trials == 1
-    EEGTMP.trials = 0;
     recurrence = 2;
-    while EEGTMP.trials <= g.nepochs
-        EEGTMP = eeg_regepochs(EEG, recurrence, [0 2]);
-        if EEGTMP.trials < g.nepochs
-            recurrence = recurrence/2;
-            disp('Not enough data epochs, increasing overlap and trying again');
-        end
-        if recurrence < 0.1
-            error('Cannot extract enough data epochs')
-        end
-    end
-    EEG = EEGTMP;
-elseif EEG.trials < g.nepochs/5
-    error('Too few epochs/windows, reduce the number of required epochs/windows for connectivity analysis');
-end
-if EEG.trials ~= g.nepochs
-    if EEG.trials > g.nepochs
-        epochSelect = shuffle(1:EEG.trials);
-        EEG = pop_select(EEG, 'trial', epochSelect(1:g.nepochs));
-    else
-        % bootstraping epochs
-        epochSelect = [1:EEG.trials ceil(rand(1,g.nepochs-EEG.trials)*EEG.trials) ];
-        EEG.data = EEG.data(:,:,epochSelect);
-        EEG.trials = size(EEG.data,3);
-        EEG.epoch  = [];
-        EEG.event  = [];
-        EEG = eeg_checkset(EEG);
-    end
+    EEG = eeg_regepochs(EEG, recurrence, [0 2]);
 end
 
 if isempty(g.leadfield)
