@@ -91,6 +91,7 @@ end
     'subplots'    'string'    {'on' 'off'}    'off';
     'exporttxt'   'string'    {'on' 'off'}    'on';
     'title'       'string'    {}              '';
+    'netstat'     'string'    {'on' 'off'}    'off';
     'addrois'     ''          {}              [];
     'columns'     'integer'   {}              [];
     'limits'      'float'     {}              [];
@@ -139,7 +140,7 @@ end
 
 % get value of matrix based on measure for the frequency of interest
 % ------------------------------------------------------------------
-fprintf('Thresold of %1.2f (all connectivity values below the threshold are removed)\n', g.threshold);
+fprintf('Thresold of %s (all connectivity values below the threshold are removed)\n', num2str(g.threshold));
 if ischar(measure) % measure contains the name of the measure
     matrix = pop_roi_connectplot(EEG, 'measure', measure, 'noplot', 'on', addopts{:});
 elseif iscell(measure) % measure contains connectivity matrices
@@ -175,24 +176,30 @@ end
 imgFileName = {};
 txtFileName = {};
 roiStruct =  EEG.roi.atlas.Scouts(:);
+if length(g.threshold) < length(networks)
+    g.threshold = g.threshold*ones(1,length(networks));
+end
+sumVals = {};
 for iNet = 1:length(networks)
     if length(networks(iNet).ROI_inds) < 2
         error('Cannot plot network %s: you need at least two brain areas to make a network', length(networks(iNet).ROI_inds));
     end
     % create structure containing connectivity for the network of interest
     if iscell(matrix)
-        networkMat = matrix{iNet};
-        if any(size(networkMat) ~= length(networks(iNet).ROI_inds))
+        networkMatSubj = matrix{iNet};
+        if size(networkMatSubj,1) ~= size(networks(iNet).ROI_inds,1)
             try
-                networkMat = networkMat(networks(iNet).ROI_inds, networks(iNet).ROI_inds);
+                networkMatSubj = networkMatSubj(networks(iNet).ROI_inds, networks(iNet).ROI_inds, :);
             catch
                 error('When a cell array, "measure" should contain matrices which have the same number of elements as the corresponding network');
             end
         end
     else
-        networkMat = matrix(networks(iNet).ROI_inds, networks(iNet).ROI_inds);
+        networkMatSubj = matrix(networks(iNet).ROI_inds, networks(iNet).ROI_inds, :);
     end
-    
+    sumVals{iNet} = sum(sum(networkMatSubj,1),2);
+    networkMat    = mean(networkMatSubj,3);
+
     if ~strcmpi(g.plotmode, 'none')
         if strcmpi(g.subplots, 'on')
             subplot(nrow, ncol, iNet)
@@ -208,7 +215,7 @@ for iNet = 1:length(networks)
     
     % 2-D plot
     if strcmpi(g.plotmode, '2D') || strcmpi(g.plotmode, 'both')
-        plotconnectivity(networkMat(:,:), 'labels', labels, 'axis', gca, 'threshold', g.threshold, 'limits', g.limits);
+        plotconnectivity(networkMat(:,:), 'labels', labels, 'axis', gca, 'threshold', g.threshold(iNet), 'limits', g.limits);
         h = title(tmpTitle, 'interpreter', 'none');
         pos = get(h, 'position');
         set(h, 'position', pos + [0 0.1 0]);
@@ -231,7 +238,7 @@ for iNet = 1:length(networks)
             options = { options{:} 'filename'  tmpFileName };
             imgFileName{end+1} = [ tmpFileName '.xhtml' ];
         end
-        roi_plotbrainmovie(networkMat(:,:), 'labels', labels, 'threshold', g.threshold, options{:});
+        roi_plotbrainmovie(networkMat(:,:), 'labels', labels, 'threshold', g.threshold(iNet), options{:});
     end
     
     % save text
@@ -248,6 +255,14 @@ for iNet = 1:length(networks)
         measures.(tmpTitle).labels = labels;
     end
     
+end
+
+% perform some stats
+if length(networks) > 1
+    [H,P,CI,STATS] = ttest(sumVals{1}, sumVals{2});
+    fprintf('Network %s effect size %1.2f p-value: %1.3f\n', networks(end).name, STATS.tstat, P);
+    %[ef,~,pvals] = statcond(sumVals(1:2), 'mode', 'perm');
+    %fprintf('Network %s effect size %1.2f p-value: %1.3f\n', networks(end).name, ef, pvals);
 end
 
 % if strcmpi(g.subplots, 'on') && ~isempty(g.title)
