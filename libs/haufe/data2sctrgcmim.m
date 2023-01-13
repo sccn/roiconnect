@@ -107,7 +107,7 @@ if abs(nboot) < 1 % no bootstrap
   % data to autocovariance
   %     G = tsdata_to_autocov(data, nlags);
 %   CS = tsdata_to_cpsd_fast(data, fres, 'WELCH', ndat);
-  CS = data2cs_event(data(:, :)', ndat, ndat - (floor(ndat/2)), ndat, [], CSpara);
+  CS = data2cs_event(data(:, :)', ndat, floor(ndat/2), ndat, [], CSpara);
   
   maxfreq = size(CS,3);
       

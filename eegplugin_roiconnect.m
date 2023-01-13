@@ -76,7 +76,7 @@ tool_m = findobj(fig, 'tag', 'tools');
 % command to check that the '.source' is present in the EEG structure
 % -------------------------------------------------------------------
 cb_toggle      = [ trystrs.no_check '[ALLEEG, LASTCOM] = pop_toggleroiandica(ALLEEG); EEG = ALLEEG(CURRENTSET);' catchstrs.add_to_hist '; eeglab(''redraw'');' ]; 
-cb_act         = [ trystrs.no_check '[EEG, LASTCOM] = pop_roi_activity(EEG);' catchstrs.store_and_hist ]; 
+cb_act         = [ trystrs.no_check '[EEG, LASTCOM] = pop_roi_activity(EEG);' catchstrs.new_and_hist ]; 
 cb_connect     = [ trystrs.no_check '[EEG, LASTCOM] = pop_roi_connect(EEG);'  catchstrs.store_and_hist ]; 
 cb_plot        = [ trystrs.no_check '[~,LASTCOM] = pop_roi_connectplot(EEG);' catchstrs.add_to_hist    ]; 
 

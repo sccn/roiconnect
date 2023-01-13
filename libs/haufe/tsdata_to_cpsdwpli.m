@@ -91,7 +91,7 @@ end
 assert(window <= m,'window cannot be longer than data');
 
 if nargin < 5 || isempty(noverlap)
-    noverlap = round(window/2);
+    noverlap = floor(window/2);
 end
 assert(noverlap < window,'overlap must be shorter than window');
 

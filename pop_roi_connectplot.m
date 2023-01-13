@@ -44,6 +44,8 @@
 % Example:
 %   % Requires prior call to pop_roi_connect
 %   matnet = pop_roi_connectplot(EEG, 'measure', 'ROIPSD');
+%
+% See also: STD_ROI_CONNECTPLOT, ROI_ACTIVITY, POP_ROI_ACTIVITY, POP_LEADFIELD
 
 % Copyright (C) Arnaud Delorme, arnodelorme@gmail.com
 %
@@ -415,7 +417,11 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         % plot on matrix
         if strcmpi(g.plotmatrix, 'on') && ~isempty(matrix)
             matrix = matrix.*seedMask; 
-            roi_plotcoloredlobes(EEG, matrix, titleStr, g.measure, g.hemisphere, g.grouphemispheres, g.region);
+            %try
+                roi_plotcoloredlobes(EEG, matrix, titleStr, g.measure, g.hemisphere, g.region);
+            %catch
+            %    figure; imagesc(matrix);
+            %end
         end
 
         % plot on cortical surface
@@ -493,12 +499,12 @@ function [colors, color_idxx, roi_idxx, labels_dk_cell_idx, roi_loc] = get_color
     roi_loc = strrep(roi_loc, 'RL', 'R1');
     roi_loc = strrep(roi_loc, 'L', '');
     roi_loc = strrep(roi_loc, 'R', '');
-    [color_idxx,roi_idxx] = sort(str2double(roi_loc));
-    labels_dk_cell_idx = labels(roi_idxx);
-    
-    % color assignment only if Desikan-Killiany atlas is used
-    if size(labels, 2) ~= 68
-        color_idxx = ones(1, size(labels,2));
+    try
+        [color_idxx,roi_idxx] = sort(str2double(roi_loc));
+        labels_dk_cell_idx = labels(roi_idxx);
+    catch
+        roi_idxx = 1:length(labels);
+        color_idxx = mod(roi_idxx, length(colors))+1;
         labels_dk_cell_idx = labels;
     end
 end
@@ -609,7 +615,7 @@ function roi_plotcoloredlobes( EEG, matrix, titleStr, measure, hemisphere, group
     % labels on dummy plot for positioning
     xlim([0 n_roi_labels])
     ylim([0 n_roi_labels])
-    set(gca,'xtick',[1:n_roi_labels],'xticklabel',labels_dk_cell_idx(hem_idx{1}:hem_idx{2}:n_roi_labels));
+    set(gca,'xtick',[1:n_roi_labels],'xticklabel',labels_dk_cell_idx(hem_idx{1}:hem_idx{2}:n_roi_labels));%, 'TickLabelInterpreter','none');
     ax = gca;
     for i=hem_idx{1}:hem_idx{2}:n_roi_labels   
         ax.XTickLabel{ceil(i/hem_idx{3})} = sprintf('\\color[rgb]{%f,%f,%f}%s', colors{color_idxx(i)}, ax.XTickLabel{ceil(i/2)});

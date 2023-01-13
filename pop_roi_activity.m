@@ -1,31 +1,28 @@
-% pop_roi_activity - call roi_activity to compute activities of ROIs using
+% POP_ROI_ACTIVITY - call roi_activity to compute activities of ROIs using
 %                    eLoreta
 %
 % Usage:
 %  EEG = pop_roi_activity(EEG, 'key', 'val', ...);
 %
 % Inputs:
-%  EEG - EEGLAB dataset
+%  EEG - EEGLAB dataset. If continuous data epochs are extracted.
 %
 % Required inputs:
 %  'headmodel'   - [string] head model file in MNI space
 %  'sourcemodel' - [string] source model file
 %
 % Optional inputs:
-%  'elec2mni'        - [9x float] homogeneous transformation matrix to convert
-%                       electrode locations to MNI space.
-%  'sourcemodel2mni' - [9x float] homogeneous transformation matrix to convert
-%                      sourcemodel to MNI space.
-%  'fooof'           - ['on'|'off'] enable FOOOF analysis. Default is 'off'.
-%  'fooof_frange'    - [''] FOOOF fitting range. Default is [1 30] like in the
-%                        example.
+%  'epochlen' - [float] epoch length (default is 2 seconds). ROIconnect
+%                  has not been tested with other epoch lenghts.
+%  'resample' - [integer] resample to the desired sampling rate. Default
+%                  is 100. Adujst the model order accordingly. ROIconnect
+%                  has only be tested with 100 Hz sampling rates.
+%
+% Other optional inputs:
+%  All ROI_ACTIVITY parameters are accepted as input and passed on.
 %
 % Output:
 %  EEG - EEGLAB dataset with field 'roi' containing connectivity info.
-%
-% Note: Optional inputs to roi_activity() are also accepted.
-%
-% Author: Arnaud Delorme, UCSD, 2019
 %
 % Example
 %   p = fileparts(which('eeglab')); % path
@@ -35,7 +32,9 @@
 %   'head_modelColin27_5003_Standard-10-5-Cap339.mat'), 'sourcemodel2mni', ...
 %   [0 -26.6046230000 -46 0.1234625600 0 -1.5707963000 1000 1000 1000]);
 %
-% Use pop_roi_connect(EEG) to compute conectivity
+% Author: Arnaud Delorme, UCSD, 2019
+%
+% See also ROI_ACTIVITY
 
 % Copyright (C) Arnaud Delorme, arnodelorme@gmail.com
 %
@@ -105,6 +104,7 @@ if ~isstruct(EEG)
     
     % update Atlas list
     leadFieldFile = get(findobj(fig, 'tag', 'leadfield'), 'string');
+    iVal = 1;
     if ~isempty(leadFieldFile)
         try
             tmp = load('-mat', leadFieldFile);
@@ -117,12 +117,16 @@ if ~isstruct(EEG)
             disp('Error reading Atlas list');
             atlasList = ' ';
         end
+
+        if contains(leadFieldFile, 'Talairach')
+            iVal = 2;
+        end
     else
         atlasList = ' ';
     end
     userdata{2} = atlasList;
     set(fig, 'userdata', userdata);
-    set(findobj(fig, 'tag', 'atlaslist'), 'string', atlasList);
+    set(findobj(fig, 'tag', 'atlaslist'), 'string', atlasList, 'value', iVal);
     return;
 end             
         
@@ -138,31 +142,27 @@ strComputeShort = { 'LCMV' 'LCMVFieldtrip' 'eLoreta' 'eLoretaFieldtrip' };
 if nargin < 2
     
     options = {};
-    if EEG(1).trials == 1
-        if EEG(1).srate > 128
-            res = questdlg2( [ 'This function is optimized to process 2-sec data epochs' 10 ...
-                'at a sampling rate of about 100 Hz. Do you want to resample the data and' 10 ...
-                'extract 2-sec data segments? (make sure your dataset is saved)' ], 'Warning ROI connect', 'Cancel', 'No', 'Yes', 'Yes');
-            if strcmpi(res, 'cancel'), return; end
+    if EEG(end).trials == 1
+        if EEG(end).srate > 128
+            res = questdlg2( [ 'This function will resample data at 100 Hz, delete all events,' 10 ...
+                               'and extract 2-sec data segments. Do you want to proceed?' ], 'Warning ROI connect', 'Cancel', 'Yes', 'Yes');
+            if strcmpi(res, 'Cancel'), return; end
             if strcmpi(res, 'yes')
-                options = { options{:} 'resample' 'on' 'regepochs' 'on' };
+                options = { options{:} 'resample' 100 };
             end
         else
-            res = questdlg2( [ 'This function is optimized to process 2-sec data epochs.' 10 ...
-                'Do you want to resample the data extract 2-sec data segments?' 10 ...
-                '(make sure your dataset is saved)' ], 'Warning ROI connect', 'Cancel', 'No', 'Yes', 'Yes');
-            if strcmpi(res, 'cancel'), return; end
+            res = questdlg2( [ 'This function will delete all events and extract 2-sec' 10 ...
+                             'data segments. Do you want to proceed?' ], 'Warning ROI connect', 'Cancel', 'Yes', 'Yes');
+            if strcmpi(res, 'Cancel'), return; end
             if strcmpi(res, 'yes')
-                options = { options{:} 'regepochs' 'on' };
+                options = { options{:} };
             end
         end
-    elseif EEG(1).srate > 128
-        res = questdlg2( [ 'This function is optimized to process data epochs' 10 ...
-            'at a sampling rate of about 100 Hz. Do you want to resample the data?' 10 ...
-            '(make sure your dataset is saved)' ], 'Warning ROI connect', 'Cancel', 'No', 'Yes', 'Yes');
-        if strcmpi(res, 'cancel'), return; end
+    elseif EEG(end).srate > 128
+        res = questdlg2( 'This function will resample data at 100 Hz. Do you want to proceed?', 'Warning ROI connect', 'Cancel', 'Yes', 'Yes');
+        if strcmpi(res, 'Cancel'), return; end
         if strcmpi(res, 'yes')
-            options = { options{:} 'resample' 'on' };
+            options = { options{:} 'resample' 100 };
         end
     end
                      
@@ -175,20 +175,23 @@ if nargin < 2
     cb_load   = 'pop_roi_activity(''cb_load'', gcbf);';
 
     rowg = [0.1 0.5 1 0.2];
+    rowg2 = [0.1 1 0.2 0.5];
     strLeadfield = { strDipfit 'Use custom source model aligned to MNI (Brainstorm, Fieldtrip etc...)' };
     strCompute   = { 'Compute distributed source solution using ROIconnect LCMV' ...
                      'Compute distributed source solution using Fieldtrip LCMV' ...
                      'Compute distributed source solution using ROIconnect eLoreta' ...
                      'Compute distributed source solution using Fieldtrip eLoreta'  };
-    uigeom = { 1 1 rowg rowg 1 1 rowg [0.1 0.5 0.2 1] };
-    uilist = { { 'style' 'text' 'string' 'Region Of Interest (ROI) connectivity analysis' 'fontweight' 'bold'} ...
+    uigeom = { 1 1 rowg rowg 1 1 rowg 1 1 rowg2 };
+    uilist = { { 'style' 'text' 'string' 'Head and source model parameters' 'fontweight' 'bold'} ...
         { 'style' 'popupmenu' 'string' strLeadfield 'tag' 'leadfieldselect' 'callback' cb_select }  ...
         {} { 'style' 'text' 'string' 'Source model file:'  } { 'style' 'edit' 'string' defaultFile 'tag' 'leadfield'   'enable'  'off'   } { 'style' 'pushbutton' 'string' '...' 'tag' 'but' 'callback' cb_load }  ...
         {} { 'style' 'text' 'string' 'Choose ROI atlas:' } { 'style' 'popupmenu' 'string' 'xxxx' 'tag' 'atlaslist' } {} ...
         {} ...
         { 'style' 'popupmenu' 'string' strCompute 'tag' 'model' }  ...
         {} { 'style' 'text' 'string' 'Model parameters:' } { 'style' 'edit' 'string' '0.05'  'tag' 'modelparams' } {}  ...
-        {} { 'style' 'text' 'string' 'Dimention per ROI:'  } { 'style' 'edit' 'string' '3' 'tag' 'pca' } {}  ...
+        {} ...
+        { 'style' 'text' 'string' 'Other parameters' 'fontweight' 'bold'} ...
+        {} { 'style' 'text' 'string' 'Number of dimentions per ROI:'  } { 'style' 'edit' 'string' '3' 'tag' 'pca' } {}  ...
         };
     
     [result,usrdat,~,out] = inputgui('geometry', uigeom, 'uilist', uilist, 'helpcom', 'pophelp(''pop_roi_activity'')', ...
@@ -196,10 +199,9 @@ if nargin < 2
     if isempty(result), return, end
 
     % 
-    if out.leadfieldselect == 1
-         options = { options{:} 'leadfield' EEG(1).dipfit.sourcemodel };
-    else
-         options = { options{:} 'leadfield' EEG(1).dipfit.leadfield };
+    if out.leadfieldselect == 2
+         options = { options{:} 'leadfield' EEG(1).dipfit.leadfield }; % file provided by user
+         % otherwise use EEG.dipfit.sourcemodel
     end
     try
         modelParams = eval( [ '{' out.modelparams '}' ] );
@@ -219,7 +221,6 @@ end
 % process multiple datasets
 % -------------------------
 if length(EEG) > 1
-    % check that the dipfit settings are the same
     if nargin < 2
         [ EEG, com ] = eeg_eval( 'pop_roi_activity', EEG, 'warning', 'on', 'params', options );
     else
@@ -234,28 +235,36 @@ end
     'model'           'string'              strComputeShort  'LCMV';
     'modelparams'     'cell'                {}               {};
     'atlas'           'string'              {}               '';
-    'resample'        'string'              { 'on' 'off'}    'off';
-    'regepochs'       'string'              { 'on' 'off'}    'off';
+    'resample'        'real'                {}               100;
+    'regepochs'       'string'              { 'on' 'off'}    'off'; % ignored
     'nPCA'            'real'                {}               3;
+    'epochlen'        'real'                {}               2;
     'fooof'           'string'              { 'on' 'off'}    'off';
     'fooof_frange'     ''                   {}               [1 30]}, 'pop_roi_activity', 'ignore');
 if ischar(g), error(g); end
 
-if strcmpi(g.resample, 'on')
-    EEG = pop_resample(EEG, 100);
+if ~isempty(g.resample) && ~isequal(EEG.srate, g.resample)
+    EEG = pop_resample(EEG, g.resample);
 end
-if strcmpi(g.regepochs, 'on')
-    EEG = eeg_regepochs(EEG, 2, [0 2]);
+if EEG.trials == 1
+    recurrence = 2;
+    EEG = eeg_regepochs(EEG, recurrence, [0 2]);
 end
 
+if isempty(g.leadfield)
+    g.leadfield = EEG.dipfit.sourcemodel;
+end
 if isstruct(g.leadfield) && isfield(g.leadfield, 'file')
     sourceModelFile = g.leadfield.file;
     sourceModel2MNI = g.leadfield.coordtransform;
-else
+elseif ~isempty(g.leadfield)
     sourceModelFile = g.leadfield;
     sourceModel2MNI = [];
+else
+    sourceModelFile = g.leadfield.file;
+    sourceModel2MNI = g.leadfield.coordtransform;
+    g.leadfield = EEG.dipfit.sourcemodel;
 end    
-%modelParams;
 
 EEG = roi_activity(EEG, 'leadfield', g.leadfield, 'headmodel', EEG.dipfit.hdmfile, ...
     'model', g.model, 'modelparams', g.modelparams, 'sourcemodel', sourceModelFile, ...

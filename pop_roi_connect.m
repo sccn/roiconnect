@@ -8,6 +8,12 @@
 %
 % Optional inputs:
 %  'morder'         - [integer]  Order of autoregressive model. Default is 20.
+%  'nepochs'  - [integer] number of data epoch. This is useful when
+%               comparing conditions. if not enough epochs can be extracted
+%               an error is returned. If there are too many, the first ones
+%               are selected (selecting the first epochs ensure they are mostly
+%               contiguous and that the correlation between them is similar 
+%               accross conditions).
 %  'naccu'          - [integer]  Number of accumulation for stats. Default is 0.
 %  'methods'        - [cell] Cell of strings corresponding to methods.
 %                       'CS'    : Cross spectrum
@@ -137,6 +143,7 @@ g = finputcheck(options, ...
       'naccu'          'integer' { }                            0;
       'methods'        'cell'     { }                           {};
       'snippet'        'string'   { 'on', 'off' }               'off';
+      'nepochs'         'real'                {}               [];
       'snip_length'    'integer'  { }                           60; 
       'fcsave_format'  'string'   { 'mean_snips', 'all_snips'}  'mean_snips'}, 'pop_roi_connect');
 if ischar(g), error(g); end
@@ -144,13 +151,48 @@ if ischar(g), error(g); end
 % process multiple datasets
 % -------------------------
 if length(EEG) > 1
-    % check that the dipfit settings are the same
+    eeglab_options;
     if nargin < 2
-        [ EEG, com ] = eeg_eval( 'pop_roi_connect', EEG, 'warning', 'on', 'params', options );
-    else
-        [ EEG, com ] = eeg_eval( 'pop_roi_connect', EEG, 'params', options );
+        if option_storedisk
+            res = questdlg2( [ 'Data files on disk will be automatically overwritten.' 10 ...
+                                'Are you sure you want to proceed with this operation?' ], ...
+                            'Confirmation', 'Cancel', 'Proceed', 'Proceed');
+            switch lower(res)
+                case 'cancel', return;
+                case 'proceed'
+            end
+        end
     end
-    return;
+    % find common datasets accross subjects
+    % and limit the number of epochs
+    allsubjects = { EEG.subject };
+    for index = 1:length(allsubjects)
+        optionsSubj = options;
+        allinds = strmatch(allsubjects{index}, allsubjects, 'exact');
+
+        % datasets from the same subjects need to have the same number of epochs
+        TMPEEG = EEG(allinds);
+        if TMPEEG(1).trials > 1
+            optionsSubj = [ optionsSubj { 'nepochs' min([TMPEEG.trials]) }];
+        end
+        if nargin < 2
+            [ TMPEEG, com ] = eeg_eval( 'pop_roi_connect', TMPEEG, 'warning', 'off', 'params', optionsSubj );
+        else
+            [ TMPEEG, com ] = eeg_eval( 'pop_roi_connect', TMPEEG, 'params', optionsSubj );
+        end
+        EEG = eeg_store(EEG, TMPEEG, allinds);
+    end
+    return
+end
+
+if ~isempty(g.nepochs) 
+    if EEG.trials < g.nepochs
+        error('Not enough data epochs')
+    elseif EEG.trials > g.nepochs
+        % epochSelect = shuffle(1:EEG.trials);
+        % better select contiguous epochs
+        EEG = pop_select(EEG, 'trial', 1:g.nepochs);
+    end
 end
 
 % compute connectivity over snippets
