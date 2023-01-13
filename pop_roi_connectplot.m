@@ -417,11 +417,12 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         % plot on matrix
         if strcmpi(g.plotmatrix, 'on') && ~isempty(matrix)
             matrix = matrix.*seedMask; 
-            %try
+            try
                 roi_plotcoloredlobes(EEG, matrix, titleStr, g.measure, g.hemisphere, g.grouphemispheres, g.region);
-            %catchs
-            %    figure; imagesc(matrix);
-            %end
+            catch
+                warning('Functionalities only available for the Desikan-Killiany atlas (68 ROIs).')
+               figure; imagesc(matrix);
+            end
         end
 
         % plot on cortical surface
