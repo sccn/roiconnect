@@ -217,8 +217,7 @@ if ~isequal(size(leadfield,1), EEG.nbchan)
     error('There must be the same number of channels in the leadfield and in the dataset');
 end
 
-% use frequency resolution of 0.5 Hz
-fres = EEG.srate;
+fres = EEG.pnts/2;
 
 % from the MVGC toolbox, compute frequencies in Hz for a
 frqs = sfreqs(fres, EEG.srate);

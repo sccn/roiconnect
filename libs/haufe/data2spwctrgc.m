@@ -107,7 +107,7 @@ if abs(nboot) < 1 % no bootstrap
 
     % crossspectrum using multitapers
     if ~isempty(intersect(output, {'wPLI'}))
-         [CS wPLI] = tsdata_to_cpsdwpli(data, fres, 'WELCH', ndat, [], 1);
+         [CS wPLI] = tsdata_to_cpsdwpli(data, fres, 'MT', ndat, [], 1);
 %         [CS wPLI] = tsdata_to_cpsdwpli(data, fres, 'MT', (floor(ndat/2)), [], 1);
 
         maxfreq = size(CS,3);

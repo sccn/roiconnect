@@ -45,7 +45,7 @@ measures = { 'MIM' };
 for iMeasure = 1:length(measures)
     tic
     EEG = pop_roi_connect(EEG, 'methods', measures(iMeasure));
-    t(iMeasure) = toc
+    t(iMeasure) = toc;
 end
 
 pop_roi_connectplot(EEG, 'measure', 'MIM', 'plotmatrix', 'on', 'plotcortex', 'on');

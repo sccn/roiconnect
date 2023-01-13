@@ -418,8 +418,8 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         if strcmpi(g.plotmatrix, 'on') && ~isempty(matrix)
             matrix = matrix.*seedMask; 
             %try
-                roi_plotcoloredlobes(EEG, matrix, titleStr, g.measure, g.hemisphere, g.region);
-            %catch
+                roi_plotcoloredlobes(EEG, matrix, titleStr, g.measure, g.hemisphere, g.grouphemispheres, g.region);
+            %catchs
             %    figure; imagesc(matrix);
             %end
         end
