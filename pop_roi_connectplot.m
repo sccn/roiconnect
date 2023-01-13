@@ -420,7 +420,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
             try
                 roi_plotcoloredlobes(EEG, matrix, titleStr, g.measure, g.hemisphere, g.grouphemispheres, g.region);
             catch
-                warning('Functionalities only available for the Desikan-Killiany atlas (68 ROIs).')
+               warning('Functionalities only available for the Desikan-Killiany atlas (68 ROIs).')
                figure; imagesc(matrix);
             end
         end
