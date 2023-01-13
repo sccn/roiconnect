@@ -84,6 +84,7 @@ function EEG = roi_connect(EEG, varargin)
             ninds = ninds + 1;
         end
     end
+end
 
     % MIC, MIM, GC and TRGC use data2strcgmim, remaining metrics use data2spwctrgc
     if any(ismember(g.methods, 'MIC')) || any(ismember(g.methods, 'MIM')) || any(ismember(g.methods, 'GC')) || any(ismember(g.methods, 'TRGC'))
