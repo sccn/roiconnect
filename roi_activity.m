@@ -295,7 +295,7 @@ labels = {cortex.Atlas.Scouts.Label};
 
 % keep only the first nPCA strongest components for each ROI
 if strcmpi(g.roiactivity, 'on')
-    nfreq = EEG.pnts/2 + 1;
+    nfreq = fres + 1;
     source_roi_power = zeros(nfreq, nROI);
     disp('Computing ROI activity...');
     source_roi_data = [];
