@@ -648,14 +648,20 @@ function roi_plotcoloredlobes( EEG, matrix, titleStr, measure, hemisphere, group
         matrix = horzcat(mat_left_col, mat_right_col); % sort columns
         
         % sort labels
-        lc = {labels; transpose(color_idxx)};
-        for i = 1:length(lc)
-            left = lc{i}(1:2:end);
-            right = lc{i}(2:2:end);
-            lc{i} = [left right];
+        try % if color can be assigned
+            lc = {labels; transpose(color_idxx)};
+            for i = 1:length(lc)
+                left = lc{i}(1:2:end);
+                right = lc{i}(2:2:end);
+                lc{i} = [left right];
+            end
+            labels = lc{1};
+            color_idxx = transpose(lc{2});
+        catch
+            left = labels(1:2:end);
+            right = labels(2:2:end);
+            labels = [left right];
         end
-        labels = lc{1};
-        color_idxx = transpose(lc{2});
     end
 
     % reduce matrix to keep only one hemisphere
