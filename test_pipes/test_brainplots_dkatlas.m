@@ -1,4 +1,4 @@
-% Test region-to-region FC matrices (MIM) with different parameters. Here, the LORETA-Talairach-BAs atlas with 90 ROIs is used as the source model.
+% Test cortical surface topographies with different parameters. Here, the Desikan-Killiany atlas with 68 ROIs is used as the source model.
 %% Run pipeline
 clear
 eeglab
@@ -22,24 +22,12 @@ EEG = pop_leadfield(EEG, 'sourcemodel',fullfile(eeglabp,'functions','supportfile
 EEG = pop_roi_activity(EEG, 'leadfield',EEG.dipfit.sourcemodel,'model','LCMV','modelparams',{0.05},'atlas','LORETA-Talairach-BAs','nPCA',3);
 EEG = pop_roi_connect(EEG, 'methods', {'MIM'});
 
-%% Plot matrix with different parameters
-% matrix without any filters
-pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'off', 'plotmatrix', 'on');
-
-% group by hemispheres
-pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'off', 'plotmatrix', 'on', 'grouphemispheres', 'on');
+%% Plot brain plot with different parameters
+% brain plot without any filters
+pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'on');  
 
 % frequency band specified
-pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'off', 'plotmatrix', 'on', 'freqrange', [4 8]');
+pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'on', 'freqrange', [8 13]);  
 
-% hemisphere specified
-pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'off', 'plotmatrix', 'on', 'hemisphere', 'right'); 
-
-% cortical region specified
-pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'off', 'plotmatrix', 'on', 'region', 'occipital');
-
-
-
-
-
-
+% seed voxel specified
+pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'on', 'plotcortexseedregion', 49); 

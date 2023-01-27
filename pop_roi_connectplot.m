@@ -547,7 +547,7 @@ function roi_plotcoloredlobes( EEG, matrix, titleStr, measure, hemisphere, group
         error('Region plotting is only supported for the Desikan-Killiany atlas.');
     end
     
-    % plot matrix with colored labels sorted by region according to the Desikan-Killiany atlas    
+    % plot matrix with colored labels    
     load cm18
     switch lower(measure)
         case {'mim', 'mic', 'coh'}
