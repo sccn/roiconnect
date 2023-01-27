@@ -685,6 +685,8 @@ function roi_plotcoloredlobes( EEG, matrix, titleStr, measure, hemisphere, group
     set(gca, 'Position', pos, 'DataAspectRatio',[1 1 1], 'visible', 'on')
 
     % add colored labels with display option
+    ax = gca;
+    set(gca,'xtick',1:n_roi_labels,'xticklabel',labels(hem_idx{1}:hem_idx{2}:n_roi_labels));
     if isDKatlas == 1
         set(gca,'ytick',1:n_roi_labels,'yticklabel',labels(hem_idx{1}:hem_idx{2}:n_roi_labels), 'fontweight','bold', 'fontsize', 9, 'TickLength',[0.015, 0.02], 'LineWidth',0.75);
         for i=hem_idx{1}:hem_idx{2}:n_roi_labels  
@@ -694,8 +696,6 @@ function roi_plotcoloredlobes( EEG, matrix, titleStr, measure, hemisphere, group
     else
         set(gca,'ytick',1:n_roi_labels,'yticklabel',labels(hem_idx{1}:hem_idx{2}:n_roi_labels), 'fontsize', 7, 'TickLength',[0.015, 0.02], 'LineWidth',0.75);
     end
-    set(gca,'xtick',1:n_roi_labels,'xticklabel',labels(hem_idx{1}:hem_idx{2}:n_roi_labels));
-    ax = gca;
     h = title([ 'ROI to ROI ' upper(measure) ' (' titleStr ')' ]);
     set(h, 'fontsize', 16);
     xtickangle(90)
