@@ -34,6 +34,8 @@ git clone https://github.com/arnodelorme/roiconnect.git
 ```
 That's it! If you want to run the plugin, please start [EEGLAB](https://github.com/sccn/eeglab#to-use-eeglab) first. You may need to add EEGLAB to the [MATLAB path](https://de.mathworks.com/help/matlab/ref/addpath.html).  
 
+📌 `test_pipes/` includes some test pipelines which can be used to get started.
+
 # Key features
 The features of the toolbox are implemented in the following three main functions: `pop_roi_activity`, `pop_roi_connect` and `pop_roi_connectplot`.
 
