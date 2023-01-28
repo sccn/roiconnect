@@ -1,5 +1,4 @@
-% Test pipeline with a different epoch length. It used to work only with 2s
-% epochs.
+% Test pipeline with an epoch length other than 2 seconds (test with 1 second epoch length).
 %% Run pipeline
 clear
 eeglab
@@ -7,7 +6,7 @@ eeglab
 eeglabp = fileparts(which('eeglab.m'));
 EEG = pop_loadset('filename','eeglab_data_epochs_ica.set','filepath',fullfile(eeglabp, 'sample_data/'));
 EEG = pop_resample( EEG, 100);
-EEG = pop_epoch( EEG, { }, [-0.5 1.5], 'newname', 'EEG Data epochs epochs', 'epochinfo', 'yes');
+EEG = pop_epoch( EEG, { }, [-0.5 0.5], 'newname', 'EEG Data epochs epochs', 'epochinfo', 'yes');
 EEG = pop_select( EEG, 'trial',1:30);
 [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG);
 eeglab redraw;
@@ -20,7 +19,13 @@ EEG = pop_dipfit_settings( EEG, 'hdmfile',fullfile(eeglabp, 'plugins','dipfit','
 EEG = pop_leadfield(EEG, 'sourcemodel',fullfile(eeglabp,'functions','supportfiles','head_modelColin27_5003_Standard-10-5-Cap339.mat'), ...
     'sourcemodel2mni',[0 -24 -45 0 0 -1.5708 1000 1000 1000] ,'downsample',1);
 
-% subepoch dataset
-epoch = [1 2];
-EEG = eeg_checkset( EEG ); 
-EEG = pop_epoch( EEG, {'1'}, epoch, 'epochinfo', 'yes');
+EEG = pop_roi_activity(EEG, 'leadfield',EEG.dipfit.sourcemodel,'model','LCMV','modelparams',{0.05},'atlas','LORETA-Talairach-BAs','nPCA',1);
+
+measures = { 'MIM' 'wPLI' };
+for iMeasure = 1:length(measures)
+    tic
+    EEG = pop_roi_connect(EEG, 'methods', measures(iMeasure));
+    t(iMeasure) = toc;
+end
+
+
