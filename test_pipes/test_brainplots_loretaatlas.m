@@ -1,16 +1,5 @@
-% Time estimates for 60 epochs at 100 Hz in second
-% Cross-spectrum                    2
-% Coherence                         2
-% Weighted Phase Lag Index          49
-% Granger Causality (GC)            619
-% Time-reversed GC                  -
-% Partial Directed Coherence (PDC)  152
-% Time-reversed PDC                 -
-% Directed Transfer Entropy (DTF)   167
-% Time-reversed DTF                 -
-% Multivariate Interaction Measure  19
-% Maximized Imaginary Coherency     18 
-
+% Test cortical surface topographies with different parameters. Here, the LORETA-Talairach-BAs atlas with 90 ROIs is used as the source model.
+%% Run pipeline
 clear
 eeglab
 
@@ -30,22 +19,15 @@ EEG = pop_dipfit_settings( EEG, 'hdmfile',fullfile(eeglabp, 'plugins','dipfit','
 EEG = pop_leadfield(EEG, 'sourcemodel',fullfile(eeglabp,'plugins','dipfit','LORETA-Talairach-BAs.mat'), ...
     'sourcemodel2mni',[0 -24 -45 0 0 -1.5708 1000 1000 1000] ,'downsample',1);
 
-% EEG = pop_leadfield(EEG, 'sourcemodel',fullfile(eeglabp,'functions','supportfiles','head_modelColin27_5003_Standard-10-5-Cap339.mat'), ...
-%     'sourcemodel2mni',[0 -24 -45 0 0 -1.5708 1000 1000 1000] ,'downsample',1);
-
 EEG = pop_roi_activity(EEG, 'leadfield',EEG.dipfit.sourcemodel,'model','LCMV','modelparams',{0.05},'atlas','LORETA-Talairach-BAs','nPCA',3);
+EEG = pop_roi_connect(EEG, 'methods', {'MIM'});
 
-measures = { 'CS' 'COH' 'DTF'  'wPLI'  'PDC'  'MIM'  'MIC' 'GC' };
-measures = { 'CS' 'COH' 'wPLI'  'PDC'  'MIM'  'MIC' 'GC' };
-measures = { 'CS' 'COH' 'MIM' 'GC' };
-measures = { 'CS' 'COH' 'MIM' };
-measures = { 'TRGC' 'MIM' };
-measures = { 'MIM' };
+%% Plot brain plot with different parameters
+% brain plot without any filters
+pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'on');  
 
-for iMeasure = 1:length(measures)
-    tic
-    EEG = pop_roi_connect(EEG, 'methods', measures(iMeasure));
-    t(iMeasure) = toc;
-end
+% frequency band specified
+pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'on', 'freqrange', [8 13]);  
 
-pop_roi_connectplot(EEG, 'measure', 'MIM', 'plotmatrix', 'on', 'plotcortex', 'on');
+% seed voxel specified
+pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'on', 'plotcortexseedregion', 49); 
