@@ -1,4 +1,4 @@
-% Test region-to-region FC matrices (MIM) with different parameters. Here, the LORETA-Talairach-BAs atlas with 90 ROIs is used as the source model.
+% Test region-to-region FC matrices (MIM) with different parameters. Here, the Desikan-Killiany atlas with 68 ROIs is used as the source model.
 %% Run pipeline
 clear
 eeglab

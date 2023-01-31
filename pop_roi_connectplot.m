@@ -768,7 +768,7 @@ function roi_largeplot(EEG, mim, trgc, roipsd, titleStr)
     barh(roipsd(roi_idxx));
 
     set(gca, 'YDir', 'reverse');
-    set(gca,'ytick',[1:n_roi_labels],'yticklabel',labels_sorted(1:end), 'fontweight','bold','fontsize', 9, 'TickLength',[0.015, 0.02], 'LineWidth',0.7);
+    set(gca,'ytick',[1:n_roi_labels],'yticklabel',labels_sorted(1:end), 'fontsize', 9, 'TickLength',[0.015, 0.02], 'LineWidth',0.7);
     h = title([ 'ROI source power' ' (' titleStr ')' ]);
     set(h, 'fontsize', 16);
     ylabel('power [dB]')
