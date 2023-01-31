@@ -561,12 +561,21 @@ function roi_plotcoloredlobes( EEG, matrix, titleStr, measure, hemisphere, group
     clim_max = max(matrix, [], 'all');
 
     % hemisphere parameters to determine which labels to use 
+    last_char = EEG.roi.atlas.Scouts(1).Label(end); 
     if strcmpi(hemisphere, 'left')
-        hem_idx = {1 2 2};  % use labels 1:2:end (first two values), only use 1/2 of the labels (3rd value)
+        if strcmpi(last_char, 'R')
+            hem_idx = {2 2 2};  % use labels 2:2:end (first two values), only use 1/2 of the labels (3rd value)
+        else 
+            hem_idx = {1 2 2};  % use labels 1:2:end (first two values), only use 1/2 of the labels (3rd value)
+        end
     elseif strcmpi(hemisphere, 'right')
-        hem_idx = {2 2 2};  % use labels 2:2:end (first two values), only use 1/2 of the labels (3rd value)
+        if strcmpi(last_char, 'L')
+            hem_idx = {1 2 2};  
+        else
+            hem_idx = {2 2 2};  
+        end
     else
-        hem_idx = {1 1 1};  % use labels 1:1:end (first two values, all labels), use 1/1 of the labels (3rd value, all labels)
+        hem_idx = {1 1 1};
     end
     
     % sort matrix according to color scheme
