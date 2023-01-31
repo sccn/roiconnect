@@ -73,7 +73,7 @@ You can visualize power and FC in different modes by calling `pop_roi_connectplo
 ### Power as a region-wise bar plot
 If you wish to visualize power as a barplot only, please make sure to explicitely turn `plotcortex` off because it is turned on by default. 
 ```matlab
-EEG = pop_roi_connectplot(EEG, 'measure', 'roipsd', 'plotcortex', 'off', 'plotbarplot', on, 'freqrange', [8 13]) % alpha band;
+EEG = pop_roi_connectplot(EEG, 'measure', 'roipsd', 'plotcortex', 'off', 'plotbarplot', 'on', 'freqrange', [8 13]) % alpha band;
 ```
 <p float="middle">
   <img src="https://github.com/Hiyeri/roiconnect/blob/master/resources/power_barplot_left.jpg?raw=true" width="400"/>     
