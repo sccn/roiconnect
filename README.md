@@ -68,7 +68,7 @@ The function computes all FC metrics in a frequency-resolved way, i.e., the outp
 You can visualize power and FC in different modes by calling `pop_roi_connectplot`. Below, we show results of a single subject from the real data example in [[1]](#1). You can find the MATLAB code and corresponding analyses [here](https://github.com/fpellegrini/MotorImag). The plots show power or FC in left motor imagery condition. Due to the nature of the task, we show results in the 8 to 13 Hz frequency band but you are free to choose any frequency or frequency band you want. 
 
 :pushpin: If any of the images are too small for you, simply click on them, they will open in full size in another tab.<br>
-:round_pushpin: Plotting is particularly optimized for PSD, MIM/MIC and GC/TRGC. The matrix plots are only available for the Desikan-Killiany atlas (68 ROIs). We are currently working on a generalized solution for all atlases. 
+:round_pushpin: Plotting is particularly optimized for PSD, MIM/MIC and GC/TRGC. 
 
 ### Power as a region-wise bar plot
 If you wish to visualize power as a barplot only, please make sure to explicitely turn `plotcortex` off because it is turned on by default. 
