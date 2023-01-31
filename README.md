@@ -95,7 +95,7 @@ Again, if you do not wish to see the cortex plot, you should explicitely turn `p
 EEG = pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'off', 'plotmatrix', 'on', 'freqrange', [8 13]);
 ```
 <p float="middle">
-  <img src="https://github.com/Hiyeri/roiconnect/blob/master/resources/FC_MIM_matrix_left.jpg?raw=true" width="400"/>     
+  <img src="https://github.com/Hiyeri/roiconnect/blob/master/resources/FC_MIM_matrix.png?raw=true" width="400"/>     
   &nbsp; &nbsp;
 </p>
 
@@ -105,17 +105,17 @@ pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'off', 'plotmatrix', 'o
 ```
 
 <p float="middle">
-  <img src="https://github.com/Hiyeri/roiconnect/blob/master/resources/FC_MIM_matrix_groupedhems_left.jpg?raw=true" width="400"/>     
+  <img src="https://github.com/Hiyeri/roiconnect/blob/master/resources/FC_MIM_matrix_groupedhems.png?raw=true" width="400"/>     
   &nbsp; &nbsp;
 </p>
 
 You can additionally filter by hemispheres and regions belonging to specific brain lobes. As an example, let us see how FC of the left hemisphere looks like.
 
 ```matlab
-pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'off', 'plotmatrix', 'on', 'freqrange', [8 13], 'hemisphere', 'left') % left hemisphere, left motor imagery;
+pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'off', 'plotmatrix', 'on', 'freqrange', [8 13], 'hemisphere', 'left');
 ```
 <p float="middle">
-  <img src="https://github.com/Hiyeri/roiconnect/blob/master/resources/FC_MIM_matrix_lefthem_left.jpg?raw=true" width="400"/>     
+  <img src="https://github.com/Hiyeri/roiconnect/blob/master/resources/FC_MIM_matrix_lefthem.png?raw=true" width="400"/>     
   &nbsp; &nbsp;
 </p>
 
