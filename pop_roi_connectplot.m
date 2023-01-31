@@ -490,6 +490,11 @@ function labels = get_labels(EEG)
     labels = cellstr(labels);
 end
 
+function new_labels = replace_underscores(labels)
+    % remove underscores in label names to avoid bug
+    new_labels = strrep(labels, '_', ' ');
+end
+
 function [colors, color_idxx, roi_idxx, labels_sorted, roi_loc] = get_colored_labels(EEG)
     labels = get_labels(EEG);
 
@@ -621,6 +626,9 @@ function roi_plotcoloredlobes( EEG, matrix, titleStr, measure, hemisphere, group
     else
         labels = get_labels(EEG);
     end
+
+    % remove underscores in labels to avoid plotting bug
+    labels = replace_underscores(labels);
 
     % create dummy plot and add custom legend
     f = figure();
