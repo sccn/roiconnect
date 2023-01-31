@@ -713,7 +713,7 @@ function roi_plotcoloredlobes( EEG, matrix, titleStr, measure, hemisphere, group
     ax = gca;
     set(gca,'xtick',1:n_roi_labels,'xticklabel',labels(hem_idx{1}:hem_idx{2}:n_roi_labels));
     if isDKatlas == 1
-        set(gca,'ytick',1:n_roi_labels,'yticklabel',labels(hem_idx{1}:hem_idx{2}:n_roi_labels), 'fontweight','bold', 'fontsize', 9, 'TickLength',[0.015, 0.02], 'LineWidth',0.75);
+        set(gca,'ytick',1:n_roi_labels,'yticklabel',labels(hem_idx{1}:hem_idx{2}:n_roi_labels), 'fontsize', 9, 'TickLength',[0.015, 0.02], 'LineWidth',0.75);
         for i=hem_idx{1}:hem_idx{2}:n_roi_labels  
             ax.XTickLabel{ceil(i/hem_idx{3})} = sprintf('\\color[rgb]{%f,%f,%f}%s', colors{color_idxx(i)}, ax.XTickLabel{ceil(i/hem_idx{3})});
             ax.YTickLabel{ceil(i/hem_idx{3})} = sprintf('\\color[rgb]{%f,%f,%f}%s', colors{color_idxx(i)}, ax.YTickLabel{ceil(i/hem_idx{3})});
