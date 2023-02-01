@@ -34,6 +34,8 @@ git clone https://github.com/arnodelorme/roiconnect.git
 ```
 That's it! If you want to run the plugin, please start [EEGLAB](https://github.com/sccn/eeglab#to-use-eeglab) first. You may need to add EEGLAB to the [MATLAB path](https://de.mathworks.com/help/matlab/ref/addpath.html).  
 
+📌 `test_pipes/` includes some test pipelines which can be used to get started.
+
 # Key features
 The features of the toolbox are implemented in the following three main functions: `pop_roi_activity`, `pop_roi_connect` and `pop_roi_connectplot`.
 
@@ -66,12 +68,12 @@ The function computes all FC metrics in a frequency-resolved way, i.e., the outp
 You can visualize power and FC in different modes by calling `pop_roi_connectplot`. Below, we show results of a single subject from the real data example in [[1]](#1). You can find the MATLAB code and corresponding analyses [here](https://github.com/fpellegrini/MotorImag). The plots show power or FC in left motor imagery condition. Due to the nature of the task, we show results in the 8 to 13 Hz frequency band but you are free to choose any frequency or frequency band you want. 
 
 :pushpin: If any of the images are too small for you, simply click on them, they will open in full size in another tab.<br>
-:round_pushpin: Plotting is particularly optimized for PSD, MIM/MIC and GC/TRGC. The matrix plots are only available for the Desikan-Killiany atlas (68 ROIs). We are currently working on a generalized solution for all atlases. 
+:round_pushpin: Plotting is particularly optimized for PSD, MIM/MIC and GC/TRGC. 
 
 ### Power as a region-wise bar plot
 If you wish to visualize power as a barplot only, please make sure to explicitely turn `plotcortex` off because it is turned on by default. 
 ```matlab
-EEG = pop_roi_connectplot(EEG, 'measure', 'roipsd', 'plotcortex', 'off', 'plotbarplot', on, 'freqrange', [8 13]) % alpha band;
+EEG = pop_roi_connectplot(EEG, 'measure', 'roipsd', 'plotcortex', 'off', 'plotbarplot', 'on', 'freqrange', [8 13]) % alpha band;
 ```
 <p float="middle">
   <img src="https://github.com/Hiyeri/roiconnect/blob/master/resources/power_barplot_left.jpg?raw=true" width="400"/>     
@@ -93,7 +95,7 @@ Again, if you do not wish to see the cortex plot, you should explicitely turn `p
 EEG = pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'off', 'plotmatrix', 'on', 'freqrange', [8 13]);
 ```
 <p float="middle">
-  <img src="https://github.com/Hiyeri/roiconnect/blob/master/resources/FC_MIM_matrix_left.jpg?raw=true" width="400"/>     
+  <img src="https://github.com/Hiyeri/roiconnect/blob/master/resources/FC_MIM_matrix.png?raw=true" width="400"/>     
   &nbsp; &nbsp;
 </p>
 
@@ -103,17 +105,17 @@ pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'off', 'plotmatrix', 'o
 ```
 
 <p float="middle">
-  <img src="https://github.com/Hiyeri/roiconnect/blob/master/resources/FC_MIM_matrix_groupedhems_left.jpg?raw=true" width="400"/>     
+  <img src="https://github.com/Hiyeri/roiconnect/blob/master/resources/FC_MIM_matrix_groupedhems.png?raw=true" width="400"/>     
   &nbsp; &nbsp;
 </p>
 
 You can additionally filter by hemispheres and regions belonging to specific brain lobes. As an example, let us see how FC of the left hemisphere looks like.
 
 ```matlab
-pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'off', 'plotmatrix', 'on', 'freqrange', [8 13], 'hemisphere', 'left') % left hemisphere, left motor imagery;
+pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'off', 'plotmatrix', 'on', 'freqrange', [8 13], 'hemisphere', 'left');
 ```
 <p float="middle">
-  <img src="https://github.com/Hiyeri/roiconnect/blob/master/resources/FC_MIM_matrix_lefthem_left.jpg?raw=true" width="400"/>     
+  <img src="https://github.com/Hiyeri/roiconnect/blob/master/resources/FC_MIM_matrix_left.png?raw=true" width="400"/>     
   &nbsp; &nbsp;
 </p>
 
