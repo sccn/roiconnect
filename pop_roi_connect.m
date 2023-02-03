@@ -202,6 +202,9 @@ if strcmpi(g.snippet, 'on')
     snippet_length = g.snip_length; % seconds
     snip_eps = snippet_length/(size(EEG.data,2)/EEG.srate); % n epochs in snippet
     nsnips = floor(EEG.trials/snip_eps);
+    if nsnips < 1
+        error('Snippet length cannot exceed data length.')
+    end
     diff = (EEG.trials * EEG.pnts/EEG.srate) - (nsnips * EEG.pnts/EEG.srate * snip_eps);
     if diff ~= 0
         warning(strcat(int2str(diff), ' seconds are thrown away.'));

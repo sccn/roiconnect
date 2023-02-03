@@ -1,4 +1,4 @@
-% Test FOOOF implementation. Requires prior FOOOF installation: https://github.com/fooof-tools/fooof_mat
+% Test connectivity estimation on time snippets. 
 %% Run pipeline
 clear
 eeglab
@@ -19,10 +19,8 @@ EEG = pop_dipfit_settings( EEG, 'hdmfile',fullfile(eeglabp, 'plugins','dipfit','
 EEG = pop_leadfield(EEG, 'sourcemodel',fullfile(eeglabp,'functions','supportfiles','head_modelColin27_5003_Standard-10-5-Cap339.mat'), ...
     'sourcemodel2mni',[0 -24 -45 0 0 -1.5708 1000 1000 1000] ,'downsample',1);
 
-% compute fooof
-EEG = pop_roi_activity(EEG, 'leadfield',EEG.dipfit.sourcemodel,'model','LCMV','modelparams',{0.05},'atlas','LORETA-Talairach-BAs','nPCA',3, 'fooof', 'on', 'fooof_frange', [1 30]);
+EEG = pop_roi_activity(EEG, 'leadfield',EEG.dipfit.sourcemodel,'model','LCMV','modelparams',{0.05},'atlas','LORETA-Talairach-BAs','nPCA',3);
 
-% access values
-results = EEG.roi.fooof_results;
-
-
+% snippet analysis, individual snippets are stored
+EEG = pop_roi_connect(EEG, 'methods', { 'MIM' }, 'snippet', 'on', 'snip_length', 20, 'fcsave_format', 'all_snips');
+disp(size(EEG.roi.MIM)) % n_snips, frequency, roi, roi
