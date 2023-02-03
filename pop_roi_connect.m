@@ -225,9 +225,7 @@ if strcmpi(g.snippet, 'on')
     % compute mean over connectivity of each snippet
     for fc = 1:n_conn_metrics
         fc_name = options{2}{fc};
-        first_dim = size(conn_matrices_snips{1,fc},1);
-        second_dim = size(conn_matrices_snips{1,fc},2);
-        third_dim = size(conn_matrices_snips{1,fc},3);
+        [first_dim, second_dim, third_dim] = size(conn_matrices_snips{1,fc});
 
         conn_cell = conn_matrices_snips(:,fc); % store all matrices of one metric in a cell
         mat = cell2mat(conn_cell);
