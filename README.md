@@ -115,7 +115,7 @@ You can additionally filter by hemispheres and regions belonging to specific bra
 pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'off', 'plotmatrix', 'on', 'freqrange', [8 13], 'hemisphere', 'left');
 ```
 <p float="middle">
-  <img src="https://github.com/Hiyeri/roiconnect/blob/master/resources/FC_MIM_matrix_lefthem.png?raw=true" width="400"/>     
+  <img src="https://github.com/Hiyeri/roiconnect/blob/master/resources/FC_MIM_matrix_left.png?raw=true" width="400"/>     
   &nbsp; &nbsp;
 </p>
 
