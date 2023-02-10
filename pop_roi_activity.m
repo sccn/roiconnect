@@ -17,6 +17,9 @@
 %  'resample' - [integer] resample to the desired sampling rate. Default
 %                  is 100. Adujst the model order accordingly. ROIconnect
 %                  has only be tested with 100 Hz sampling rates.
+%  'fooof'     - ['on'|'off'] enable FOOOF analysis. Default is 'off'.
+%  'fooof_frange' - [''] FOOOF fitting range. Default is [1 30] like in the
+%                        example.
 %
 % Other optional inputs:
 %  All ROI_ACTIVITY parameters are accepted as input and passed on.

@@ -202,6 +202,9 @@ if strcmpi(g.snippet, 'on')
     snippet_length = g.snip_length; % seconds
     snip_eps = snippet_length/(size(EEG.data,2)/EEG.srate); % n epochs in snippet
     nsnips = floor(EEG.trials/snip_eps);
+    if nsnips < 1
+        error('Snippet length cannot exceed data length.')
+    end
     diff = (EEG.trials * EEG.pnts/EEG.srate) - (nsnips * EEG.pnts/EEG.srate * snip_eps);
     if diff ~= 0
         warning(strcat(int2str(diff), ' seconds are thrown away.'));
@@ -222,9 +225,7 @@ if strcmpi(g.snippet, 'on')
     % compute mean over connectivity of each snippet
     for fc = 1:n_conn_metrics
         fc_name = options{2}{fc};
-        first_dim = size(conn_matrices_snips{1,fc},1);
-        second_dim = size(conn_matrices_snips{1,fc},2);
-        third_dim = size(conn_matrices_snips{1,fc},3);
+        [first_dim, second_dim, third_dim] = size(conn_matrices_snips{1,fc});
 
         conn_cell = conn_matrices_snips(:,fc); % store all matrices of one metric in a cell
         mat = cell2mat(conn_cell);
