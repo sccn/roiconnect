@@ -9,18 +9,18 @@
 % Optional inputs (choose at least one):
 %  'morder'    - [integer] order of autoregressive model. Default is 20.
 %  'naccu'     - [integer] number of accumulation for stats. Default is 0.
-%  'methods'    - [cell of string 'psd'|'roipsd'|'trgc'|'crossspecimag'|'crossspecpow'|'mic'|'mim']
-%                   'cs'    : cross spectrum
-%                   'coh'   : coherence
-%                   'gc'    : Granger causality
-%                   'trgc'  : Time-reversed granger causality
-%                   'wpli'  : Weighted phase lag index
-%                   'pdc'   : Partial directed coherence
-%                   'trpdc' : Time-reversed partial directed coherence
-%                   'dtf'   : Directed transfer entropy
-%                   'trdtf' : Time-reversed directed transfer entropy
-%                   'mic'   : Maximized Imaginary Coherency for each ROI
-%                   'mim'   : Multivariate Interaction Measure for each ROI
+%  'methods'   - [cell] Cell of strings corresponding to methods.
+%                       'CS'    : Cross spectrum
+%                       'COH'   : Coherence
+%                       'GC'    : Granger Causality
+%                       'TRGC'  : Time-reversed Granger Causality
+%                       'wPLI'  : Weighted Phase Lag Index
+%                       'PDC'   : Partial directed coherence
+%                       'TRPDC' : Time-reversed partial directed coherence
+%                       'DTF'   : Directed transfer entropy
+%                       'TRDTF' : Time-reversed directed transfer entropy
+%                       'MIM'   : Multivariate Interaction Measure for each ROI
+%                       'MIC'   : Maximized Imaginary Coherency for each ROI
 % Output:
 %   EEG - EEG structure with EEG.roi field updated and now containing
 %         connectivity information.
@@ -85,57 +85,47 @@ function EEG = roi_connect(EEG, varargin)
         end
     end
 
-    % MIC, MIM, GC and TRGC use data2strcgmim, remaining metrics use data2spwctrgc
-    if any(ismember(g.methods, 'MIC')) || any(ismember(g.methods, 'MIM')) || any(ismember(g.methods, 'GC')) || any(ismember(g.methods, 'TRGC'))
-        tmpMethods = setdiff(g.methods, { 'CS' 'COH' 'PSD' 'PSDROI' 'wPLI' 'PDC' 'TRPDC' 'DTF' 'TRDTF' });
-        conn_mult = data2sctrgcmim(source_roi_data, EEG.pnts, g.morder, 0, g.naccu, [], inds, tmpMethods);
+    % wPLI, MIC, MIM, GC and TRGC use data2strcgmim, remaining metrics use data2spwctrgc
+    methodset1 = { 'MIM' 'MIC' 'GC' 'TRGC' };
+    methodset2 = { 'wPLI', 'CS' 'COH' 'PSD' 'PSDROI', 'PDC' 'TRPDC' 'DTF' 'TRDTF' };
 
+    tmpMethods1 = intersect(g.methods, methodset1);
+    if ~isempty(tmpMethods1)
+        conn_mult = data2sctrgcmim(source_roi_data, EEG.pnts, g.morder, 0, g.naccu, [], inds, tmpMethods1);
         fields = fieldnames(conn_mult);
         for iField = 1:length(fields)
             EEG.roi.(fields{iField}) = conn_mult.(fields{iField});
         end
-        for iMethods = 1:length(tmpMethods)
-            if strcmpi(tmpMethods{iMethods}, 'MIM') || strcmpi(tmpMethods{iMethods}, 'MIC')
-                MI = EEG.roi.(tmpMethods{iMethods})(:, :);
-                EEG.roi.(tmpMethods{iMethods}) = get_connect_mat( MI, EEG.roi.nROI, +1);
-            else  % GC/TRGC
-                TRGCnet = EEG.roi.(tmpMethods{iMethods})(:, :, 1) - EEG.roi.(tmpMethods{iMethods})(:, :, 2);
-%                 TRGCnet = EEG.roi.(tmpMethods{iMethods});
-%                 TRGCnet = TRGCnet - permute(TRGCnet, [1 3 2]);
-%                 TRGCnet = TRGCnet(:,:);
-                EEG.roi.(tmpMethods{iMethods}) = get_connect_mat( TRGCnet, EEG.roi.nROI, -1); 
+
+        % rearrange matrices
+        for iMethods = 1:length(tmpMethods1)
+            if strcmpi(tmpMethods1{iMethods}, 'MIM') || strcmpi(tmpMethods1{iMethods}, 'MIC')
+                MI = EEG.roi.(tmpMethods1{iMethods})(:, :);
+                EEG.roi.(tmpMethods1{iMethods}) = get_connect_mat( MI, EEG.roi.nROI, +1);
+            elseif  strcmpi(tmpMethods1{iMethods}, 'GC') || strcmpi(tmpMethods1{iMethods}, 'TRGC')
+                TRGCnet = EEG.roi.(tmpMethods1{iMethods})(:, :, 1) - EEG.roi.(tmpMethods1{iMethods})(:, :, 2);
+                EEG.roi.(tmpMethods1{iMethods}) = get_connect_mat( TRGCnet, EEG.roi.nROI, -1); 
+            else
+                MI = EEG.roi.(tmpMethods1{iMethods})(:, :);
+                EEG.roi.(tmpMethods1{iMethods}) = get_connect_mat( MI, EEG.roi.nROI, +1);
             end
         end
     end
-    tmpMethods2 = setdiff(g.methods, { 'MIM' 'MIC' 'GC' 'TRGC' });
+
+    tmpMethods2 = intersect(g.methods, methodset2);
     if ~isempty(tmpMethods2)
         conn_mult = data2spwctrgc(source_roi_data, EEG.pnts, g.morder, 0, g.naccu, [], tmpMethods2);
         fields = fieldnames(conn_mult);
         for iField = 1:length(fields)
             EEG.roi.(fields{iField}) = conn_mult.(fields{iField});
         end
+
+        % rearrange matrices
         for iMethods = 1:length(tmpMethods2)
             MI = EEG.roi.(tmpMethods2{iMethods})(:, :);
             EEG.roi.(tmpMethods2{iMethods}) = get_connect_mat( MI, EEG.roi.nROI, +1);
         end
     end
-
-%     function EEG = vec2mat(EEG)
-%         % convert to matrices
-%         nroi = EEG.roi.nROI;
-%         iinds = 0;
-%         for iroi = 1:nroi
-%             for jroi = (iroi+1):nroi
-%                 iinds = iinds + 1;
-%                 mim_(iroi, jroi,:) = EEG.roi.MIM(:, iinds);
-%                 mim_(jroi,iroi,:) = mim_(iroi,jroi,:);
-%                 trgc_(iroi,jroi,:) = EEG.roi.TRGC(:,iinds,1) - EEG.roi.TRGC(:,iinds,2);
-%                 trgc_(jroi,iroi,:) = -trgc_(iroi,jroi,:);
-%             end
-%         end
-%         EEG.roi.MIM_matrix = mim_; 
-%         EEG.roi.TRGC_matrix = trgc_;
-%     end
 
     function measure = get_connect_mat( measureOri, nROI, signVal)
         % create a ROI x ROI connectivity matrix, if needed
