@@ -109,7 +109,7 @@ function EEG = roi_connect(EEG, varargin)
     end
     tmpMethods2 = setdiff(g.methods, { 'MIM' 'MIC' 'GC' 'TRGC' });
     if ~isempty(tmpMethods2)
-        conn_mult = data2spwctrgc(source_roi_data, EEG.srate, g.morder, 0, g.naccu, [], tmpMethods2);
+        conn_mult = data2spwctrgc(source_roi_data, EEG.pnts, g.morder, 0, g.naccu, [], tmpMethods2);
         fields = fieldnames(conn_mult);
         for iField = 1:length(fields)
             EEG.roi.(fields{iField}) = conn_mult.(fields{iField});
