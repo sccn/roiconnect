@@ -86,8 +86,8 @@ function EEG = roi_connect(EEG, varargin)
     end
 
     % wPLI, MIC, MIM, GC and TRGC use data2strcgmim, remaining metrics use data2spwctrgc
-    methodset1 = { 'MIM' 'MIC' 'GC' 'TRGC' };
-    methodset2 = { 'wPLI', 'CS' 'COH' 'PSD' 'PSDROI', 'PDC' 'TRPDC' 'DTF' 'TRDTF' };
+    methodset1 = { 'wPLI' 'MIM' 'MIC' 'GC' 'TRGC' };
+    methodset2 = { 'CS' 'COH' 'PSD' 'PSDROI', 'PDC' 'TRPDC' 'DTF' 'TRDTF' };
 
     tmpMethods1 = intersect(g.methods, methodset1);
     if ~isempty(tmpMethods1)
