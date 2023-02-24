@@ -441,7 +441,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
             end
             h = textsc(cortexTitle, 'title');
             set(h, 'fontsize', 20);
-        elseif cortexFlag == -1
+        elseif strcmpi(g.plotcortex, 'on') && cortexFlag == -1
             warning('EEG.roi.cortex does not contain the field "Faces" required to plot surface topographies.')
         end
 

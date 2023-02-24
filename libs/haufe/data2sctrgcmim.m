@@ -100,15 +100,15 @@ CSpara.subave = 0;
 CSpara.mywindow = hanning(ndat)./sqrt(hanning(ndat)'*hanning(ndat));
   
 
-clear TRGC GC MIM MIC CS COH
+clear TRGC GC MIM MIC CS COH wPLI
 
 if abs(nboot) < 1 % no bootstrap
 
   % data to autocovariance
   %     G = tsdata_to_autocov(data, nlags);
-%   CS = tsdata_to_cpsd_fast(data, fres, 'WELCH', ndat);
-  CS = data2cs_event(data(:, :)', ndat, floor(ndat/2), ndat, [], CSpara);
-  
+%   CS = data2cs_event(data(:, :)', ndat, floor(ndat/2), ndat, [], CSpara);
+  [CS, ~, wPLI, ~] = data2cs_event(data(:, :)', ndat, floor(ndat/2), ndat, [], CSpara);
+
   maxfreq = size(CS,3);
       
   if ~isempty(intersect(output, {'MIM', 'MIC', 'COH'}))

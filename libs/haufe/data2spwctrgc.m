@@ -76,7 +76,7 @@ if nargin < 8 || isempty(verbose)
 end
 
 freqs = freqs(1:maxfreq);
-z = exp(-i*pi*freqs);
+z = exp(-1i*pi*freqs);
 
 if  nlags < 0
     if cond
