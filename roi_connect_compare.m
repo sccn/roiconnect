@@ -50,8 +50,11 @@ end
 [g,addopts] = finputcheck(varargin,  { 'measure'    'string'  {}  'MIM';
     'freqrange'             {'real' 'cell' }     []                    [];
     'quantile'              'real'     { }                     [];
+    'plotsubjmat'           'string'   { 'on' 'off' }          'off'; ...
     'threshold'             'real'     { }                     1.1;
+    'outputdir'             'string'   { }                     '.';
     'network'               'string'   { 'on' 'off' }          'off'; ...
+    'addrois'               'string'   { 'on' 'off' }          'off'; ...
     'pmask'                 'string'   { 'on' 'off' }          'off' }, 'pop_roi_connectplot', 'ignore');
 if ischar(g), error(g); end
 if isempty(g.freqrange)
@@ -76,39 +79,48 @@ end
 
 % compute stats
 % -------------
+freqTextSig = cell(1, length(g.freqrange));
+freqTextSig(:) = { '' };
 if strcmpi(g.pmask, 'on')
-    pcond = std_stat(dataCell', 'condstats', 'on', 'method', 'permutation', 'naccu', 200, 'mcorrect', 'fdr');
-    %pcond = std_stat(dataCell', 'condstats', 'on', 'method', 'permutation', 'naccu', 200); %, 'mcorrect', 'fdr'); pcond{1} = pcond{1} < 0.5;
-    pcond = pcond{1};
-    
-    for iDiag = 1:size(pcond,1), pcond(iDiag, iDiag) = 1; end
-    if ~any(pcond(:) < 1)
-        fprintf(2,'Nothing significant\n');
-        return;
-    else
-        for iCond = 1:length(datCond(:))
-            dataCell{iCond} = bsxfun(@times,dataCell{iCond}, pcond<1 );
+    freqTextSig = {};
+    for iFreq = 1:length(g.freqrange)
+        pcond = std_stat(dataCell(iFreq,:)', 'condstats', 'on', 'method', 'permutation', 'naccu', 50, 'mcorrect', 'fdr');
+        %pcond = std_stat(dataCell', 'condstats', 'on', 'method', 'permutation', 'naccu', 200); %, 'mcorrect', 'fdr'); pcond{1} = pcond{1} < 0.5;
+        pcond = pcond{1};
+        
+        for iDiag = 1:size(pcond,1), pcond(iDiag, iDiag) = 1; end
+        if all(pcond(:) == 1)
+            fprintf('Frequency %1.1f to %1.1f -> Nothing significant\n', g.freqrange{iFreq}(1), g.freqrange{iFreq}(2));
+            freqTextSig{iFreq} = 'ns';
+        else
+            fprintf(2, 'Frequency %1.1f to %1.1f -> Something significant\n', g.freqrange{iFreq}(1), g.freqrange{iFreq}(2));
+            freqTextSig{iFreq} = 'significant';
+            for iCond = 1:length(datCond(:))
+                dataCell{iFreq, iCond} = bsxfun(@times,dataCell{iFreq, iCond}, pcond<1 );
+            end
         end
     end
 end
 
 % plot matrices
 % -------------
-for iFreq = 1:length(g.freqrange)
-    figure('position', [275  1075 1725 262]);
-    numDat = size(dataCell{1},3);
-    numRows = length(dataCell(:));
-    cl = [0.03 0.1];
-    %cl = [0.0 1];
-    for iCond = 1:numRows
-        for iDat = 1:numDat
-            subplot(numRows, numDat, iDat+numDat*(iCond-1));
-            imagesc(dataCell{iCond}(:,:,iDat));
-            caxis(cl);
-            axis off;
+if strcmpi(g.plotsubjmat, 'on')
+    for iFreq = 1:length(g.freqrange)
+        figure('position', [275  1075 1725 262]);
+        numDat = size(dataCell{1},3);
+        numRows = length(dataCell(:));
+        cl = [0.03 0.1];
+        %cl = [0.0 1];
+        for iCond = 1:numRows
+            for iDat = 1:numDat
+                subplot(numRows, numDat, iDat+numDat*(iCond-1));
+                imagesc(dataCell{iCond}(:,:,iDat));
+                clim(cl);
+                axis off;
+            end
         end
+        textsc('title', sprintf('Connectivity %g-%g Hz %s', g.freqrange{iFreq}(1), g.freqrange{iFreq}(2)), freqTextSig{iFreq});
     end
-    textsc('title', sprintf('Connectivity %g-%g Hz', g.freqrange{iFreq}(1), g.freqrange{iFreq}(2)));
 end
 
 % plot surfaces
@@ -136,21 +148,36 @@ end
 if strcmpi(g.network, 'on')
     tab1 = readtable('NGNetworkROIs_v4.txt','delimiter', char(9));
     for iCond = 1:length(dataCell(:))
-        [~,net,dataCell{iCond}] = roi_definenetwork(EEG(1), tab1, 'connectmat', dataCell{iCond}, 'ignoremissing', 'on'); % adding missing ROIs
+        if strcmpi(g.addrois, 'on')
+            tab2 = readtable('NGNetworkROIs_area_definition_v2.txt','delimiter', char(9));
+            [EEG(1),net,dataCell{iCond}] = roi_definenetwork(EEG(1), tab1, 'addrois', tab2, 'connectmat', dataCell{iCond}, 'ignoremissing', 'on'); % adding missing ROIs
+        else
+            [EEG(1),net,dataCell{iCond}] = roi_definenetwork(EEG(1), tab1, 'connectmat', dataCell{iCond}, 'ignoremissing', 'on'); % adding missing ROIs
+        end
     end
-    for iNetwork = 1:length(net)
-        netTmp = net([iNetwork iNetwork iNetwork]);
-        netTmp(1).name = [ netTmp(1).name 'Condition 1' ];
-        netTmp(2).name = [ netTmp(2).name 'Condition 2' ]; 
-        netTmp(2).name = [ netTmp(2).name 'Difference' ];
+    if size(dataCell,2) > 1
+        for iNetwork = 1:length(net)
+            netTmp = net([iNetwork iNetwork iNetwork]);
+            netTmp(1).name = [ netTmp(1).name 'Condition 1' ];
+            netTmp(2).name = [ netTmp(2).name 'Condition 2' ]; 
+            netTmp(2).name = [ netTmp(2).name 'Difference' ];
+            for iFreq = 1:length(g.freqrange)
+    
+                tit = sprintf('MIM %g_%g Hz', g.freqrange{iFreq}(1), g.freqrange{iFreq}(2));
+    
+                medthresh = nanmedian(dataCell{iFreq,1}(:))*g.threshold;
+                roi_networkplot(EEG(1), netTmp, [ dataCell(iFreq,:) {dataCell{iFreq,2}-dataCell{iFreq,1}}], 'threshold', medthresh, 'subplots', 'on', 'title', tit, 'columns', 3, addopts{:}); %, 'limits'); %, [0.05 0.08]);
+                tit(tit == ' ') = '_';
+                print('-djpeg', [g.outputdir filesep 'Connectivity_maps_MIM_' net(iNetwork).name '_' tit '.jpg']);
+                close;
+            end
+        end
+    else
         for iFreq = 1:length(g.freqrange)
-
             tit = sprintf('MIM %g_%g Hz', g.freqrange{iFreq}(1), g.freqrange{iFreq}(2));
-
-            medthresh = nanmedian(dataCell{iFreq,1}(:))*g.threshold;
-            roi_networkplot(EEG(1), netTmp, [ dataCell(iFreq,:) {dataCell{iFreq,2}-dataCell{iFreq,1}}], 'threshold', medthresh, 'subplots', 'off', 'title', tit, 'columns', 3, addopts{:}); %, 'limits'); %, [0.05 0.08]);
+            roi_networkplot(EEG(1), net, dataCell{iFreq}, 'threshold', 0, 'subplots', 'on', 'title', tit, 'limits', [0.1 0.2]);
             tit(tit == ' ') = '_';
-            print('-djpeg', ['../results/Connectivity_maps_MIM_' net(iNetwork).name '_' tit '.jpg']);
+            print('-djpeg', [g.outputdir filesep 'Connectivity_maps_' tit '_fixed.jpg']);
             close;
         end
     end
