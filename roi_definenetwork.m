@@ -132,11 +132,18 @@ if ~isempty(g.addrois)
                     indTmp1 = strmatch(val, allLabels, 'exact');
                     indTmp2 = strmatch([ 'Brodmann area ' val], allLabels, 'exact');
                     indTmp = [ indTmp1 indTmp2 ];
-                    if length(indTmp) ~= 1
+                    if length(indTmp) == 0
                         if strcmpi(g.ignoremissing, 'off')
-                            error('Area %s not found or duplicate', val);
+                            error('Area %s not found ', val);
                         else
-                            fprintf('Area %s not found or duplicate, ignoring\n', val);
+                            fprintf('Area %s not found, ignoring it\n', val);
+                            indTmp = [];
+                        end
+                    elseif length(indTmp) > 1
+                        if strcmpi(g.ignoremissing, 'off')
+                            error('Area %s duplicate', val);
+                        else
+                            fprintf('Area %s duplicate, ignoring\n', val);
                             indTmp = [];
                         end
                     else
@@ -185,11 +192,18 @@ for iCol = 1:size(roiTable,2) % scan columns
                 indTmp1 = strmatch(val, allLabels, 'exact');
                 indTmp2 = strmatch([ 'Brodmann area ' val], allLabels, 'exact');
                 indTmp = [ indTmp1 indTmp2 ];
-                if length(indTmp) ~= 1
+                if length(indTmp) == 1
                     if strcmpi(g.ignoremissing, 'off')
-                        error('Area %s not found or duplicate', val);
+                        error('Area %s not found', val);
                     else
-                        fprintf('Area %s not found or duplicate, using the first one\n', val);
+                        fprintf('Area %s not found\n', val);
+                        if length(indTmp) > 1 indTmp = indTmp(1); end
+                    end
+                else
+                    if strcmpi(g.ignoremissing, 'off')
+                        error('Area %s not found', val);
+                    else
+                        fprintf('Area %s duplicate, using the first one\n', val);
                         if length(indTmp) > 1 indTmp = indTmp(1); end
                     end
                 end
@@ -213,7 +227,26 @@ EEG.roi.atlas.networks = networks;
 
 function newconnectmat = augmentConnectivity(connectmat,ROIinds)
 
+sz = [size(connectmat) 1 1];
+permFlag = false;
+if sz(2) == sz(3) && sz(1) ~= sz(2)
+    connectmat = permute(connectmat, [2 3 1]);
+    permFlag = true;
+end
+
+% accross subjects if any
 nVals = size(connectmat,1);
+if size(connectmat,3) > 1
+    newconnectmat = zeros(nVals+length(ROIinds), nVals+length(ROIinds), size(connectmat,3));
+    for iSubject = 1:size(connectmat,3)
+        newconnectmat(:,:,iSubject) = augmentConnectivity(connectmat(:,:,iSubject),ROIinds);
+    end
+    if permFlag
+        newconnectmat = permute(newconnectmat, [3 1 2]);
+    end
+    return;
+end
+
 newconnectmat = zeros(nVals+length(ROIinds), nVals+length(ROIinds));
 newconnectmat(1:nVals,1:nVals) = connectmat;
 
@@ -241,3 +274,4 @@ for iCol1 = 1:length(ROIinds)
         end
     end
 end
+

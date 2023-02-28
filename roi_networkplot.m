@@ -18,8 +18,10 @@
 %  'freqrange'  - [min max] frequency range in Hz. Default is to plot broadband power.
 %  'subplots'   - ['on'|'off'] create subplots (when more than one plot).
 %                 Default is 'off'.
-%  'exporttxt'  - ['on'|'off'] export results as text files (see filename)
-%                 Default is 'off'.
+%  'exportmean' - ['on'|'off'] export results as text files (when filename defined)
+%                 Default is 'on'.
+%  'exportstd'  - ['on'|'off'] export results as text files (when filename defined)
+%                 Default is 'on'.
 %  'title'      - ['string'] figure title. Default none.
 %  'plotmode'   - ['2D'|'3D'|'both'] figure plotting mode. Default is '2D'
 %  'filename'   - ['string'] base file name (without extension). This is
@@ -89,7 +91,8 @@ end
 
 [g, addopts] = finputcheck(varargin, { ...
     'subplots'    'string'    {'on' 'off'}    'off';
-    'exporttxt'   'string'    {'on' 'off'}    'on';
+    'exportmean'  'string'    {'on' 'off'}    'on';
+    'exportstd'   'string'    {'on' 'off'}    'off';
     'title'       'string'    {}              '';
     'netstat'     'string'    {'on' 'off'}    'off';
     'addrois'     ''          {}              [];
@@ -197,8 +200,25 @@ for iNet = 1:length(networks)
     else
         networkMatSubj = matrix(networks(iNet).ROI_inds, networks(iNet).ROI_inds, :);
     end
-    sumVals{iNet} = sum(sum(networkMatSubj,1),2);
+    if 0
+        % sum
+        sumVals{iNet} = nansum(nansum(networkMatSubj,1),2);
+    elseif 0
+        % max
+        sumVals{iNet} = nanmax(nanmax(networkMatSubj,[],1),[],2);
+    else
+        % median
+        tmp = networkMatSubj;
+        for i1 = 1:size(tmp,1) 
+            for i2 = 1:size(tmp,3)
+                tmp(i1,i1,i2) = NaN;
+            end
+        end
+        tmp = reshape(tmp, size(tmp,1)*size(tmp,2), size(tmp,3));
+        sumVals{iNet} = nanmedian(tmp, 1);
+    end
     networkMat    = mean(networkMatSubj,3);
+    networkMatStd = std(networkMatSubj,[],3);
 
     if ~strcmpi(g.plotmode, 'none')
         if strcmpi(g.subplots, 'on')
@@ -242,15 +262,23 @@ for iNet = 1:length(networks)
     end
     
     % save text
-    if strcmpi(g.exporttxt, 'on') && ~isempty(g.filename)
+    if strcmpi(g.exportmean, 'on') && ~isempty(g.filename)
         tmptable = array2table(networkMat(:,:), 'variablenames', labels, 'rownames', labels);
-        tmpFileName = [ g.filename '_' networks(iNet).name '.txt' ];
+        tmpFileName = [ g.filename '_' networks(iNet).name '_mean.txt' ];
         txtFileName{end+1} = tmpFileName;
         writetable(tmptable, tmpFileName,'WriteRowNames', true );
     end
-    
+    if strcmpi(g.exportstd, 'on') && ~isempty(g.filename)
+        tmptable = array2table(networkMatStd(:,:), 'variablenames', labels, 'rownames', labels);
+        tmpFileName = [ g.filename '_' networks(iNet).name '_std.txt' ];
+        txtFileName{end+1} = tmpFileName;
+        writetable(tmptable, tmpFileName,'WriteRowNames', true );
+    end
+
     if nargin > 2
         tmpTitle(tmpTitle == ' ') = '_';
+        tmpTitle(tmpTitle == '.') = '_';
+        tmpTitle(tmpTitle == '-') = '_';
         measures.(tmpTitle).mean   = networkMat;
         measures.(tmpTitle).labels = labels;
     end
@@ -260,7 +288,11 @@ end
 % perform some stats
 if length(networks) > 1
     [H,P,CI,STATS] = ttest(sumVals{1}, sumVals{2});
-    fprintf('Network %s effect size %1.2f p-value: %1.3f\n', networks(end).name, STATS.tstat, P);
+    if P< 0.05
+        fprintf(2, 'Network %s effect size %1.2f p-value: %1.3f\n', networks(end).name, STATS.tstat, P);
+    else
+        fprintf('Network %s effect size %1.2f p-value: %1.3f\n', networks(end).name, STATS.tstat, P);
+    end
     %[ef,~,pvals] = statcond(sumVals(1:2), 'mode', 'perm');
     %fprintf('Network %s effect size %1.2f p-value: %1.3f\n', networks(end).name, ef, pvals);
 end
