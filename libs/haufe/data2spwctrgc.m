@@ -76,7 +76,7 @@ if nargin < 8 || isempty(verbose)
 end
 
 freqs = freqs(1:maxfreq);
-z = exp(-i*pi*freqs);
+z = exp(-1i*pi*freqs);
 
 if  nlags < 0
     if cond
@@ -105,21 +105,9 @@ if abs(nboot) < 1 % no bootstrap
 
     if verbose; disp(['computing cross-spectrum']); end
 
-    % crossspectrum using multitapers
-    if ~isempty(intersect(output, {'wPLI'}))
-         [CS wPLI] = tsdata_to_cpsdwpli(data, fres, 'MT', ndat, [], 1);
-%         [CS wPLI] = tsdata_to_cpsdwpli(data, fres, 'MT', (floor(ndat/2)), [], 1);
-
-        maxfreq = size(CS,3);
-        wPLI = wPLI(:, :, 1:maxfreq);
-        wPLI = permute(wPLI, [3, 1, 2]);
-        wPLI(isnan(wPLI)) = 0;
-    else
-        %       CS = tsdata_to_cpsd(data, fres, 'MT', ndat, [], 1);
-        CS = data2cs_event(data(:, :)',ndat, ndat - (floor(ndat/2)), ndat , [], CSpara);
-        ASR = log(norm(imag(CS(:)))/norm(real(CS(:))));
-        fprintf('ASR: %1.4f\n', ASR);
-    end
+    CS = data2cs_event(data(:, :)',ndat, ndat - (floor(ndat/2)), ndat , [], CSpara);
+    ASR = log(norm(imag(CS(:)))/norm(real(CS(:))));
+    fprintf('ASR: %1.4f\n', ASR);
 
     if ~isempty(intersect(output, {'COH'}))
         clear COH
