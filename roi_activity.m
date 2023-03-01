@@ -13,30 +13,32 @@
 %  'sourcemodel' - [string] source model file also containing Atlas info.
 % 
 % Optional inputs:
-%  'model'     - ['eLoretaFieldtrip'|'lcmvFieldtrip'|'eLoreta'|'lcmv'] distributed
-%                source localization method. Default is 'lcvm'
-%                (Beamforming) from ROIconnect. 'eLoretaFieldtrip' and 
-%                'lcmvFieldtrip' are alternative implementations in
-%                Fieldtrip that should return similar results.
-%  'sourcemodel2mni' - [9x float] homogeneous transformation matrix to convert
-%                  sourcemodel to MNI space.
+%  'model'            - ['eLoretaFieldtrip'|'lcmvFieldtrip'|'eLoreta'|'lcmv'] distributed
+%                       source localization method. Default is 'lcvm'
+%                       (Beamforming) from ROIconnect. 'eLoretaFieldtrip' and 
+%                       'lcmvFieldtrip' are alternative implementations in
+%                       Fieldtrip that should return similar results.
+%  'sourcemodel2mni'  - [9x float] homogeneous transformation matrix to convert
+%                       sourcemodel to MNI space.
 %  'sourcemodelatlas' - [string] name of Atlas to use (must be contained
 %                       in Atlas field of the sourcemodel file.
-%  'nPCA'      - [interger] Number of PCA component for each ROI. Each ROI
-%                is made of many voxel. Instead of averaging their activity,
-%                this function takes the x first PCA components, then use
-%                these to compute connectivity (default is 3)
-%  'naccu'     - [interger] For bootstrap, number of accumulation. Default is 
-%                none.
-%  'eloretareg' - [float] regularization term for eLoreta. Default is 0.05.
-%  'roiactivity'  - ['on'|'off'] compute ROI activity. Default is on. If
-%                you just need voxel activity, you can set this option to
-%                'off'.
-%  'exportvoxact' - ['on'|'off'] export voxel activity in EEG.roi.source_voxel_data
-%                These array are huge, so the default is 'off'.
-%  'fooof'     - ['on'|'off'] enable FOOOF analysis. Default is 'off'.
-%  'fooof_frange' - [''] FOOOF fitting range. Default is [1 30] like in the
-%                        example.
+%  'nPCA'             - [interger] Number of PCA component for each ROI. Each ROI
+%                       is made of many voxel. Instead of averaging their activity,
+%                       this function takes the x first PCA components, then use
+%                       these to compute connectivity (default is 3)
+%  'naccu'            - [interger] For bootstrap, number of accumulation. Default is 
+%                        none.
+%  'eloretareg'       - [float] regularization term for eLoreta. Default is 0.05.
+%  'roiactivity'      - ['on'|'off'] compute ROI activity. Default is on. If
+%                       you just need voxel activity, you can set this option to
+%                '      off'.
+%  'exportvoxact'     - ['on'|'off'] export voxel activity in EEG.roi.source_voxel_data
+%                       These array are huge, so the default is 'off'.
+%  'fooof'            - ['on'|'off'] enable FOOOF analysis. Default is 'off'.
+%  'fooof_frange'     - [''] FOOOF fitting range. Default is [1 30] like in the
+%                      example.
+%  'freqresolution'   - [''] Desired frequency resolution after FT. If
+%                       specified, the signal is zero padded accordingly.
 %
 % Output:
 %  EEG - EEGLAB dataset with field 'roi' containing connectivity info.
@@ -96,6 +98,7 @@ g = finputcheck(varargin, { ...
     'exportvoxact'     'string'             { 'on' 'off' }  'off';
     'fooof'            'string'             { 'on' 'off'}   'off';
     'fooof_frange'     ''                   {}              [1 30];
+    'freqresolution'   'integer'            {}               0;
     'outputdir'        'string'  { }              '' }, 'roi_activity');
 if ischar(g), error(g); end
 if isempty(g.leadfield), error('Leadfield is mandatory parameter'); end
@@ -295,14 +298,28 @@ labels = {cortex.Atlas.Scouts.Label};
 
 % keep only the first nPCA strongest components for each ROI
 if strcmpi(g.roiactivity, 'on')
-    nfreq = fres + 1;
-    source_roi_power = zeros(nfreq, nROI);
-    disp('Computing ROI activity...');
-    source_roi_data = [];
-
-    % compute power using the Welch method
+    nyquist = fres + 1;
     tmpData = reshape(source_voxel_data, EEG.pnts, EEG.trials*size(source_voxel_data,2)*size(source_voxel_data,3));
-    [tmpWelch,ftmp] = pwelch(tmpData(:,:), EEG.pnts, floor(EEG.pnts/2), EEG.pnts, EEG.srate); % ftmp should be equal frqs 
+    source_roi_data = [];
+    data_pnts = EEG.pnts;
+
+    % zero padding if necessary
+    if g.freqresolution ~= 0
+        required_zeros = g.freqresolution - fres;
+        if required_zeros < 0
+            error('Desired frequency resolution cannot be lower than the actual resolution of the signal.')
+        end
+        pad = zeros(required_zeros, size(tmpData, 2));
+        tmpData = cat(1,pad,tmpData,pad);
+        frqs = sfreqs(g.freqresolution, EEG.srate);
+        data_pnts = size(tmpData, 1);
+        nyquist = data_pnts/2 + 1;
+    end
+    source_roi_power = zeros(nyquist, nROI);
+    
+    % compute power using the Welch method
+    disp('Computing ROI activity...');
+    [tmpWelch,ftmp] = pwelch(tmpData(:,:), data_pnts, floor(data_pnts/2), data_pnts, EEG.srate); % ftmp should be equal frqs 
     tmpWelch = reshape(tmpWelch, size(tmpWelch,1), EEG.trials, size(source_voxel_data,2), size(source_voxel_data,3));
     tmpWelch = squeeze(mean(tmpWelch,2)); % remove trials size freqs x voxels x 3
     tmpWelch = squeeze(mean(tmpWelch,3)); % remove 3rd dim size freqs x voxels
@@ -331,22 +348,13 @@ if strcmpi(g.roiactivity, 'on')
             y = (-slope(iROI) .* log10(frqs)) + offset;
             PS_corrected(:,:,iROI) = 10*log10(ps1)-10*y;
             
-%             sp = subplot(1,2,1);
-% %             plot(log10(frqs),y)
-% %             hold on
-%             plot(log10(frqs),log10(squeeze(PS_corrected(:,:,iROI))))
-% 
-%             rectX = log10(f_range);
-%             rectY = ylim([sp]);
-%             pch = patch(sp,rectX([1 2 2 1]), rectY([1 1 2 2]),'r','EdgeColor','none','FaceAlpha',0.1);
-% 
-%             ylabel('log10(Power)')
-%             xlabel('log10(Frequency)')
         end
     end
 
     % version with nPCA components
     source_roi_data = permute(reshape(source_roi_data, EEG.pnts, EEG.trials, []), [3 1 2]);
+%     source_roi_data = permute(reshape(source_roi_data, data_pnts, EEG.trials, []), [3 1 2]); % error when fres is chosen to be 400 Hz
+
 else
     source_roi_data = [];
     source_roi_power = [];
@@ -385,7 +393,7 @@ end
 if strcmpi(g.channelpower, 'on')
     tmpdata = permute(EEG.data, [2 1 3]); % pnts trials channels
     tmpdata = reshape(tmpdata, size(tmpdata,1), size(tmpdata,2)*size(tmpdata,3));
-    [tmpWelch,ftmp] = pwelch(tmpdata, EEG.pnts, EEG.pnts/2, EEG.pnts, EEG.pnts/2); % ftmp should be equal frqs 
+    [tmpWelch,ftmp] = pwelch(tmpdata, data_pnts, data_pnts/2, data_pnts, data_pnts/2); % ftmp should be equal frqs 
     tmpWelch = reshape(tmpWelch, size(tmpWelch,1), EEG.nbchan, EEG.trials);
     tmpWelch = squeeze(mean(tmpWelch,3)); % remove trials size freqs x voxels x 3
     EEG.roi.channel_power = tmpWelch;
