@@ -101,7 +101,8 @@ end
     'plotmode'    'string'    {'2D' '3D' 'both' 'none' }  '2D';
     'filename'    'string'    {}              '';
     'threshold'   'float'     {}              0.1;
-    }, 'roi_network', 'ignore');
+    'precomputed'    'struct'    {}      struct([]);
+    }, 'roi_networkplot', 'ignore');
 if isstr(g)
     error(g);
 end
