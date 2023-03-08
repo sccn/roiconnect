@@ -37,7 +37,7 @@
 %  'fooof'            - ['on'|'off'] enable FOOOF analysis. Default is 'off'.
 %  'fooof_frange'     - [''] FOOOF fitting range. Default is [1 30] like in the
 %                      example.
-%  'freqresolution'   - [''] Desired frequency resolution after FT. If
+%  'freqresolution'   - [''] Desired frequency resolution (in number of frequencies). If
 %                       specified, the signal is zero padded accordingly.
 %
 % Output:
@@ -298,7 +298,7 @@ labels = {cortex.Atlas.Scouts.Label};
 
 % keep only the first nPCA strongest components for each ROI
 if strcmpi(g.roiactivity, 'on')
-    nyquist = fres + 1;
+    nfreq = fres + 1;
     tmpData = reshape(source_voxel_data, EEG.pnts, EEG.trials*size(source_voxel_data,2)*size(source_voxel_data,3));
     source_roi_data = [];
     data_pnts = EEG.pnts;
@@ -313,9 +313,9 @@ if strcmpi(g.roiactivity, 'on')
         tmpData = cat(1,pad,tmpData,pad);
         frqs = sfreqs(g.freqresolution, EEG.srate);
         data_pnts = size(tmpData, 1);
-        nyquist = data_pnts/2 + 1;
+        nfreq = data_pnts/2 + 1;
     end
-    source_roi_power = zeros(nyquist, nROI);
+    source_roi_power = zeros(nfreq, nROI);
     
     % compute power using the Welch method
     disp('Computing ROI activity...');
