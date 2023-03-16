@@ -1,4 +1,4 @@
-function [cs, coh, wpli, nave]=data2cs_event(data,segleng,segshift,epleng,maxfreqbin,para);
+function [cs, coh, wpli, nave]=data2cs_event(data,segleng,segshift,epleng,maxfreqbin,para)
 % usage: [cs, coh, wpli, nave]=data2cs_event(data,segleng,segshift,epleng,maxfreqbin,para)
 %
 % calculates cross-spectra from data for event-related measurement
@@ -42,16 +42,19 @@ segave=0;
 mydetrend=0;
 proj=[];
 if isfield(para,'segave')
-    segave=para.segave;
+    segave = para.segave;
 end
 if isfield(para,'detrend')
-    mydetrend=para.detrend;
+    mydetrend = para.detrend;
 end
 if isfield(para,'proj')
-    proj=para.proj;
+    proj = para.proj;
 end
 if isfield(para,'subave')
-    subave=para.subave;
+    subave = para.subave;
+end
+if isfield(para,'freqresolution')
+    desired_nfreq = para.freqresolution;
 end
 
 [ndum,npat]=size(proj);
@@ -85,7 +88,7 @@ if npat>0
 end
 
 mywindow=repmat(hanning(segleng),1,nchan);
-if isfield(para,'mywindow');
+if isfield(para,'mywindow')
     mywindow=repmat(para.mywindow,1,nchan);
 end
 
@@ -97,11 +100,36 @@ for j=1:nep
     dataep=data((j-1)*epleng+1:j*epleng,:);
     for i=1:nseg %average over all segments;
         dataloc=dataep((i-1)*segshift+1:(i-1)*segshift+segleng,:);
+
+        % apply Hanning window
         if mydetrend==1
-            datalocfft=fft(detrend(dataloc,0).*mywindow);
+            dataloc_win = detrend(dataloc,0).*mywindow;
         else
-            datalocfft=fft(dataloc.*mywindow);
+            dataloc_win = dataloc.*mywindow;
         end
+
+        % zero padding if necessary
+        if desired_nfreq ~= 0
+            required_zeros = desired_nfreq - segshift;
+            if required_zeros < 0
+                error('Desired frequency resolution cannot be lower than the actual resolution of the signal.')
+            end
+            pad = zeros(required_zeros, size(dataloc_win, 2));
+            dataloc_win = cat(1,pad,dataloc_win,pad);
+        end
+        datalocfft=fft(dataloc_win);
+
+%         subplot(3,1,1)
+%         plot(dataloc(:,1))
+%         title('dataloc(:,1)')
+% 
+%         subplot(3,1,2)
+%         plot(dataloc_win(:,1))
+%         title('dataloc_win(:,1)')
+% 
+%         subplot(3,1,3)
+%         plot(abs(datalocfft(:,1)))
+%         title('abs(datalocfft(:,1))')
 
         for f=1:maxfreqbin % for all frequencies
             if npat==0
