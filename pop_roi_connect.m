@@ -144,9 +144,10 @@ g = finputcheck(options, ...
       'naccu'          'integer' { }                            0;
       'methods'        'cell'     { }                           {};
       'snippet'        'string'   { 'on', 'off' }               'off';
-      'nepochs'         'real'                {}               [];
+      'nepochs'        'real'                {}               [];
       'snip_length'    'integer'  { }                           60; 
-      'fcsave_format'  'string'   { 'mean_snips', 'all_snips'}  'mean_snips'}, 'pop_roi_connect');
+      'fcsave_format'  'string'   { 'mean_snips', 'all_snips'}  'mean_snips';
+      'freqresolution' 'integer'  { }                           0}, 'pop_roi_connect');
 if ischar(g), error(g); end
 
 % process multiple datasets
@@ -215,7 +216,7 @@ if strcmpi(g.snippet, 'on')
     for isnip = 1:nsnips
         roi_snip = source_roi_data_save(:,:,(isnip-1)* snip_eps + 1 : (isnip-1)* snip_eps + snip_eps); % cut source data into snippets
         EEG.roi.source_roi_data = single(roi_snip);
-        EEG = roi_connect(EEG, 'morder', g.morder, 'naccu', g.naccu, 'methods', g.methods); % compute connectivity over one snippet
+        EEG = roi_connect(EEG, 'morder', g.morder, 'naccu', g.naccu, 'methods', g.methods,'freqresolution',g.freqresolution); % compute connectivity over one snippet
         for fc = 1:n_conn_metrics 
             fc_name = options{2}{fc};
             fc_matrix = EEG.roi.(fc_name);
@@ -240,7 +241,7 @@ if strcmpi(g.snippet, 'on')
         end
     end
 else
-    EEG = roi_connect(EEG, 'morder', g.morder, 'naccu', g.naccu, 'methods', g.methods);
+    EEG = roi_connect(EEG, 'morder', g.morder, 'naccu', g.naccu, 'methods', g.methods,'freqresolution',g.freqresolution);
 end
 
 if nargout > 1
