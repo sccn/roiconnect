@@ -35,10 +35,11 @@
 %  'exportvoxact'     - ['on'|'off'] export voxel activity in EEG.roi.source_voxel_data
 %                       These array are huge, so the default is 'off'.
 %  'fooof'            - ['on'|'off'] enable FOOOF analysis. Default is 'off'.
-%  'fooof_frange'     - [''] FOOOF fitting range. Default is [1 30] like in the
+%  'fooof_frange'     - [ ] FOOOF fitting range. Default is [1 30] like in the
 %                      example.
-%  'freqresolution'   - [''] Desired frequency resolution (in number of frequencies). If
+%  'freqresolution'   - [integer] Desired frequency resolution (in number of frequencies). If
 %                       specified, the signal is zero padded accordingly.
+%                       Default is 0 (means no padding).
 %
 % Output:
 %  EEG - EEGLAB dataset with field 'roi' containing connectivity info.

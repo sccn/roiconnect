@@ -30,6 +30,7 @@
 %  'snippet'        - ['on'|off]  Option to compute connectivity over snippets. Default is 'off'. 
 %  'snip_length'    - ['on'|'off']  Length of the snippets. Default is 60 seconds.
 %  'fcsave_format'  - ['mean_snips'|'all_snips']  Option to save mean over snippets (shape: 101,68,68) or all snippets (shape: n_snips,101,68,68). Default is 'mean_snips.'
+%  'freqresolution'   - [integer] Desired frequency resolution (in number of frequencies). If specified, the signal is zero padded accordingly. Default is 0 (means no padding.
 %
 % Output:
 %  EEG - EEGLAB dataset with field 'roi' containing connectivity info.
