@@ -1,4 +1,4 @@
-% plotconnectivity() - plot circle o brain image showing connectivity 
+% plotconnectivity() - plot circle or brain image showing connectivity 
 %                      between regions
 %
 % Usage:
@@ -227,7 +227,8 @@ for ind1 = 1:size(array,1)
                 col = max(col,1);
                 col = min(col,size(g.colormap,1));
                 if sum(abs(center)) < 1e-8 || ~strcmpi(g.brainimg, 'off')
-                    plot([aa(1) bb(1)],[aa(2) bb(2)],'-', 'color', g.colormap(col, :), 'linewidth', 2);
+                    patchline([aa(1) bb(1)],[aa(2) bb(2)],'edgecolor', g.colormap(col, :), 'edgealpha', max(0.1,col/256), 'linewidth', 2);
+                    %plot([aa(1) bb(1)],[aa(2) bb(2)],'-', 'color', g.colormap(col, :), 'alpha', 0.5, 'linewidth', 2);
                 else
                     angle1 = atan2(aa(1)-center(1), aa(2)-center(2));
                     angle2 = atan2(bb(1)-center(1), bb(2)-center(2));
