@@ -1,4 +1,4 @@
-function conn = data2sctrgcmim(data, fres, nlags, cond, nboot, maxfreq, inds, output, verbose)
+function conn = data2sctrgcmim(data, fres, nlags, cond, nboot, maxfreq, inds, output, verbose, varargin)
 % Epoched time series data to spectral conditional time-reversed Granger causality
 %
 % (C) 2018 Stefan Haufe
@@ -28,8 +28,17 @@ function conn = data2sctrgcmim(data, fres, nlags, cond, nboot, maxfreq, inds, ou
 % Barnett, L., & Seth, A. K. (2014). The MVGC multivariate Granger causality 
 % toolbox: a new approach to Granger-causal inference. Journal of 
 % neuroscience methods, 223, 50-68.
+%
+% Optional inputs:
+%  'freqresolution' - [integer]  Desired frequency resolution (in number of frequencies). If
+%                       specified, the signal is zero padded accordingly.
+%                       Default is 0 (means no padding).
 
-
+% decode input parameters
+% -----------------------
+g = finputcheck(varargin, { ...
+    'freqresolution'  'integer'  { }  0}, 'data2sctrgcmim'); 
+if ischar(g), error(g); end
 [nchan, ndat, nepo] = size(data);
 
 if nargin < 2 || isempty(fres)
@@ -98,6 +107,7 @@ end
 CSpara = [];
 CSpara.subave = 0;
 CSpara.mywindow = hanning(ndat)./sqrt(hanning(ndat)'*hanning(ndat));
+CSpara.freqresolution = g.freqresolution;
   
 
 clear TRGC GC MIM MIC CS COH wPLI
