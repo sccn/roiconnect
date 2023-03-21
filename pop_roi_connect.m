@@ -7,7 +7,7 @@
 %  EEG - EEGLAB dataset containing ROI activity
 %
 % Optional inputs:
-%  'morder'         - [integer]  Order of autoregressive model. Default is 20.
+%  'morder'   - [integer]  Order of autoregressive model. Default is 20.
 %  'nepochs'  - [integer] number of data epoch. This is useful when
 %               comparing conditions. if not enough epochs can be extracted
 %               an error is returned. If there are too many, the first ones
