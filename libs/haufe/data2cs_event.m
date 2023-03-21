@@ -57,6 +57,8 @@ if isfield(para,'freqresolution')
     desired_nfreq = para.freqresolution;
 end
 
+fres = segleng/2;
+
 [ndum,npat]=size(proj);
 
 [ndat,nchan]=size(data);
@@ -110,7 +112,7 @@ for j=1:nep
 
         % zero padding if necessary
         if desired_nfreq ~= 0
-            required_zeros = desired_nfreq - segshift;
+            required_zeros = desired_nfreq - fres;
             if required_zeros < 0
                 error('Desired frequency resolution cannot be lower than the actual resolution of the signal.')
             end
@@ -118,18 +120,6 @@ for j=1:nep
             dataloc_win = cat(1,pad,dataloc_win,pad);
         end
         datalocfft=fft(dataloc_win);
-
-%         subplot(3,1,1)
-%         plot(dataloc(:,1))
-%         title('dataloc(:,1)')
-% 
-%         subplot(3,1,2)
-%         plot(dataloc_win(:,1))
-%         title('dataloc_win(:,1)')
-% 
-%         subplot(3,1,3)
-%         plot(abs(datalocfft(:,1)))
-%         title('abs(datalocfft(:,1))')
 
         for f=1:maxfreqbin % for all frequencies
             if npat==0

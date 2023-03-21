@@ -287,7 +287,7 @@ else
     
     % reformat for ROI analysis below
     source_voxel_data = reshape([ source.avg.mom{:} ], 3, size(source.avg.mom{1},2), length(source.avg.mom));
-    source_voxel_data = permute(source_voxel_data, [2 3 1]);
+    source_voxel_data = permute(source_vresoxel_data, [2 3 1]);
 end
     
 % number of ROIs in the Desikan-Killiany Atlas
