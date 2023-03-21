@@ -21,6 +21,9 @@
 %                       'TRDTF' : Time-reversed directed transfer entropy
 %                       'MIM'   : Multivariate Interaction Measure for each ROI
 %                       'MIC'   : Maximized Imaginary Coherency for each ROI
+%  'freqresolution'   - [integer] Desired frequency resolution (in number of frequencies). If
+%                       specified, the signal is zero padded accordingly.
+%                       Default is 0 (means no padding).
 % Output:
 %   EEG - EEG structure with EEG.roi field updated and now containing
 %         connectivity information.
@@ -65,9 +68,10 @@ function EEG = roi_connect(EEG, varargin)
     % decode input parameters
     % -----------------------
     g = finputcheck(varargin, { ...
-        'morder'      'integer' { }            20;
-        'naccu'       'integer' { }            0;
-        'methods'     'cell'    { }            {} }, 'roi_connect');    
+        'morder'          'integer'  { }            20;
+        'naccu'           'integer'  { }            0;
+        'methods'         'cell'     { }            {}; 
+        'freqresolution'  'integer'  { }            0}, 'roi_connect');    
     if ischar(g), error(g); end
     if isempty(g.naccu), g.naccu = 0; end
     tmpMethods = setdiff(g.methods, {  'CS' 'COH' 'GC' 'TRGC' 'wPLI' 'PDC' 'TRPDC' 'DTF' 'TRDTF' 'MIM' 'MIC'});
@@ -91,7 +95,7 @@ function EEG = roi_connect(EEG, varargin)
 
     tmpMethods1 = intersect(g.methods, methodset1);
     if ~isempty(tmpMethods1)
-        conn_mult = data2sctrgcmim(source_roi_data, EEG.pnts, g.morder, 0, g.naccu, [], inds, tmpMethods1);
+        conn_mult = data2sctrgcmim(source_roi_data, EEG.pnts, g.morder, 0, g.naccu, [], inds, tmpMethods1, [], 'freqresolution', g.freqresolution);
         fields = fieldnames(conn_mult);
         for iField = 1:length(fields)
             EEG.roi.(fields{iField}) = conn_mult.(fields{iField});
