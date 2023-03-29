@@ -1,10 +1,13 @@
 % roi_lookupregions() - look up regions from network name
 %
 % Usage:
+%     regions = roi_lookupregions(networkname, EEG);
 %     regions = roi_lookupregions(networkname, networkdefs);
 %
 % Input:
 %     networkname - [string] name of network.
+%     EEG         - [EEGLAB structure] use EEG dataset to look up network
+% Or
 %     networkdefs - [string|struct] network definition file (same input as
 %                   roi_definenetwork()). Alternatively network structure
 %                   (second output of roi_definenetwork())
@@ -53,11 +56,24 @@ if ischar(networkdefs)
         roiTable = roiTable2;
     end
     roiTable = readtable(networkdefs,'Delimiter', char(9));
-else
+    allnetworknames = fieldnames(roiTable);
+elseif ~isstruct(networkdefs)
     roiTable = networkdefs;
+    allnetworknames = fieldnames(roiTable);
+else
+    EEG = networkdefs;
+    if isfield(EEG, 'roi') && isfield(EEG.roi, 'atlas')
+        atlas = EEG.roi.atlas;
+    else
+        atlas = EEG;
+    end
+    if ~isfield(atlas, 'networks')
+        error('Input structure must contain a field named "networks"')
+    end
+
+    allnetworknames = { atlas.networks.name };
 end
 
-allnetworknames = fieldnames(roiTable);
 indNet = [];
 for iNet = 1:length(allnetworknames)
     if contains(networkname, allnetworknames{iNet})
@@ -68,6 +84,8 @@ end
 
 if isempty(indNet)
     fprintf('Network %s not found\n', networkname);
-else
+elseif ~isstruct(networkdefs)
     regions = roiTable.(allnetworknames{iNet});
+else
+    regions = { atlas.Scouts(atlas.networks(indNet).ROI_inds).Label };
 end
