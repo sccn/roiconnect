@@ -6,7 +6,7 @@
 %  data   - nchan x ntimepoints x ntrials ROI data, requires prior source reconstruction 
 %  params - Set containing parameters for bispectrum computation
 %  
-% Output:
+% Outputs:
 %   b_orig - ROI x ROI bispectrum
 %   b_anti - ROI x ROI antisymmetrized bispectrum
 %   b_orig_norm - ROI x ROI normalized bispectrum

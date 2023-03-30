@@ -1,5 +1,6 @@
 % roi_pac() - Compute phase-amplitude coupling (PAC) between ROIs 
-%             (cf. Zandvoort and Nolte, 2021)
+%             (cf. Zandvoort and Nolte, 2021). Wrapper function for
+%             pac_bispec().
 %
 % Usage:
 %  EEG = roi_pac(EEG, filt, bs_outopts); 
