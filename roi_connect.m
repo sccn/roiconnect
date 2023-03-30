@@ -24,6 +24,7 @@
 %  'freqresolution'   - [integer] Desired frequency resolution (in number of frequencies). If
 %                       specified, the signal is zero padded accordingly.
 %                       Default is 0 (means no padding).
+%
 % Output:
 %   EEG - EEG structure with EEG.roi field updated and now containing
 %         connectivity information.
@@ -74,7 +75,7 @@ function EEG = roi_connect(EEG, varargin)
         'freqresolution'  'integer'  { }            0}, 'roi_connect');    
     if ischar(g), error(g); end
     if isempty(g.naccu), g.naccu = 0; end
-    tmpMethods = setdiff(g.methods, {  'CS' 'COH' 'GC' 'TRGC' 'wPLI' 'PDC' 'TRPDC' 'DTF' 'TRDTF' 'MIM' 'MIC'});
+    tmpMethods = setdiff(g.methods, {  'CS' 'COH' 'GC' 'TRGC' 'wPLI' 'PDC' 'TRPDC' 'DTF' 'TRDTF' 'MIM' 'MIC' 'PAC'});
     if ~isempty(tmpMethods)
         error('Unknown methods %s', vararg2str(tmpMethods))
     end
