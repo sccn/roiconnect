@@ -97,7 +97,7 @@ end
 %figure;plot(mywindow);
 nave = 0;
 wpli_numer = cs; wpli_denom = cs; % initialize in the same way as CS
-
+desired_nfreq = 0;
 for j=1:nep
     dataep=data((j-1)*epleng+1:j*epleng,:);
     for i=1:nseg %average over all segments;
