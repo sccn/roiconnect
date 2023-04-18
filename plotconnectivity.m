@@ -61,6 +61,7 @@ g = finputcheck(varargin, { ...
     'axis'        ''          {}              [];
     'colormap'    ''          {}              cool;
     'limits'      'real'      {}              [];
+    'cbar'        'string'     {'on' 'off' }     'off';
     'brainimg'   'string'     {'on' 'off' 'bilateral'}     'bilateral';
     'threshold'   'real'      {}              0.25;
     }, 'roi_network');
@@ -167,6 +168,7 @@ else
     hold on;
     axis equal
 end
+g.axis = gca;
 axis equal;
 axis off;
 
@@ -279,6 +281,16 @@ if ~strcmpi(g.brainimg, 'off')
 else
     xlim([-0.7 0.7]);
     ylim([-0.7 0.7]);
+end
+if strcmpi(g.cbar, 'on')
+    h = cbar;
+    n = size(g.colormap,1);
+    transparency = linspace(0,1,n)';
+    transparency(transparency < 0.1) = 0.1;
+    imagesc([0 1], linspace(limits(1), limits(2), n), reshape(cool,n,1,3), 'AlphaData', transparency);
+    set(h, 'xticklabel', [], 'YAxisLocation', 'right')
+    ylim(limits);
+    axes(g.axis);
 end
 
 function str = formatlabel(str)
