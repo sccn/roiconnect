@@ -29,6 +29,7 @@
 %                 Default is empty and no file are saved.
 %
 % Outputs:
+%     EEG     - modified EEG structure
 %     imgFile - Image file list
 %     txtFile - Text file list
 %
@@ -82,7 +83,7 @@
 %                    - networks(x).name (name of network x)
 %                    - networks(x).ROI_inds (indices of ROIs for network x)
 
-function [imgFileName,txtFileName,measures] = roi_networkplot(EEG, networks, measure, varargin)
+function [EEG,imgFileName,txtFileName,measures] = roi_networkplot(EEG, networks, measure, varargin)
 
 if nargin < 2
     help roi_networkplot;
@@ -287,7 +288,7 @@ for iNet = 1:length(networks)
 end
 
 % perform some stats
-if length(networks) > 1
+if length(networks) > 1 && length(sumVals) == 2 && length(sumVals{1}) == length(sumVals{2})
     [H,P,CI,STATS] = ttest(sumVals{1}, sumVals{2});
     if P< 0.05
         fprintf(2, 'Network %s effect size %1.2f p-value: %1.3f\n', networks(end).name, STATS.tstat, P);
