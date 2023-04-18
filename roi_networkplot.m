@@ -288,7 +288,7 @@ for iNet = 1:length(networks)
 end
 
 % perform some stats
-if length(networks) > 1
+if length(networks) > 1 && length(sumVals) == 2 && length(sumVals{1}) == length(sumVals{2})
     [H,P,CI,STATS] = ttest(sumVals{1}, sumVals{2});
     if P< 0.05
         fprintf(2, 'Network %s effect size %1.2f p-value: %1.3f\n', networks(end).name, STATS.tstat, P);
