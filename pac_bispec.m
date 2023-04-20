@@ -9,8 +9,8 @@
 % Outputs:
 %   b_orig - ROI x ROI bispectrum
 %   b_anti - ROI x ROI antisymmetrized bispectrum
-%   b_orig_norm - ROI x ROI normalized bispectrum
-%   b_anti_norm - ROI x ROI normalized antisymmetrized bispectrum
+%   b_orig_norm - ROI x ROI bicoherence (normalized by threenorm)
+%   b_anti_norm - ROI x ROI antisymmetrized bicoherence (normalized by threenorm)
 %
 % Copyright (C) Franziska Pellegrini, franziska.pellegrini@charite.de
 
@@ -20,27 +20,28 @@ nroi = params.nROI;
 segleng = params.segleng;
 segshift = params.segshift;
 epleng = params.epleng;
-filt = params.filt;
+fcomb = params.fcomb;
 fs = params.fs;
 
 fres = fs;
 frqs = sfreqs(fres, fs);
-freqinds_low = [find(frqs==filt.low) find(frqs==filt.high-filt.low)];
-freqinds_up = [find(frqs==filt.low) find(frqs==filt.high)];
+freqinds_low = [find(frqs==fcomb.low) find(frqs==fcomb.high-fcomb.low)]; 
+freqinds_up = [find(frqs==fcomb.low) find(frqs==fcomb.high)];
 
+% mit Warning: this will take x times longer than
 for proi = 1:nroi
     for aroi = proi:nroi
         
         % upper freqs
         X = data([proi aroi],:,:); 
-        [bs_up,~] = data2bs_event(X(:,:)', segleng, segshift, epleng, freqinds_up);
+        [bs_up,~] = data2bs_event(X(:,:)', segleng, segshift, epleng, freqinds_up); 
         biv_orig_up = ([abs(bs_up(1, 2, 2)) abs(bs_up(2, 1, 1))]);
         xx = bs_up - permute(bs_up, [2 1 3]); %Bkmm - Bmkm
         biv_anti_up = ([abs(xx(1, 2, 2)) abs(xx(2, 1, 1))]);
         
         % normalized by threenorm
         [RTP_up,~]=data2bs_threenorm(X(:,:)',segleng,segshift,epleng,freqinds_up);
-        bicoh_up=bs_up./sqrt(RTP_up);
+        bicoh_up = bs_up ./ RTP_up;
         biv_orig_up_norm = ([abs(bicoh_up(1, 2, 2)) abs(bicoh_up(2, 1, 1))]);
         xx=bicoh_up-permute(bicoh_up, [2 1 3]);
         biv_anti_up_norm = ([abs(xx(1, 2, 2)) abs(xx(2, 1, 1))]);
@@ -53,12 +54,12 @@ for proi = 1:nroi
         
         % normalized by threenorm
         [RTP_low,~]=data2bs_threenorm(X(:,:)',segleng,segshift,epleng,freqinds_low);
-        bicoh_low=bs_low./sqrt(RTP_low);
+        bicoh_low = bs_low ./ RTP_low;
         biv_orig_low_norm = ([abs(bicoh_low(1, 2, 2)) abs(bicoh_low(2, 1, 1))]);
         xx=bicoh_low-permute(bicoh_low, [2 1 3]);
         biv_anti_low_norm = ([abs(xx(1, 2, 2)) abs(xx(2, 1, 1))]);
         
-        b_orig(aroi,proi) = mean([biv_orig_up(1) biv_orig_low(1)]); % mean across the two possible bispec combinations 
+        b_orig(aroi,proi) = mean([biv_orig_up(1) biv_orig_low(1)]); 
         b_orig(proi,aroi) = mean([biv_orig_up(2) biv_orig_low(2)]);
         b_anti(aroi,proi) = mean([biv_anti_up(1) biv_anti_low(1)]);  
         b_anti(proi,aroi) = mean([biv_anti_up(2) biv_anti_low(2)]);  
