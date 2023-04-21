@@ -20,6 +20,7 @@
 %                           'crossspecpow' : Average cross-spectrum power for each ROI
 %                           'mic' : Maximized Imaginary Coherency for each ROI
 %                           'mim' : Multivariate Interaction Measure for each ROI
+%                           'pac' : Phase-amplitude coupling for each ROI for a certain frequency (band) combination
 %  'freqrange'            - [min max] frequency range in Hz. Default is to plot broadband power.
 %  'smooth'               - [float] smoothing factor for cortex surface plotting
 %  'plotcortex'           - ['on'|'off'] plot results on smooth cortex. Default is 'on'
@@ -192,6 +193,17 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         splot(end  ).labelshort = 'Multivariate Interaction Measure';
         splot(end  ).acronym  = 'MIM';
         splot(end  ).unit   = 'MIM'; % not used yet
+        splot(end  ).cortex = cortexFlag;
+        splot(end  ).matrix = 1;
+        splot(end  ).psd    = 0;
+        splot(end  ).plot3d = plot3dFlag;
+    end
+
+    if isfield(EEG.roi, 'PAC')
+        splot(end+1).label    = 'ROI to ROI Phase-amplitude coupling';
+        splot(end  ).labelshort = 'Phase-amplitude coupling';
+        splot(end  ).acronym  = 'PAC';
+        splot(end  ).unit   = 'PAC'; % not used yet
         splot(end  ).cortex = cortexFlag;
         splot(end  ).matrix = 1;
         splot(end  ).psd    = 0;
@@ -395,6 +407,10 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
                 plotPSDFreq = S.freqs(frq_inds);
                 plotPSD     = PS(frq_inds, :);
                 matrix      = PSarea2area;
+
+            case {'pac'}
+                matrix = S.PAC;
+                
         end
 
         % get seed

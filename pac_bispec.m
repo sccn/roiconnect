@@ -28,6 +28,9 @@ frqs = sfreqs(fres, fs);
 freqinds_low = [find(frqs==fcomb.low) find(frqs==fcomb.high-fcomb.low)]; 
 freqinds_up = [find(frqs==fcomb.low) find(frqs==fcomb.high)];
 
+% band_inds_low = find(frqs >= low(1) & frqs <= low(2)); % indices of interacting low frequencies
+% band_inds_high = find(frqs >= high(1) & frqs <= high(2)); % indices of interacting high frequencies
+
 % mit Warning: this will take x times longer than
 for proi = 1:nroi
     for aroi = proi:nroi

@@ -259,7 +259,7 @@ else
 end
 
 if ~isempty(intersect(g.methods, {'PAC'}))
-    EEG = roi_pac(EEG, g.comb, g.bs_outopts);
+    EEG = roi_pac(EEG, g.fcomb, g.bs_outopts);
 end
 
 if nargout > 1
