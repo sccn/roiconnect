@@ -1,0 +1,19 @@
+Cingulo_opercular_network	DNM	Salience_network	Executive_network	Working_memory_network	Dorsal_attention_network
+13L	23L	13L	8L	6R	17R
+42L	31L	24L	9L	8R	18R
+8L	39L	32L	10L	9R	19R
+9L	24L	33L	46L	7R	7R
+10L	25L	13R	3L	39R	8R
+ThalamusL	32L	24R	5L	40R	17L
+13R	33L	32R	7L	6L	18L
+42R	23R	33R	39L	8L	19L
+8R	31R		40L	9L	7L
+9R	39R		8R	7L	8L
+10R	24R		9R	39L	
+ThaRamusR	25R		10R	40L	
+39R	32R		46R		
+40R	33R		3R		
+39L			5R		
+40L			7R		
+			39R		
+			40R		
