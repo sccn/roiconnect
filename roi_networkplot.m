@@ -100,6 +100,7 @@ end
     'columns'     'integer'   {}              [];
     'limits'      'float'     {}              [];
     'plotmode'    'string'    {'2D' '3D' 'both' 'none' }  '2D';
+    'plotopt'     'cell'      {}              {};
     'filename'    'string'    {}              '';
     'threshold'   'float'     {}              0.1;
     'precomputed'    'struct'    {}      struct([]);
@@ -237,7 +238,7 @@ for iNet = 1:length(networks)
     
     % 2-D plot
     if strcmpi(g.plotmode, '2D') || strcmpi(g.plotmode, 'both')
-        plotconnectivity(networkMat(:,:), 'labels', labels, 'axis', gca, 'threshold', g.threshold(iNet), 'limits', g.limits);
+        plotconnectivity(networkMat(:,:), 'labels', labels, 'axis', gca, 'threshold', g.threshold(iNet), 'limits', g.limits, g.plotopt{:});
         h = title(tmpTitle, 'interpreter', 'none');
         pos = get(h, 'position');
         set(h, 'position', pos + [0 0.1 0]);
@@ -254,7 +255,7 @@ for iNet = 1:length(networks)
     
     % 3-D plot
     if strcmpi(g.plotmode, '3D') || strcmpi(g.plotmode, 'both')
-        options = {'brainmovieopt' { 'moviename' '' } };
+        options = {'brainmovieopt' { 'moviename' '' } g.plotopt{:} };
         if ~strcmpi(g.subplots, 'on') && ~isempty(g.filename)
             tmpFileName = [ g.filename '_' networks(iNet).name '_3d' ];
             options = { options{:} 'filename'  tmpFileName };
