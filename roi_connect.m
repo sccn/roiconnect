@@ -24,6 +24,7 @@
 %  'freqresolution'   - [integer] Desired frequency resolution (in number of frequencies). If
 %                       specified, the signal is zero padded accordingly.
 %                       Default is 0 (means no padding).
+%
 % Output:
 %   EEG - EEG structure with EEG.roi field updated and now containing
 %         connectivity information.
@@ -74,7 +75,7 @@ function EEG = roi_connect(EEG, varargin)
         'freqresolution'  'integer'  { }            0}, 'roi_connect');    
     if ischar(g), error(g); end
     if isempty(g.naccu), g.naccu = 0; end
-    tmpMethods = setdiff(g.methods, {  'CS' 'COH' 'GC' 'TRGC' 'wPLI' 'PDC' 'TRPDC' 'DTF' 'TRDTF' 'MIM' 'MIC'});
+    tmpMethods = setdiff(g.methods, {  'CS' 'COH' 'GC' 'TRGC' 'wPLI' 'PDC' 'TRPDC' 'DTF' 'TRDTF' 'MIM' 'MIC' 'PAC'});
     if ~isempty(tmpMethods)
         error('Unknown methods %s', vararg2str(tmpMethods))
     end
@@ -118,7 +119,7 @@ function EEG = roi_connect(EEG, varargin)
 
     tmpMethods2 = intersect(g.methods, methodset2);
     if ~isempty(tmpMethods2)
-        conn_mult = data2spwctrgc(source_roi_data, EEG.pnts, g.morder, 0, g.naccu, [], tmpMethods2);
+        conn_mult = data2spwctrgc(source_roi_data, EEG.pnts, g.morder, 0, g.naccu, [], tmpMethods2, [], 'freqresolution', g.freqresolution);
         fields = fieldnames(conn_mult);
         for iField = 1:length(fields)
             EEG.roi.(fields{iField}) = conn_mult.(fields{iField});
