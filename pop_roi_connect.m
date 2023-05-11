@@ -34,9 +34,10 @@
 %                     (shape: 101,68,68) or all snippets (shape: n_snips,101,68,68). Default is 'mean_snips.'
 %  'freqresolution' - [integer] Desired frequency resolution (in number of frequencies). 
 %                     If specified, the signal is zero padded accordingly. Default is 0 (means no padding).
-%  'filt'           - [struct] Frequency combination for which PAC is computed. Must have fields 'low' and 
-%                     'high' with filt.low < filt.high. For example, filt.low = 10 (Hz), filt.high = 50 (Hz). 
-%                     Default is {} (this will cause an error).
+%  'fcomb'          - [struct] Frequency combination for which PAC is computed (in Hz). Must have fields 'low' and 
+%                     'high' with fcomb.low < fcomb.high. For example, fcomb.low = 10 and fcomb.high = 50 if single 
+%                     frequencies are used. fcomb.low = [4 8] and fcomb.high = [48 50] if frequency bands are used 
+%                     (might take a long time to compute, so use with caution). Default is {} (this will cause an error).
 %  'bs_outopts'     - [integer] Option which bispectral tensors should be stored in EEG.roi.PAC. Default is 1.
 %                          1 - store all tensors: b_orig, b_anti, b_orig_norm, b_anti_norm
 %                          2 - only store: b_orig, b_anti
@@ -160,7 +161,7 @@ g = finputcheck(options, ...
       'snip_length'    'integer'  { }                           60; 
       'fcsave_format'  'string'   { 'mean_snips', 'all_snips'}  'mean_snips';
       'freqresolution' 'integer'  { }                           0; 
-      'filt'           'struct'   { }                           struct; ...
+      'fcomb'          'struct'  { }                           struct; ...
       'bs_outopts'     'integer'  { }                           1}, 'pop_roi_connect');
 if ischar(g), error(g); end
 
@@ -259,7 +260,7 @@ else
 end
 
 if ~isempty(intersect(g.methods, {'PAC'}))
-    EEG = roi_pac(EEG, g.filt, g.bs_outopts);
+    EEG = roi_pac(EEG, g.fcomb, g.bs_outopts);
 end
 
 if nargout > 1
