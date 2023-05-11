@@ -420,11 +420,23 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
                 matrix      = PSarea2area;
 
             case {'pac'}
-                matrix = S.PAC.b_orig_norm;
+                if isfield(S.PAC, 'b_orig_norm')
+                    matrix = S.PAC.b_orig_norm;
+                elseif isfield(S.PAC, 'b_orig')
+                    matrix = S.PAC.b_orig;
+                else
+                    error('PAC (original bicoherence) cannot be plotted, field is missing.')
+                end
                 cortexPlot = mean(matrix, 2);
 
             case {'pac_anti'}
-                matrix = S.PAC.b_anti_norm;
+                if isfield(S.PAC, 'b_anti_norm')
+                    matrix = S.PAC.b_anti_norm;
+                elseif isfield(S.PAC, 'b_anti')
+                    matrix = S.PAC.b_anti;
+                else
+                    error('PAC (antisymmetrized bicoherence) cannot be plotted, field is missing.')
+                end
                 cortexPlot = mean(matrix, 2);
                 
         end
