@@ -34,9 +34,10 @@
 %                     (shape: 101,68,68) or all snippets (shape: n_snips,101,68,68). Default is 'mean_snips.'
 %  'freqresolution' - [integer] Desired frequency resolution (in number of frequencies). 
 %                     If specified, the signal is zero padded accordingly. Default is 0 (means no padding).
-%  'fcomb'          - [struct] Frequency combination for which PAC is computed. Must have fields 'low' and 
-%                     'high' with fcomb.low < fcomb.high. For example, fcomb.low = 10 (Hz), fcomb.high = 50 (Hz). 
-%                     Default is {} (this will cause an error).
+%  'fcomb'          - [struct] Frequency combination for which PAC is computed (in Hz). Must have fields 'low' and 
+%                     'high' with fcomb.low < fcomb.high. For example, fcomb.low = 10 and fcomb.high = 50 if single 
+%                     frequencies are used. fcomb.low = [4 8] and fcomb.high = [48 50] if frequency bands are used 
+%                     (might take a long time to compute, so use with caution). Default is {} (this will cause an error).
 %  'bs_outopts'     - [integer] Option which bispectral tensors should be stored in EEG.roi.PAC. Default is 1.
 %                          1 - store all tensors: b_orig, b_anti, b_orig_norm, b_anti_norm
 %                          2 - only store: b_orig, b_anti
