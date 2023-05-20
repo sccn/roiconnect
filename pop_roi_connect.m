@@ -236,7 +236,11 @@ if strcmpi(g.snippet, 'on')
         if strcmpi(g.fcsave_format, 'all_snips')
             EEG.roi.(fc_name) = reshaped;
         else
-            mean_conn = squeeze(mean(reshaped, 1)); 
+            if nsnips > 1
+                mean_conn = squeeze(mean(reshaped, 1)); 
+            else
+                mean_conn = reshaped;
+            end
             EEG.roi.(fc_name) = mean_conn; % store mean connectivity in EEG struct
         end
     end
