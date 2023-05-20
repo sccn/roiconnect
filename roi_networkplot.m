@@ -168,6 +168,7 @@ if isstruct(networks) % in case network is already converted from a table to a s
 else
     [EEG,networks,matrix] = roi_definenetwork(EEG, networks, 'addrois', g.addrois, 'connectmat', matrix, 'ignoremissing', 'on');
 end
+networks(cellfun(@(x)(length(x) < 2), { networks.ROI_inds })) = []; % Remove networks with less than 2 brain areas
 
 if strcmpi(g.subplots, 'on')
     if isempty(g.columns)
