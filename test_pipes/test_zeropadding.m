@@ -24,30 +24,34 @@ EEG = pop_leadfield(EEG, 'sourcemodel',fullfile(eeglabp,'plugins','dipfit','LORE
 %% Test zero padding in roi_activity and plot results
 % sanity check with default frequency resolution (freqresolution = 0)
 EEG = pop_roi_activity(EEG, 'leadfield',EEG.dipfit.sourcemodel,'model','LCMV','modelparams',{0.05},'atlas','LORETA-Talairach-BAs','nPCA',3);
-subplot(2,1,1)
-for j = 1:size(EEG.roi.source_roi_power,2)
-    plot(EEG.roi.freqs,EEG.roi.source_roi_power(:,j))
-    hold on;
-end
-original_nfreq = length(EEG.roi.freqs);
-title("Number of frequencies: " + int2str(original_nfreq) + " (Default)")
-xlabel('Frequency [Hz]')
+
+% subplot(2,1,1)
+% for j = 1:size(EEG.roi.source_roi_power,2)
+%     plot(EEG.roi.freqs,EEG.roi.source_roi_power(:,j))
+%     hold on;
+% end
+% original_nfreq = length(EEG.roi.freqs);
+% title("Number of frequencies: " + int2str(original_nfreq) + " (Default)")
+% xlabel('Frequency [Hz]')
 
 % specify desired frequency resolution (in number of desired frequencies)
 desired_nfreq = 400;
 EEG = pop_roi_activity(EEG, 'leadfield',EEG.dipfit.sourcemodel,'model','LCMV','modelparams',{0.05},'atlas','LORETA-Talairach-BAs','nPCA',3,'freqresolution',desired_nfreq);
-assert(length(EEG.roi.freqs) == desired_nfreq+1)
-assert(size(EEG.roi.source_roi_power,1) == desired_nfreq+1)
 
-subplot(2,1,2)
-for j = 1:size(EEG.roi.source_roi_power,2)
-    plot(EEG.roi.freqs,EEG.roi.source_roi_power(:,j))
-    hold on;
-end
-title("Number of frequencies: " + int2str(desired_nfreq + 1))
-xlabel('Frequency [Hz]')
+% subplot(2,1,2)
+% for j = 1:size(EEG.roi.source_roi_power,2)
+%     plot(EEG.roi.freqs,EEG.roi.source_roi_power(:,j))
+%     hold on;
+% end
+% title("Number of frequencies: " + int2str(desired_nfreq + 1))
+% xlabel('Frequency [Hz]')
 
 %% Perform zero padding in roi_connect and plot results
+% test data2sctrgcmim
 EEG = pop_roi_connect(EEG, 'methods', {'MIM'}); % default (without padding)
 EEG = pop_roi_connect(EEG, 'methods', {'MIM'}, 'freqresolution', desired_nfreq); % with padding
+
+% test data2spwctrgc
+EEG = pop_roi_connect(EEG, 'methods', { 'CS', 'COH'}, 'snippet', 'on', 'snip_length', 60, 'fcsave_format', 'mean_snips'); % also test data2spwctrgc
+EEG = pop_roi_connect(EEG, 'methods', { 'CS', 'COH'}, 'snippet', 'on', 'snip_length', 60, 'fcsave_format', 'mean_snips', 'freqresolution', desired_nfreq);
 

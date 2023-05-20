@@ -20,6 +20,9 @@
 %  'fooof'     - ['on'|'off'] enable FOOOF analysis. Default is 'off'.
 %  'fooof_frange' - [''] FOOOF fitting range. Default is [1 30] like in the
 %                        example.
+%  'freqresolution'   - [integer] Desired frequency resolution (in number of frequencies). If
+%                       specified, the signal is zero padded accordingly.
+%                       Default is 0 (means no padding).
 %
 % Other optional inputs:
 %  All ROI_ACTIVITY parameters are accepted as input and passed on.
@@ -243,6 +246,7 @@ end
     'nPCA'            'real'                {}               3;
     'epochlen'        'real'                {}               2;
     'fooof'           'string'              { 'on' 'off'}    'off';
+    'freqresolution'   'integer'            {}               0;
     'fooof_frange'     ''                   {}               [1 30]}, 'pop_roi_activity', 'ignore');
 if ischar(g), error(g); end
 
@@ -274,7 +278,7 @@ end
 EEG = roi_activity(EEG, 'leadfield', g.leadfield, 'headmodel', EEG.dipfit.hdmfile, ...
     'model', g.model, 'modelparams', g.modelparams, 'sourcemodel', sourceModelFile, ...
     'sourcemodel2mni', sourceModel2MNI, 'nPCA', g.nPCA,'fooof', g.fooof, 'fooof_frange', g.fooof_frange, ...
-    'sourcemodelatlas', g.atlas, 'chansel', chansel, moreargs{:});
+    'freqresolution', g.freqresolution, 'sourcemodelatlas', g.atlas, 'chansel', chansel, moreargs{:});
 
 if nargout > 1
     for iOption = 1:2:length(options)
