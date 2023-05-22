@@ -258,8 +258,10 @@ if EEG.trials == 1
     EEG = eeg_regepochs(EEG, recurrence, [0 2]);
 end
 
+chansel = {};
 if isempty(g.leadfield)
     g.leadfield = EEG.dipfit.sourcemodel;
+    chansel   = EEG.dipfit.sourcemodel.label;
 end
 if isstruct(g.leadfield) && isfield(g.leadfield, 'file')
     sourceModelFile = g.leadfield.file;
@@ -276,7 +278,7 @@ end
 EEG = roi_activity(EEG, 'leadfield', g.leadfield, 'headmodel', EEG.dipfit.hdmfile, ...
     'model', g.model, 'modelparams', g.modelparams, 'sourcemodel', sourceModelFile, ...
     'sourcemodel2mni', sourceModel2MNI, 'nPCA', g.nPCA,'fooof', g.fooof, 'fooof_frange', g.fooof_frange, ...
-    'freqresolution', g.freqresolution, 'sourcemodelatlas', g.atlas, moreargs{:});
+    'freqresolution', g.freqresolution, 'sourcemodelatlas', g.atlas, 'chansel', chansel, moreargs{:});
 
 if nargout > 1
     for iOption = 1:2:length(options)

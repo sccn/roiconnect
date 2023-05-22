@@ -32,6 +32,7 @@
 %  'roiactivity'      - ['on'|'off'] compute ROI activity. Default is on. If
 %                       you just need voxel activity, you can set this option to
 %                '      off'.
+%  'chansel'          - [cell array of string] channel selection. Default is all.
 %  'exportvoxact'     - ['on'|'off'] export voxel activity in EEG.roi.source_voxel_data
 %                       These array are huge, so the default is 'off'.
 %  'fooof'            - ['on'|'off'] enable FOOOF analysis. Default is 'off'.
@@ -94,6 +95,7 @@ g = finputcheck(varargin, { ...
     'model'            'string'             { 'eLoretaFieldtrip' 'lcmvFieldtrip' 'eLoreta' 'lcmv' } 'lcmv';
     'nPCA'             'integer'            { }              3;
     'downsample'       'integer'            { }              1;
+    'chansel'          'cell'               { }              {};
     'roiactivity'      'string'             { 'on' 'off' }  'on';
     'channelpower'     'string'             { 'on' 'off' }  'off';
     'exportvoxact'     'string'             { 'on' 'off' }  'off';
@@ -217,8 +219,13 @@ nvox2 = size(leadfield,2);
 if ~isequal(nvox, nvox2)
     error('There must be the same number of vertices/voxels in the leadfield and source model');
 end
-if ~isequal(size(leadfield,1), EEG.nbchan)
-    error('There must be the same number of channels in the leadfield and in the dataset');
+if isempty(g.chansel)
+    g.chansel = [1:EEG.nbchan];
+else
+    g.chansel = eeg_decodechan(EEG.chanlocs, g.chansel);
+end
+if ~isequal(size(leadfield,1), length(g.chansel))
+    error('There must be the same number of channels in the leadfield and in the list of selected channels');
 end
 
 fres = EEG.pnts/2;
@@ -227,11 +234,12 @@ fres = EEG.pnts/2;
 frqs = sfreqs(fres, EEG.srate);
 
 % common average reference transform
-H = eye(EEG.nbchan) - ones(EEG.nbchan) ./ EEG.nbchan;
+nbchan = length(g.chansel);
+H = eye(nbchan) - ones(nbchan) ./ nbchan;
 
 % apply to data and leadfield
-EEG.data = reshape(H*EEG.data(:, :), EEG.nbchan, EEG.pnts, EEG.trials);
-leadfield = reshape(H*leadfield(:, :), EEG.nbchan, nvox, 3);
+tmpdata = reshape(H*EEG.data(g.chansel, :), nbchan, EEG.pnts, EEG.trials);
+leadfield = reshape(H*leadfield(:, :), nbchan, nvox, 3);
 
 %% source reconstruction
 if strcmpi(g.model, 'eLoreta')
@@ -240,16 +248,16 @@ if strcmpi(g.model, 'eLoreta')
     P_eloreta = mkfilt_eloreta_v2(leadfield, g.modelparams{:});
     
     % project to source space
-    source_voxel_data = reshape(EEG.data(:, :)'*P_eloreta(:, :), EEG.pnts*EEG.trials, nvox, 3);
+    source_voxel_data = reshape(tmpdata(:, :)'*P_eloreta(:, :), EEG.pnts*EEG.trials, nvox, 3);
 elseif strcmpi(g.model, 'LCMV')
-    C = cov(EEG.data(:, :)');
+    C = cov(tmpdata(:, :)');
     if length(g.modelparams) == 1
         lcmv_reg = g.modelparams{1};
     end
     alpha = lcmv_reg*trace(C)/length(C);
-    Cr = C + alpha*eye(EEG.nbchan);
+    Cr = C + alpha*eye(nbchan);
     [~, P_eloreta] = lcmv(Cr, leadfield, struct('alpha', 0, 'onedim', 0));
-    source_voxel_data = reshape(EEG.data(:, :)'*P_eloreta(:, :), EEG.pnts*EEG.trials, nvox, 3);
+    source_voxel_data = reshape(tmpdata(:, :)'*P_eloreta(:, :), EEG.pnts*EEG.trials, nvox, 3);
     source_voxel_data = 10^3*source_voxel_data; % the units are nA*m
 else
     % transform the data to continuous so we can get an estimate for each sample
@@ -392,7 +400,7 @@ end
 
 % get channel power for comparison
 if strcmpi(g.channelpower, 'on')
-    tmpdata = permute(EEG.data, [2 1 3]); % pnts trials channels
+    tmpdata = permute(EEG.data(g.chansel, :, :), [2 1 3]); % pnts trials channels
     tmpdata = reshape(tmpdata, size(tmpdata,1), size(tmpdata,2)*size(tmpdata,3));
     [tmpWelch,ftmp] = pwelch(tmpdata, data_pnts, data_pnts/2, data_pnts, data_pnts/2); % ftmp should be equal frqs 
     tmpWelch = reshape(tmpWelch, size(tmpWelch,1), EEG.nbchan, EEG.trials);
