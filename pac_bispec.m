@@ -39,7 +39,7 @@ frqs_high = frqs(inds_high);
 [m, n] = ndgrid(frqs_low, frqs_high);
 frqs_combs = [m(:),n(:)]; 
 n_combs = size(frqs_combs, 1);
-if n_combs > 50
+if n_combs > 20
     % according to our test simulations, the computation time scales linearly with the number of frequency pairs times 2, assuming no other ongoing CPU-heavy processes
     time_est = 2 * n_combs; 
     warning('PAC is going to be estimated on %d frequency pair(s). Estimated time: %d seconds', n_combs, time_est);
