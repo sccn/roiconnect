@@ -177,7 +177,7 @@ end
 % define networks
 networks = [];
 colNames = fieldnames(roiTable);
-allLabels = { EEG.roi.atlas.Scouts.Label };
+allLabels = lower({ EEG.roi.atlas.Scouts.Label });
 for iCol = 1:size(roiTable,2) % scan columns
     
     networks(end+1).name = colNames{iCol};
@@ -189,23 +189,18 @@ for iCol = 1:size(roiTable,2) % scan columns
         for iRow = 1:size(roiTable,1)
             val = roiTable{iRow, iCol}{1};
             if ~isempty(val)
-                indTmp1 = strmatch(val, allLabels, 'exact');
-                indTmp2 = strmatch([ 'Brodmann area ' val], allLabels, 'exact');
+                indTmp1 = strmatch(lower(val), allLabels, 'exact');
+                indTmp2 = strmatch(lower([ 'Brodmann area ' val]), allLabels, 'exact');
                 indTmp = [ indTmp1 indTmp2 ];
-                if length(indTmp) == 1
+                if isempty(indTmp)
                     if strcmpi(g.ignoremissing, 'off')
                         error('Area %s not found', val);
                     else
                         fprintf('Area %s not found\n', val);
-                        if length(indTmp) > 1 indTmp = indTmp(1); end
                     end
-                else
-                    if strcmpi(g.ignoremissing, 'off')
-                        error('Area %s not found', val);
-                    else
-                        fprintf('Area %s duplicate, using the first one\n', val);
-                        if length(indTmp) > 1 indTmp = indTmp(1); end
-                    end
+                elseif length(indTmp) > 1
+                    fprintf('Area %s duplicate, using the first one\n', val);
+                    indTmp = indTmp(1);
                 end
                 inds = [ inds;indTmp ];
             end
