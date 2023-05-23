@@ -36,8 +36,6 @@ if nargin<6
     para=[];
 end
 
-maxfreqbin=min([maxfreqbin,floor(segleng/2)+1]);
-
 segave=0;
 mydetrend=0;
 proj=[];
@@ -57,6 +55,11 @@ if isfield(para,'freqresolution')
     desired_nfreq = para.freqresolution;
 end
 
+if desired_nfreq == 0
+    maxfreqbin = min([maxfreqbin,floor(segleng/2)+1]);
+else
+    maxfreqbin = desired_nfreq + 1;
+end
 fres = segleng/2;
 
 [ndum,npat]=size(proj);
@@ -168,7 +171,7 @@ else
 end
 
 % compute wPLI
-wpli = wpli_numer ./ wpli_denom;
+wpli = abs(wpli_numer) ./ wpli_denom;
 wpli = permute(wpli, [3, 1, 2]);
 
 for f=1:maxfreqbin

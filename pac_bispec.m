@@ -3,7 +3,7 @@
 %                are shown in Zandvoort and Nolte, 2021.
 %
 % Inputs:
-%  data   - nchan x ntimepoints x ntrials ROI data, requires prior source reconstruction 
+%  data   - (nchan x ntimepoints x ntrials) or (nchan x ntimepoints * ntrials) ROI data, requires prior source reconstruction 
 %  params - Set containing parameters for bispectrum computation
 %  
 % Outputs:
@@ -12,7 +12,8 @@
 %   b_orig_norm - ROI x ROI bicoherence (normalized by threenorm)
 %   b_anti_norm - ROI x ROI antisymmetrized bicoherence (normalized by threenorm)
 %
-% Copyright (C) Franziska Pellegrini, franziska.pellegrini@charite.de
+% Copyright (C) Franziska Pellegrini, franziska.pellegrini@charite.de,
+%               Tien Dung Nguyen, tien-dung.nguyen@charite.de
 
 function [b_orig, b_anti, b_orig_norm,b_anti_norm] = pac_bispec(data, params)
 
@@ -38,7 +39,11 @@ frqs_high = frqs(inds_high);
 [m, n] = ndgrid(frqs_low, frqs_high);
 frqs_combs = [m(:),n(:)]; 
 n_combs = size(frqs_combs, 1);
-warning('PAC is going to be estimated on %d frequency pair(s).', n_combs);
+if n_combs > 50
+    % according to our test simulations, the computation time scales linearly with the number of frequency pairs times 2, assuming no other ongoing CPU-heavy processes
+    time_est = 2 * n_combs; 
+    warning('PAC is going to be estimated on %d frequency pair(s). Estimated time: %d seconds', n_combs, time_est);
+end
 
 freqinds_low = zeros(n_combs, 2);
 freqinds_up = zeros(n_combs, 2);
@@ -70,7 +75,7 @@ for proi = 1:nroi
         [bs_low,~] = data2bs_event(X(:,:)', segleng, segshift, epleng, freqinds_low);
         biv_orig_low = ([abs(bs_low(1, 2, 2, :)) abs(bs_low(2, 1, 1, :))]);
         xx = bs_low - permute(bs_low, [2 1 3, 4]);
-        biv_anti_low =([abs(xx(1, 2, 2, :)) abs(xx(2, 1, 1, :))]);
+        biv_anti_low = ([abs(xx(1, 2, 2, :)) abs(xx(2, 1, 1, :))]);
         
         % normalized by threenorm
         [RTP_low,~] = data2bs_threenorm(X(:,:)', segleng, segshift, epleng, freqinds_low);
