@@ -239,22 +239,12 @@ if strcmpi(g.snippet, 'on') && isempty(intersect(g.methods, {'PAC'})) && strcmpi
     snip_eps = snippet_length/(size(EEG.data,2)/EEG.srate); % n epochs in snippet
     nsnips = floor(EEG.trials/snip_eps);
     if nsnips < 1
-        error('Snippet length cannot exceed data length.')
-    end
-    diff = (EEG.trials * EEG.pnts/EEG.srate) - (nsnips * EEG.pnts/EEG.srate * snip_eps);
-    if diff ~= 0
-        warning(strcat(int2str(diff), ' seconds are thrown away.'));
-    end
-
-    source_roi_data_save = EEG.roi.source_roi_data;
-    for isnip = 1:nsnips
-        roi_snip = source_roi_data_save(:,:,(isnip-1)* snip_eps + 1 : (isnip-1)* snip_eps + snip_eps); % cut source data into snippets
-        EEG.roi.source_roi_data = single(roi_snip);
-        EEG = roi_connect(EEG, 'morder', g.morder, 'naccu', g.naccu, 'methods', g.methods,'freqresolution', g.freqresolution, 'roi_selection', g.roi_selection); % compute connectivity over one snippet
-        for fc = 1:n_conn_metrics 
-            fc_name = g.methods{fc};
-            fc_matrix = EEG.roi.(fc_name);
-            conn_matrices_snips{isnip,fc} = fc_matrix; % store each connectivity metric for each snippet in separate structure
+        warning('Snippet length cannot exceed data length. Using the whole data length.')
+        EEG = roi_connect(EEG, 'morder', g.morder, 'naccu', g.naccu, 'methods', g.methods,'freqresolution',g.freqresolution);
+    else
+        diff = (EEG.trials * EEG.pnts/EEG.srate) - (nsnips * EEG.pnts/EEG.srate * snip_eps);
+        if diff ~= 0
+            warning(strcat(int2str(diff), ' seconds are thrown away.'));
         end
 
         if strcmpi(g.firstsnippet, 'on')
