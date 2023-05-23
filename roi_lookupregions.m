@@ -75,10 +75,13 @@ else
 end
 
 indNet = [];
+len    = 0;
 for iNet = 1:length(allnetworknames)
     if contains(networkname, allnetworknames{iNet})
-        indNet = iNet;
-        break
+        if length(  allnetworknames{iNet} ) > len
+            indNet = iNet;
+            len    = length( allnetworknames{iNet} );
+        end
     end
 end
 

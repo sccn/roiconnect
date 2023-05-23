@@ -80,7 +80,7 @@ end
 if isempty(g.labels)
     if strcmpi(g.brainimg, 'on')
         disp('Cannot plot on brain with area labels')
-        g.brainimg = 'off';
+        g.brainimg = 'off';g
     end
 end
 
@@ -193,6 +193,7 @@ end
 
 % rename labels
 % -------------
+if ~strcmpi(g.brainimg, 'off') % CTC added .... to branch around code if not plotting
 if isempty(g.labels)
     for iPnt = 1:length(anglesInit)
         g.labels{iPnt} = sprintf('  Area %d', iPnt);
@@ -205,7 +206,7 @@ else
         g.labels{iPnt} = [ ' ' g.labels{iPnt} ];
     end
 end
-
+end % CTC added .... to branch around above code if not plotting
 warning off;
 if isempty(limits)
     limits(2) = max(array(:));
