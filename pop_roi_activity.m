@@ -23,6 +23,7 @@
 %  'freqresolution'   - [integer] Desired frequency resolution (in number of frequencies). If
 %                       specified, the signal is zero padded accordingly.
 %                       Default is 0 (means no padding).
+%  'chansel'          - [cell array of string] channel selection. Default is all.
 %
 % Other optional inputs:
 %  All ROI_ACTIVITY parameters are accepted as input and passed on.
