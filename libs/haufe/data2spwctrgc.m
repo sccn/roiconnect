@@ -1,4 +1,4 @@
-function [conn, nlags] = data2spwctrgc(data, fres, nlags, cond, nboot, maxfreq, output, verbose)
+function [conn, nlags] = data2spwctrgc(data, fres, nlags, cond, nboot, maxfreq, output, verbose, varargin)
 % Epoched time series data to spectral pairwise-conditional time-reversed Granger causality
 % and other useful quantities (cross-spectrum, (time reversed) directed
 % transfer function, (time reversed) partial directed coherence)
@@ -37,6 +37,12 @@ function [conn, nlags] = data2spwctrgc(data, fres, nlags, cond, nboot, maxfreq, 
 % Barnett, L., & Seth, A. K. (2014). The MVGC multivariate Granger causality
 % toolbox: a new approach to Granger-causal inference. Journal of
 % neuroscience methods, 223, 50-68.
+
+% decode input parameters
+% -----------------------
+g = finputcheck(varargin, { ...
+    'freqresolution'  'integer'  { }  0}, 'data2spwctrgc'); 
+if ischar(g), error(g); end
 
 [nchan, ndat, nepo] = size(data);
 
@@ -95,6 +101,7 @@ end
 CSpara = [];
 CSpara.subave = 0;
 CSpara.mywindow = hanning(ndat)./sqrt(hanning(ndat)'*hanning(ndat));
+CSpara.freqresolution = g.freqresolution;
 
 clear TRGC GC TRPDC PDC TRDTF DTF CS COH wPLI
 
@@ -108,6 +115,8 @@ if abs(nboot) < 1 % no bootstrap
     CS = data2cs_event(data(:, :)',ndat, ndat - (floor(ndat/2)), ndat , [], CSpara);
     ASR = log(norm(imag(CS(:)))/norm(real(CS(:))));
     fprintf('ASR: %1.4f\n', ASR);
+
+    maxfreq = size(CS,3);
 
     if ~isempty(intersect(output, {'COH'}))
         clear COH
