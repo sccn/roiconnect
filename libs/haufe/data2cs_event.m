@@ -171,7 +171,7 @@ else
 end
 
 % compute wPLI
-wpli = wpli_numer ./ wpli_denom;
+wpli = abs(wpli_numer) ./ wpli_denom;
 wpli = permute(wpli, [3, 1, 2]);
 
 for f=1:maxfreqbin
