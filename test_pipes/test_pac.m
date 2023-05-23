@@ -33,7 +33,7 @@ EEG3 = pop_roi_connect(EEG, 'methods', {'PAC'}, 'fcomb', fcomb, 'bs_outopts', 5)
 
 %% Test bispectrum for frequency band inputs
 low = [4 8];
-high = [48 50];
+high = [9 10];
 
 fcomb.low = low;
 fcomb.high = high;
