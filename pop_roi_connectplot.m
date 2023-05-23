@@ -20,6 +20,8 @@
 %                           'crossspecpow' : Average cross-spectrum power for each ROI
 %                           'mic' : Maximized Imaginary Coherency for each ROI
 %                           'mim' : Multivariate Interaction Measure for each ROI
+%                           'pac' : Phase-amplitude coupling for a certain frequency (band) combination based on bicoherence
+%                           'pac_anti': Phase-amplitude coupling for a certain frequency (band) combination based on the antisymmetrized bicoherence
 %  'freqrange'            - [min max] frequency range in Hz. Default is to plot broadband power.
 %  'smooth'               - [float] smoothing factor for cortex surface plotting
 %  'plotcortex'           - ['on'|'off'] plot results on smooth cortex. Default is 'on'
@@ -197,8 +199,29 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         splot(end  ).psd    = 0;
         splot(end  ).plot3d = plot3dFlag;
     end
-   
 
+    if isfield(EEG.roi, 'PAC')
+        splot(end+1).label    = 'ROI to ROI Phase-amplitude coupling';
+        splot(end  ).labelshort = 'Phase-amplitude coupling';
+        splot(end  ).acronym  = 'PAC'; % PAC based on bicoherence
+        splot(end  ).unit   = 'PAC'; % not used yet
+        splot(end  ).cortex = cortexFlag;
+        splot(end  ).matrix = 1;
+        splot(end  ).psd    = 0;
+        splot(end  ).plot3d = plot3dFlag;
+    end
+
+    if isfield(EEG.roi, 'PAC')
+        splot(end+1).label    = 'ROI to ROI Phase-amplitude coupling';
+        splot(end  ).labelshort = 'Phase-amplitude coupling';
+        splot(end  ).acronym  = 'PAC_anti'; % PAC based on antisymmetrized bicoherence
+        splot(end  ).unit   = 'PAC'; % not used yet
+        splot(end  ).cortex = cortexFlag;
+        splot(end  ).matrix = 1;
+        splot(end  ).psd    = 0;
+        splot(end  ).plot3d = plot3dFlag;
+    end
+   
     if nargin < 2
 
         cb_select = [ 'usrdat = get(gcf, ''userdata'');' ...
@@ -395,6 +418,27 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
                 plotPSDFreq = S.freqs(frq_inds);
                 plotPSD     = PS(frq_inds, :);
                 matrix      = PSarea2area;
+
+            case {'pac'}
+                if isfield(S.PAC, 'b_orig_norm')
+                    matrix = S.PAC.b_orig_norm;
+                elseif isfield(S.PAC, 'b_orig')
+                    matrix = S.PAC.b_orig;
+                else
+                    error('PAC (original bicoherence) cannot be plotted, field is missing.')
+                end
+                cortexPlot = mean(matrix, 2);
+
+            case {'pac_anti'}
+                if isfield(S.PAC, 'b_anti_norm')
+                    matrix = S.PAC.b_anti_norm;
+                elseif isfield(S.PAC, 'b_anti')
+                    matrix = S.PAC.b_anti;
+                else
+                    error('PAC (antisymmetrized bicoherence) cannot be plotted, field is missing.')
+                end
+                cortexPlot = mean(matrix, 2);
+                
         end
 
         % get seed
@@ -721,7 +765,7 @@ function roi_plotcoloredlobes( EEG, matrix, titleStr, measure, hemisphere, group
     else
         set(gca,'ytick',1:n_roi_labels,'yticklabel',labels(hem_idx{1}:hem_idx{2}:n_roi_labels), 'fontsize', 7, 'TickLength',[0.015, 0.02], 'LineWidth',0.75);
     end
-    h = title([ 'ROI to ROI ' upper(measure) ' (' titleStr ')' ]);
+    h = title([ 'ROI to ROI ' upper(replace_underscores(measure)) ' (' titleStr ')' ]);
     set(h, 'fontsize', 16);
     xtickangle(90)
 end 

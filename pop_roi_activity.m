@@ -12,14 +12,14 @@
 %  'sourcemodel' - [string] source model file
 %
 % Optional inputs:
-%  'epochlen' - [float] epoch length (default is 2 seconds). ROIconnect
-%                  has not been tested with other epoch lenghts.
-%  'resample' - [integer] resample to the desired sampling rate. Default
-%                  is 100. Adujst the model order accordingly. ROIconnect
-%                  has only be tested with 100 Hz sampling rates.
-%  'fooof'     - ['on'|'off'] enable FOOOF analysis. Default is 'off'.
-%  'fooof_frange' - [''] FOOOF fitting range. Default is [1 30] like in the
-%                        example.
+%  'epochlen'         - [float] epoch length (default is 2 seconds). ROIconnect
+%                       has not been tested with other epoch lenghts.
+%  'resample'         - [integer] resample to the desired sampling rate. Default
+%                       is 100. Adujst the model order accordingly. ROIconnect
+%                       has only be tested with 100 Hz sampling rates.
+%  'fooof'            - ['on'|'off'] enable FOOOF analysis (the method is described here: https://fooof-tools.github.io/fooof/). Default is 'off'.
+%  'fooof_frange'     - [ ] FOOOF fitting range. Default is [1 30] like in the MATLAB example: 
+%                       https://github.com/fooof-tools/fooof_mat/blob/main/examples/fooof_example_one_spectrum.m.
 %  'freqresolution'   - [integer] Desired frequency resolution (in number of frequencies). If
 %                       specified, the signal is zero padded accordingly.
 %                       Default is 0 (means no padding).
@@ -258,8 +258,10 @@ if EEG.trials == 1
     EEG = eeg_regepochs(EEG, recurrence, [0 2]);
 end
 
+chansel = {};
 if isempty(g.leadfield)
     g.leadfield = EEG.dipfit.sourcemodel;
+    chansel   = EEG.dipfit.sourcemodel.label;
 end
 if isstruct(g.leadfield) && isfield(g.leadfield, 'file')
     sourceModelFile = g.leadfield.file;
@@ -276,7 +278,7 @@ end
 EEG = roi_activity(EEG, 'leadfield', g.leadfield, 'headmodel', EEG.dipfit.hdmfile, ...
     'model', g.model, 'modelparams', g.modelparams, 'sourcemodel', sourceModelFile, ...
     'sourcemodel2mni', sourceModel2MNI, 'nPCA', g.nPCA,'fooof', g.fooof, 'fooof_frange', g.fooof_frange, ...
-    'freqresolution', g.freqresolution, 'sourcemodelatlas', g.atlas, moreargs{:});
+    'freqresolution', g.freqresolution, 'sourcemodelatlas', g.atlas, 'chansel', chansel, moreargs{:});
 
 if nargout > 1
     for iOption = 1:2:length(options)
