@@ -44,6 +44,8 @@
 %                          3 - only store: b_orig_norm, b_anti_norm
 %                          4 - only store: b_orig, b_orig_norm
 %                          5 - only store: b_anti, b_anti_norm
+%  'roi_selection'  - [cell array of integers] Cell array of ROI indices {1, 2, 3, ...} indicating for which regions (ROIs) connectivity should be computed. 
+%                     Default is all (set to EEG.roi.nROI).
 %
 % Output:
 %  EEG - EEGLAB dataset with field 'roi' containing connectivity info.
@@ -161,8 +163,9 @@ g = finputcheck(options, ...
       'snip_length'    'integer'  { }                           60; 
       'fcsave_format'  'string'   { 'mean_snips', 'all_snips'}  'mean_snips';
       'freqresolution' 'integer'  { }                           0; 
-      'fcomb'          'struct'  { }                           struct; ...
-      'bs_outopts'     'integer'  { }                           1}, 'pop_roi_connect');
+      'fcomb'          'struct'   { }                           struct; 
+      'bs_outopts'     'integer'  { }                           1; 
+      'roi_selection'  'cell'     { }                           {EEG.roi.nROI} }, 'pop_roi_connect');
 if ischar(g), error(g); end
 
 % process multiple datasets
@@ -264,7 +267,7 @@ else
 end
 
 if ~isempty(intersect(g.methods, {'PAC'}))
-    EEG = roi_pac(EEG, g.fcomb, g.bs_outopts);
+    EEG = roi_pac(EEG, g.fcomb, g.bs_outopts, g.roi_selection);
 end
 
 if nargout > 1

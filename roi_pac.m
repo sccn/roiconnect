@@ -16,12 +16,14 @@
 %                          3 - only store: b_orig_norm, b_anti_norm
 %                          4 - only store: b_orig, b_orig_norm
 %                          5 - only store: b_anti, b_anti_norm
+%  'roi_selection'  - [cell array of integers] Cell array of ROI indices {1, 2, 3, ...} indicating for which regions (ROIs) connectivity should be computed. 
+%                     Default is all (set to EEG.roi.nROI).
 %
 % Output:
 %   EEG - EEG structure with EEG.roi field updated and now containing
 %         connectivity information.
 
-function EEG = roi_pac(EEG, fcomb, bs_outopts)
+function EEG = roi_pac(EEG, fcomb, bs_outopts, roi_selection)
 
     if nargin < 2
         help roi_pac;
@@ -46,6 +48,7 @@ function EEG = roi_pac(EEG, fcomb, bs_outopts)
 
     [~, ndat, ~] = size(data);
     nROI = EEG.roi.nROI;
+    nPCA = EEG.roi.nPCA;
     segleng = ndat;
     segshift = floor(ndat/2);
     epleng = ndat;
@@ -58,6 +61,16 @@ function EEG = roi_pac(EEG, fcomb, bs_outopts)
     params.epleng = epleng;
     params.fcomb = fcomb;
     params.fs = fs;
+    params.roi_selection = roi_selection;
+    
+    % only keeep first PC
+    if nPCA > 1
+        warning('Only the first principal component will be used to determine PAC')
+        data = data(1:nPCA:end, :, :);
+    end
+
+    % choose ROIs if desired
+    % ...
     
     [b_orig, b_anti, b_orig_norm,b_anti_norm] = pac_bispec(data, params);
     
