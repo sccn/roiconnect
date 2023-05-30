@@ -35,9 +35,9 @@
 %  'chansel'          - [cell array of string] channel selection. Default is all.
 %  'exportvoxact'     - ['on'|'off'] export voxel activity in EEG.roi.source_voxel_data
 %                       These array are huge, so the default is 'off'.
-%  'fooof'            - ['on'|'off'] enable FOOOF analysis. Default is 'off'.
-%  'fooof_frange'     - [ ] FOOOF fitting range. Default is [1 30] like in the
-%                      example.
+%  'fooof'            - ['on'|'off'] enable FOOOF analysis (the method is described here: https://fooof-tools.github.io/fooof/). Default is 'off'.
+%  'fooof_frange'     - [ ] FOOOF fitting range. Default is [1 30] like in the MATLAB example: 
+%                       https://github.com/fooof-tools/fooof_mat/blob/main/examples/fooof_example_one_spectrum.m.
 %  'freqresolution'   - [integer] Desired frequency resolution (in number of frequencies). If
 %                       specified, the signal is zero padded accordingly.
 %                       Default is 0 (means no padding).

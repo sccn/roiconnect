@@ -28,8 +28,13 @@ function [norms,nave]=data2bs_threenorm(data,segleng,segshift,epleng,freqpairs,p
 % nave: number of averages
 
 [ndat,nchan]=size(data);
-maxfreqbin=sum(freqpairs)-1;
-f1=freqpairs(1);f2=freqpairs(2);
+[nf, ndum] = size(freqpairs);
+
+if nf == 1
+    maxfreqbin=sum(freqpairs)-1;
+else
+    maxfreqbin = sum(max(freqpairs(:, 1)) + max(freqpairs(:, 2) - 1));
+end
 mywindow=repmat(hanning(segleng),1,nchan);
 kontrand=0;
 nrun=1;
@@ -43,16 +48,14 @@ if nargin>5
     
 end
 
-norms=zeros(nchan,nchan,nchan);
-
 nep=floor(ndat/epleng);
 
 nseg=floor((epleng-segleng)/segshift)+1; %total number of segments
 datafft=zeros(maxfreqbin,nchan,nseg,nep);
-norm1=zeros(nchan,1);
-norm2=zeros(nchan,1);
-norm3=zeros(nchan,1);
-norms=zeros(nchan,nchan,nchan);
+norm1 = zeros(nchan, nf);
+norm2 = zeros(nchan, nf);
+norm3 = zeros(nchan, nf);
+norms = zeros(nchan, nchan, nchan, nf);
 
 for j=1:nep
     dataep=data((j-1)*epleng+1:j*epleng,:);
@@ -68,9 +71,12 @@ nave=0;
 for j=1:nep
     for i=1:nseg
         for k=1:nchan
-            norm1(k)=norm1(k)+abs(datafft(f1,k,i,j)).^3;
-            norm2(k)=norm2(k)+abs(datafft(f2,k,i,j)).^3;
-            norm3(k)=norm3(k)+abs(datafft(f1+f2-1,k,i,j)).^3;
+            for f = 1:nf
+                f1 = freqpairs(f, 1); f2 = freqpairs(f, 2);
+                norm1(k, f) = norm1(k, f) + abs(datafft(f1, k, i,j )).^3;
+                norm2(k, f) = norm2(k, f) + abs(datafft(f2, k, i, j)).^3;
+                norm3(k, f) = norm3(k, f) + abs(datafft(f1+f2-1, k, i, j)).^3;
+            end
         end
         nave=nave+1;
     end   
@@ -82,7 +88,7 @@ norm3=(norm3/nave).^(1/3);
 for i1=1:nchan
     for i2=1:nchan
         for i3=1:nchan
-            norms(i1,i2,i3)=norm1(i1)*norm2(i2)*norm3(i3);
+            norms(i1, i2, i3, :) = norm1(i1, :) .* norm2(i2, :) .* norm3(i3, :);
         end
     end
 end
