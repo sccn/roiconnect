@@ -65,14 +65,22 @@ function EEG = roi_pac(EEG, fcomb, bs_outopts, roi_selection)
     
     % only keeep first PC
     if nPCA > 1
-        warning('Only the first principal component will be used to determine PAC')
+        warning('Only the first principal component will be used to determine PAC.')
         data = data(1:nPCA:end, :, :);
     end
 
     % choose ROIs if desired
-    % ...
-    
-    [b_orig, b_anti, b_orig_norm,b_anti_norm] = pac_bispec(data, params);
+    if ~isempty(roi_selection)
+        nROI = length(roi_selection);
+        data_new = zeros(nROI, size(data, 2), size(data, 3));
+        for iroi = 1:nROI
+            data_new(iroi, :, :) = data(roi_selection{iroi}, :, :);
+        end
+        data = data_new;
+        params.nROI = nROI;
+        EEG.roi.PAC.roi_selection = roi_selection;
+    end
+    [b_orig, b_anti, b_orig_norm, b_anti_norm] = pac_bispec(data, params);
     
     % options which bispectral tensors to store
     switch bs_outopts
