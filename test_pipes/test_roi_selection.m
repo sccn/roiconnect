@@ -18,6 +18,9 @@ EEG = pop_dipfit_settings( EEG, 'hdmfile',fullfile(eeglabp, 'plugins','dipfit','
 
 EEG = pop_leadfield(EEG, 'sourcemodel',fullfile(eeglabp,'functions','supportfiles','head_modelColin27_5003_Standard-10-5-Cap339.mat'), ...
     'sourcemodel2mni',[0 -24 -45 0 0 -1.5708 1000 1000 1000] ,'downsample',1);
+% EEG = pop_leadfield(EEG, 'sourcemodel',fullfile(eeglabp,'plugins','dipfit','LORETA-Talairach-BAs.mat'), ...
+%     'sourcemodel2mni',[0 -24 -45 0 0 -1.5708 1000 1000 1000] ,'downsample',1);
+
 EEG = pop_roi_activity(EEG, 'leadfield',EEG.dipfit.sourcemodel,'model','LCMV','modelparams',{0.05},'atlas','LORETA-Talairach-BAs','nPCA',3);
 
 %% Test PAC for a selection of ROIs
@@ -37,22 +40,24 @@ EEG2 = pop_roi_connect(EEG, 'methods', {'PAC'}, 'fcomb', fcomb, 'roi_selection',
 toc
 
 %% Test if PAC values are (exactly) the same
-% generate all possible combinations of ROI combinations
-[p,q] = meshgrid(cell2mat(roi_selection), cell2mat(roi_selection));
-roi_pairs = [p(:) q(:)]; 
+% add 'test_pipes/cmp_roi_selection' to path first
+cmp_roi_selection(roi_selection, EEG1.roi.PAC.b_orig_norm, EEG2.roi.PAC.b_orig_norm)
 
-roi_idx = 1:1:length(roi_selection);
-[p,q] = meshgrid(roi_idx, roi_idx);
-roi_idx_pairs = [p(:) q(:)]; 
-
-for ipair = 1:size(roi_pairs, 1)
-    if ~isequal(EEG1.roi.PAC.b_orig(roi_pairs(ipair, 1), roi_pairs(ipair, 2)), EEG2.roi.PAC.b_orig(roi_idx_pairs(ipair, 1), roi_idx_pairs(ipair, 2)))
-        disp(EEG1.roi.PAC.b_orig(roi_pairs(ipair, 1), roi_pairs(ipair, 2)))
-        disp(EEG2.roi.PAC.b_orig(roi_idx_pairs(ipair, 1), roi_idx_pairs(ipair, 2)))
-        fprintf('PAC values for the ROI combination [%d %d] are not exactly the same.\n', roi_pairs(ipair, :))
-    end
-end
-
-%% Test MIM for a selection of ROIs
+%% Test FC options for a selection of ROIs
+% Tested for: MIM, MIC, CS, wPLI, GC, TRGC, COH, PDC, TRPDC, DTF, TRDTF
 roi_selection = {1, 5, 11};
+tic
+EEG3 = pop_roi_connect(EEG, 'methods', {'MIM'}); % default option (MIM computed on all ROIs)
+toc
 
+tic
+EEG4 = pop_roi_connect(EEG, 'methods', {'MIM'}, 'roi_selection', roi_selection); % default option (MIM computed on all ROIs)
+toc
+
+%% Test if FC values are (exactly) the same (for some reason, MATLAB introduces some rounding errors sometimes..)
+% add 'test_pipes/cmp_roi_selection' to path first
+cmp_roi_selection(roi_selection, squeeze(EEG3.roi.MIM(10, :, :)), squeeze(EEG4.roi.MIM(10, :, :))) 
+
+%% Plot connectivity 
+pop_roi_connectplot(EEG4, 'measure', 'mim', 'plotcortex', 'off', 'plotmatrix', 'on', 'freqrange', [8 13]);
+pop_roi_connectplot(EEG4, 'measure', 'mim', 'plotcortex', 'off', 'plotmatrix', 'on', 'freqrange', [8 13], 'region', 'central'); % region option disabled
