@@ -11,7 +11,7 @@
 %  'naccu'     - [integer] number of accumulation for stats. Default is 0.
 %  'methods'   - [cell] Cell of strings corresponding to methods.
 %                       'CS'    : Cross spectrum
-%                       'COH'   : Coherence
+%                       'COH'   : Coherency
 %                       'GC'    : Granger Causality
 %                       'TRGC'  : Time-reversed Granger Causality
 %                       'wPLI'  : Weighted Phase Lag Index
