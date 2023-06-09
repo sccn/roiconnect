@@ -24,6 +24,8 @@
 %  'freqresolution'   - [integer] Desired frequency resolution (in number of frequencies). If
 %                       specified, the signal is zero padded accordingly.
 %                       Default is 0 (means no padding).
+%  'roi_selection'    - [cell array of integers] Cell array of ROI indices {1, 2, 3, ...} indicating for which regions (ROIs) connectivity should be computed. 
+%                       Default is empty (in this case, connectivity will be computed for all ROIs).
 %
 % Output:
 %   EEG - EEG structure with EEG.roi field updated and now containing
@@ -71,8 +73,9 @@ function EEG = roi_connect(EEG, varargin)
     g = finputcheck(varargin, { ...
         'morder'          'integer'  { }            20;
         'naccu'           'integer'  { }            0;
-        'methods'         'cell'     { }            {}; 
-        'freqresolution'  'integer'  { }            0}, 'roi_connect');    
+        'methods'         'cell'     { }            { }; 
+        'freqresolution'  'integer'  { }            0;
+        'roi_selection'   'cell'     { }            { }  }, 'roi_connect');    
     if ischar(g), error(g); end
     if isempty(g.naccu), g.naccu = 0; end
     tmpMethods = setdiff(g.methods, {  'CS' 'COH' 'GC' 'TRGC' 'wPLI' 'PDC' 'TRPDC' 'DTF' 'TRDTF' 'MIM' 'MIC' 'PAC'});
@@ -81,7 +84,11 @@ function EEG = roi_connect(EEG, varargin)
     end
 
     inds = {}; ninds = 0;
-    nROI = EEG.roi.nROI;
+    if isempty(g.roi_selection)
+        nROI = EEG.roi.nROI;
+    else
+        nROI = length(g.roi_selection);
+    end
     nPCA = EEG.roi.nPCA;
     for iroi = 1:nROI
         for jroi = (iroi+1):nROI
@@ -92,43 +99,57 @@ function EEG = roi_connect(EEG, varargin)
 
     % wPLI, MIC, MIM, GC and TRGC use data2strcgmim, remaining metrics use data2spwctrgc
     methodset1 = { 'wPLI' 'MIM' 'MIC' 'GC' 'TRGC' };
-    methodset2 = { 'CS' 'COH' 'PSD' 'PSDROI', 'PDC' 'TRPDC' 'DTF' 'TRDTF' };
+    methodset2 = { 'CS' 'COH' 'PSD' 'PSDROI' 'PDC' 'TRPDC' 'DTF' 'TRDTF' };
 
     tmpMethods1 = intersect(g.methods, methodset1);
     if ~isempty(tmpMethods1)
-        conn_mult = data2sctrgcmim(source_roi_data, EEG.pnts, g.morder, 0, g.naccu, [], inds, tmpMethods1, [], 'freqresolution', g.freqresolution);
+        if isempty(g.roi_selection)
+            conn_mult = data2sctrgcmim(source_roi_data, EEG.pnts, g.morder, 0, g.naccu, [], inds, tmpMethods1, [], 'freqresolution', g.freqresolution);
+        elseif ~isempty(g.roi_selection)
+            conn_mult = data2sctrgcmim(source_roi_data, EEG.pnts, g.morder, 0, g.naccu, [], inds, tmpMethods1, [], 'freqresolution', g.freqresolution, 'roi_selection', g.roi_selection, 'nPCA', nPCA);
+            EEG.roi.roi_selection = g.roi_selection;
+        end
         fields = fieldnames(conn_mult);
         for iField = 1:length(fields)
             EEG.roi.(fields{iField}) = conn_mult.(fields{iField});
         end
 
         % rearrange matrices
+        if isempty(g.roi_selection)
+            nROI = EEG.roi.nROI;
+        else
+            nROI = length(g.roi_selection);
+        end
         for iMethods = 1:length(tmpMethods1)
             if strcmpi(tmpMethods1{iMethods}, 'MIM') || strcmpi(tmpMethods1{iMethods}, 'MIC')
                 MI = EEG.roi.(tmpMethods1{iMethods})(:, :);
-                EEG.roi.(tmpMethods1{iMethods}) = get_connect_mat( MI, EEG.roi.nROI, +1);
+                EEG.roi.(tmpMethods1{iMethods}) = get_connect_mat( MI, nROI, +1);
             elseif  strcmpi(tmpMethods1{iMethods}, 'GC') || strcmpi(tmpMethods1{iMethods}, 'TRGC')
                 TRGCnet = EEG.roi.(tmpMethods1{iMethods})(:, :, 1) - EEG.roi.(tmpMethods1{iMethods})(:, :, 2);
-                EEG.roi.(tmpMethods1{iMethods}) = get_connect_mat( TRGCnet, EEG.roi.nROI, -1); 
+                EEG.roi.(tmpMethods1{iMethods}) = get_connect_mat( TRGCnet, nROI, -1); 
             else
-                MI = EEG.roi.(tmpMethods1{iMethods})(:, :);
-                EEG.roi.(tmpMethods1{iMethods}) = get_connect_mat( MI, EEG.roi.nROI, +1);
+                measure = rm_components(EEG.roi.(tmpMethods1{iMethods}), EEG.roi.nPCA, tmpMethods1{iMethods}); % only keep the first principal component
+                EEG.roi.(tmpMethods1{iMethods}) = measure;
             end
         end
     end
 
     tmpMethods2 = intersect(g.methods, methodset2);
     if ~isempty(tmpMethods2)
-        conn_mult = data2spwctrgc(source_roi_data, EEG.pnts, g.morder, 0, g.naccu, [], tmpMethods2, [], 'freqresolution', g.freqresolution);
+        if isempty(g.roi_selection)
+            conn_mult = data2spwctrgc(source_roi_data, EEG.pnts, g.morder, 0, g.naccu, [], tmpMethods2, [], 'freqresolution', g.freqresolution);
+        else
+            conn_mult = data2spwctrgc(source_roi_data, EEG.pnts, g.morder, 0, g.naccu, [], tmpMethods2, [], 'freqresolution', g.freqresolution, 'roi_selection', g.roi_selection, 'nPCA', nPCA);
+        end
         fields = fieldnames(conn_mult);
         for iField = 1:length(fields)
             EEG.roi.(fields{iField}) = conn_mult.(fields{iField});
         end
 
-        % rearrange matrices
+        % only keep the first principal component
         for iMethods = 1:length(tmpMethods2)
-            MI = EEG.roi.(tmpMethods2{iMethods})(:, :);
-            EEG.roi.(tmpMethods2{iMethods}) = get_connect_mat( MI, EEG.roi.nROI, +1);
+            measure = rm_components(EEG.roi.(tmpMethods2{iMethods}), EEG.roi.nPCA, tmpMethods2{iMethods}); % only keep the first principal component
+            EEG.roi.(tmpMethods2{iMethods}) = measure;
         end
     end
 
@@ -143,6 +164,15 @@ function EEG = roi_connect(EEG, varargin)
                 measure(:, iroi, jroi) = signVal * measureOri(:, iinds);
                 measure(:, jroi, iroi) = measureOri(:, iinds);
             end
+        end
+    end
+
+    function measure = rm_components(measure, nPCA, method)
+        % only keep the first PC
+        % measure has the size (n_freq, nROI*nPCA, nROI*nPCA)
+        if nPCA > 1
+            warning(strcat('Only the first principal component will be used to determine ', method))
+            measure = measure(:, 1:nPCA:end, 1:nPCA:end);
         end
     end
 end

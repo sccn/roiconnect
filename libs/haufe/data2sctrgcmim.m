@@ -33,12 +33,36 @@ function conn = data2sctrgcmim(data, fres, nlags, cond, nboot, maxfreq, inds, ou
 %  'freqresolution' - [integer]  Desired frequency resolution (in number of frequencies). If
 %                       specified, the signal is zero padded accordingly.
 %                       Default is 0 (means no padding).
+%  'roi_selection'  - [cell array of integers] Cell array of ROI indices {1, 2, 3, ...} indicating for which regions (ROIs) connectivity should be computed. 
+%                     Default is all (set to EEG.roi.nROI).
 
 % decode input parameters
 % -----------------------
 g = finputcheck(varargin, { ...
-    'freqresolution'  'integer'  { }  0}, 'data2sctrgcmim'); 
+    'freqresolution'  'integer'  { }    0;
+    'roi_selection'   'cell'     { }    { }; ...
+    'nPCA'            'integer'  { }    3 }, 'data2sctrgcmim'); 
 if ischar(g), error(g); end
+
+% choose ROIs if desired, take number of PCs into account
+if ~isempty(g.roi_selection)
+    nROI = length(g.roi_selection);
+    nPCA = g.nPCA;
+    data_new = zeros(nROI * nPCA, size(data, 2), size(data, 3));
+    
+    start_idx_new  = 1;
+    end_idx_new = nPCA;
+    for iroi = 1:nROI
+        end_idx = g.roi_selection{iroi} * nPCA;
+        start_idx = end_idx - (nPCA - 1);
+        data_new(start_idx_new:end_idx_new, :, :) = data(start_idx:end_idx, :, :);
+
+        start_idx_new = start_idx_new + nPCA;
+        end_idx_new = start_idx_new + nPCA - 1;
+    end
+    data = data_new;
+end
+
 [nchan, ndat, nepo] = size(data);
 
 if nargin < 2 || isempty(fres)

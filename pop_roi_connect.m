@@ -234,7 +234,7 @@ if strcmpi(g.snippet, 'on')
     for isnip = 1:nsnips
         roi_snip = source_roi_data_save(:,:,(isnip-1)* snip_eps + 1 : (isnip-1)* snip_eps + snip_eps); % cut source data into snippets
         EEG.roi.source_roi_data = single(roi_snip);
-        EEG = roi_connect(EEG, 'morder', g.morder, 'naccu', g.naccu, 'methods', g.methods,'freqresolution',g.freqresolution); % compute connectivity over one snippet
+        EEG = roi_connect(EEG, 'morder', g.morder, 'naccu', g.naccu, 'methods', g.methods,'freqresolution', g.freqresolution, 'roi_selection', g.roi_selection); % compute connectivity over one snippet
         for fc = 1:n_conn_metrics 
             fc_name = options{2}{fc};
             fc_matrix = EEG.roi.(fc_name);
@@ -263,7 +263,8 @@ if strcmpi(g.snippet, 'on')
         end
     end
 else
-    EEG = roi_connect(EEG, 'morder', g.morder, 'naccu', g.naccu, 'methods', g.methods,'freqresolution', g.freqresolution);
+    EEG = roi_connect(EEG, 'morder', g.morder, 'naccu', g.naccu, 'methods', g.methods,'freqresolution', g.freqresolution, ...
+        'roi_selection', g.roi_selection);
 end
 
 if ~isempty(intersect(g.methods, {'PAC'}))
