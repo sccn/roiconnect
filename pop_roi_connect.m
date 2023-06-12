@@ -17,7 +17,9 @@
 %  'naccu'          - [integer]  Number of accumulation for stats. Default is 0.
 %  'methods'        - [cell] Cell of strings corresponding to methods.
 %                       'CS'    : Cross spectrum
-%                       'COH'   : Coherency
+%                       'aCOH'  : Coherence
+%                       'cCOH'  : (complex-valued) coherency
+%                       'iCOH'  : absolute value of the imaginary part of coherency
 %                       'GC'    : Granger Causality
 %                       'TRGC'  : Time-reversed Granger Causality
 %                       'wPLI'  : Weighted Phase Lag Index
@@ -135,6 +137,9 @@ if nargin < 2
     methods = {};
     if out.cs,    methods = [ methods { 'CS' } ]; end
     if out.coh,   methods = [ methods { 'COH' } ]; end
+    if out.ccoh,   methods = [ methods { 'cCOH' } ]; end
+    if out.acoh,   methods = [ methods { 'aCOH' } ]; end
+    if out.icoh,   methods = [ methods { 'iCOH' } ]; end
     if out.gc  ,  methods = [ methods { 'GC' } ]; end
     if out.trgc,  methods = [ methods { 'TRGC' } ]; end
     if out.wpli,  methods = [ methods { 'wPLI' } ]; end

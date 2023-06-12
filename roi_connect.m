@@ -11,7 +11,9 @@
 %  'naccu'     - [integer] number of accumulation for stats. Default is 0.
 %  'methods'   - [cell] Cell of strings corresponding to methods.
 %                       'CS'    : Cross spectrum
-%                       'COH'   : Coherency
+%                       'aCOH'  : Coherence
+%                       'cCOH'  : (complex-valued) coherency
+%                       'iCOH'  : absolute value of the imaginary part of coherency
 %                       'GC'    : Granger Causality
 %                       'TRGC'  : Time-reversed Granger Causality
 %                       'wPLI'  : Weighted Phase Lag Index
@@ -78,7 +80,7 @@ function EEG = roi_connect(EEG, varargin)
         'roi_selection'   'cell'     { }            { }  }, 'roi_connect');    
     if ischar(g), error(g); end
     if isempty(g.naccu), g.naccu = 0; end
-    tmpMethods = setdiff(g.methods, {  'CS' 'COH' 'GC' 'TRGC' 'wPLI' 'PDC' 'TRPDC' 'DTF' 'TRDTF' 'MIM' 'MIC' 'PAC'});
+    tmpMethods = setdiff(g.methods, {  'CS' 'COH' 'cCOH' 'aCOH' 'iCOH' 'GC' 'TRGC' 'wPLI' 'PDC' 'TRPDC' 'DTF' 'TRDTF' 'MIM' 'MIC' 'PAC'});
     if ~isempty(tmpMethods)
         error('Unknown methods %s', vararg2str(tmpMethods))
     end
@@ -97,9 +99,17 @@ function EEG = roi_connect(EEG, varargin)
         end
     end
 
+
+    if ~isempty(intersect(g.methods, {'COH'}))
+        warning("'COH' is not supported anymore and will be replaced with aCOH (coherence). " + ...
+            "Please double-check with the documentation if this is what you want.")
+        coh_idx = strcmpi(g.methods, 'COH');
+        g.methods{coh_idx} = 'aCOH';
+    end
+
     % wPLI, MIC, MIM, GC and TRGC use data2strcgmim, remaining metrics use data2spwctrgc
     methodset1 = { 'wPLI' 'MIM' 'MIC' 'GC' 'TRGC' };
-    methodset2 = { 'CS' 'COH' 'PSD' 'PSDROI' 'PDC' 'TRPDC' 'DTF' 'TRDTF' };
+    methodset2 = { 'CS' 'aCOH' 'iCOH' 'cCOH' 'PSD' 'PSDROI' 'PDC' 'TRPDC' 'DTF' 'TRDTF' };
 
     tmpMethods1 = intersect(g.methods, methodset1);
     if ~isempty(tmpMethods1)
@@ -171,7 +181,7 @@ function EEG = roi_connect(EEG, varargin)
         % only keep the first PC
         % measure has the size (n_freq, nROI*nPCA, nROI*nPCA)
         if nPCA > 1
-            warning(strcat('Only the first principal component will be used to determine ', method))
+            warning(strcat("Only the first principal component will be used to determine ", method))
             measure = measure(:, 1:nPCA:end, 1:nPCA:end);
         end
     end
