@@ -1,7 +1,7 @@
 function [conn, nlags] = data2spwctrgc(data, fres, nlags, cond, nboot, maxfreq, output, verbose, varargin)
 % Epoched time series data to spectral pairwise-conditional time-reversed Granger causality
 % and other useful quantities (cross-spectrum, (time reversed) directed
-% transfer function, (time reversed) partial directed coherence)
+% transfer function, (time reversed) partial directed cCOHerence)
 %
 % conn.measures(:, ii, jj, :) refers to the flow from jj->ii
 %
@@ -41,8 +41,29 @@ function [conn, nlags] = data2spwctrgc(data, fres, nlags, cond, nboot, maxfreq, 
 % decode input parameters
 % -----------------------
 g = finputcheck(varargin, { ...
-    'freqresolution'  'integer'  { }  0}, 'data2spwctrgc'); 
+    'freqresolution'  'integer'  { }    0;
+    'roi_selection'   'cell'     { }    { }; ...
+    'nPCA'            'integer'  { }    3  }, 'data2spwctrgc'); 
 if ischar(g), error(g); end
+
+% choose ROIs if desired, take number of PCs into account
+if ~isempty(g.roi_selection)
+    nROI = length(g.roi_selection);
+    nPCA = g.nPCA;
+    data_new = zeros(nROI * nPCA, size(data, 2), size(data, 3));
+    
+    start_idx_new  = 1;
+    end_idx_new = nPCA;
+    for iroi = 1:nROI
+        end_idx = g.roi_selection{iroi} * nPCA;
+        start_idx = end_idx - (nPCA - 1);
+        data_new(start_idx_new:end_idx_new, :, :) = data(start_idx:end_idx, :, :);
+
+        start_idx_new = start_idx_new + nPCA;
+        end_idx_new = start_idx_new + nPCA - 1;
+    end
+    data = data_new;
+end
 
 [nchan, ndat, nepo] = size(data);
 
@@ -103,7 +124,7 @@ CSpara.subave = 0;
 CSpara.mywindow = hanning(ndat)./sqrt(hanning(ndat)'*hanning(ndat));
 CSpara.freqresolution = g.freqresolution;
 
-clear TRGC GC TRPDC PDC TRDTF DTF CS COH wPLI
+clear TRGC GC TRPDC PDC TRDTF DTF CS aCOH iCOH cCOH wPLI
 
 if abs(nboot) < 1 % no bootstrap
 
@@ -118,12 +139,14 @@ if abs(nboot) < 1 % no bootstrap
 
     maxfreq = size(CS,3);
 
-    if ~isempty(intersect(output, {'COH'}))
-        clear COH
+    if ~isempty(intersect(output, {'cCOH', 'iCOH', 'aCOH'}))
+        clear cCOH iCOH aCOH
         for ifreq = 1:maxfreq
             clear pow
             pow = real(diag(CS(:,:,ifreq)));
-            COH(:,:,ifreq) = CS(:,:,ifreq)./ sqrt(pow*pow');
+            cCOH(:,:,ifreq) = CS(:,:,ifreq) ./ sqrt(pow*pow');
+            aCOH(:,:,ifreq) = abs(CS(:,:,ifreq)) ./ sqrt(pow*pow');
+            iCOH(:,:,ifreq) = abs(imag(CS(:,:,ifreq) ./ sqrt(pow*pow')));
         end
     end
 
@@ -324,15 +347,19 @@ else % bootstrap
             CS(:, :, :, iboot) = CS_(:, :, 1:maxfreq);
         end
 
-        if ~isempty(intersect(output, {'COH'}))
-            clear COH_
+        if ~isempty(intersect(output, {'cCOH', 'aCOH', 'iCOH'}))
+            clear cCOH_ aCOH_ iCOH_
             for ifreq = 1:maxfreq
                 clear pow
                 pow = real(diag(CS_(:,:,ifreq)));
-                COH_(:,:,ifreq) = CS_(:,:,ifreq)./ sqrt(pow*pow');
+                cCOH_(:,:,ifreq) = CS_(:,:,ifreq) ./ sqrt(pow*pow');
+                aCOH_(:,:,ifreq) = abs(CS_(:,:,ifreq)) ./ sqrt(pow*pow');
+                iCOH_(:,:,ifreq) = abs(imag(CS_(:,:,ifreq) ./ sqrt(pow*pow')));
             end
-            if ~isempty(intersect(output, {'COH'}))
-                COH(:, :, :, iboot) = COH_;
+            if ~isempty(intersect(output, {'cCOH', 'aCOH', 'COH'}))
+                cCOH(:, :, :, iboot) = cCOH_;
+                aCOH(:, :, :, iboot) = aCOH_;
+                iCOH(:, :, :, iboot) = iCOH_;
             end
         end
 
@@ -498,8 +525,10 @@ if ~isempty(intersect(output, {'CS'}))
     CS = permute(CS, [3 1 2 4]);
 end
 
-if ~isempty(intersect(output, {'COH'}))
-    COH = permute(COH, [3 1 2 4]);
+if ~isempty(intersect(output, {'cCOH', 'aCOH', 'iCOH'}))
+    cCOH = permute(cCOH, [3 1 2 4]);
+    aCOH = permute(aCOH, [3 1 2 4]);
+    iCOH = permute(iCOH, [3 1 2 4]);
 end
 
 clear out

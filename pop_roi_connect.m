@@ -17,7 +17,9 @@
 %  'naccu'          - [integer]  Number of accumulation for stats. Default is 0.
 %  'methods'        - [cell] Cell of strings corresponding to methods.
 %                       'CS'    : Cross spectrum
-%                       'COH'   : Coherence
+%                       'aCOH'  : Coherence
+%                       'cCOH'  : (complex-valued) coherency
+%                       'iCOH'  : absolute value of the imaginary part of coherency
 %                       'GC'    : Granger Causality
 %                       'TRGC'  : Time-reversed Granger Causality
 %                       'wPLI'  : Weighted Phase Lag Index
@@ -44,6 +46,8 @@
 %                          3 - only store: b_orig_norm, b_anti_norm
 %                          4 - only store: b_orig, b_orig_norm
 %                          5 - only store: b_anti, b_anti_norm
+%  'roi_selection'  - [cell array of integers] Cell array of ROI indices {1, 2, 3, ...} indicating for which regions (ROIs) connectivity should be computed. 
+%                     Default is empty (in this case, connectivity will be computed for all ROIs).
 %
 % Output:
 %  EEG - EEGLAB dataset with field 'roi' containing connectivity info.
@@ -133,6 +137,9 @@ if nargin < 2
     methods = {};
     if out.cs,    methods = [ methods { 'CS' } ]; end
     if out.coh,   methods = [ methods { 'COH' } ]; end
+    if out.ccoh,   methods = [ methods { 'cCOH' } ]; end
+    if out.acoh,   methods = [ methods { 'aCOH' } ]; end
+    if out.icoh,   methods = [ methods { 'iCOH' } ]; end
     if out.gc  ,  methods = [ methods { 'GC' } ]; end
     if out.trgc,  methods = [ methods { 'TRGC' } ]; end
     if out.wpli,  methods = [ methods { 'wPLI' } ]; end
@@ -161,8 +168,9 @@ g = finputcheck(options, ...
       'snip_length'    'integer'  { }                           60; 
       'fcsave_format'  'string'   { 'mean_snips', 'all_snips'}  'mean_snips';
       'freqresolution' 'integer'  { }                           0; 
-      'fcomb'          'struct'  { }                           struct; ...
-      'bs_outopts'     'integer'  { }                           1}, 'pop_roi_connect');
+      'fcomb'          'struct'   { }                           struct; 
+      'bs_outopts'     'integer'  { }                           1; 
+      'roi_selection'  'cell'     { }                           { } }, 'pop_roi_connect');
 if ischar(g), error(g); end
 
 % process multiple datasets
@@ -231,7 +239,7 @@ if strcmpi(g.snippet, 'on')
     for isnip = 1:nsnips
         roi_snip = source_roi_data_save(:,:,(isnip-1)* snip_eps + 1 : (isnip-1)* snip_eps + snip_eps); % cut source data into snippets
         EEG.roi.source_roi_data = single(roi_snip);
-        EEG = roi_connect(EEG, 'morder', g.morder, 'naccu', g.naccu, 'methods', g.methods,'freqresolution',g.freqresolution); % compute connectivity over one snippet
+        EEG = roi_connect(EEG, 'morder', g.morder, 'naccu', g.naccu, 'methods', g.methods,'freqresolution', g.freqresolution, 'roi_selection', g.roi_selection); % compute connectivity over one snippet
         for fc = 1:n_conn_metrics 
             fc_name = options{2}{fc};
             fc_matrix = EEG.roi.(fc_name);
@@ -260,11 +268,12 @@ if strcmpi(g.snippet, 'on')
         end
     end
 else
-    EEG = roi_connect(EEG, 'morder', g.morder, 'naccu', g.naccu, 'methods', g.methods,'freqresolution',g.freqresolution);
+    EEG = roi_connect(EEG, 'morder', g.morder, 'naccu', g.naccu, 'methods', g.methods,'freqresolution', g.freqresolution, ...
+        'roi_selection', g.roi_selection);
 end
 
 if ~isempty(intersect(g.methods, {'PAC'}))
-    EEG = roi_pac(EEG, g.fcomb, g.bs_outopts);
+    EEG = roi_pac(EEG, g.fcomb, g.bs_outopts, g.roi_selection);
 end
 
 if nargout > 1

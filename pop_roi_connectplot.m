@@ -318,6 +318,13 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
     if isempty(g.measure)
         error('You must define a measure to plot');
     end
+
+    if ~isempty(S.roi_selection)
+        warning("Plotting options ('region', 'hemisphere', 'grouphemispheres') are disabled when ROIs were explicitely selected.")
+        g.region = 'all';
+        g.hemisphere = 'all';
+        g.grouphemispheres = 'all';
+    end
     
     % colormap
     load cm17;
@@ -525,13 +532,18 @@ function [coordinate, seed_idx] = get_seedregion_coordinate(scouts, seed_idx, vc
 end
 
 function labels = get_labels(EEG)
-% retrieve labels from atlas
+    % retrieve labels from atlas
     labels = strings(1,length(EEG.roi.atlas.Scouts));
     for i = 1:length(labels)
         scout = struct2cell(EEG.roi.atlas.Scouts(i));
         labels(i) = char(scout(1));
     end
     labels = cellstr(labels);
+
+    % remove region labels that were not selected
+    if ~isempty(EEG.roi.roi_selection)
+        labels = labels(cell2mat(EEG.roi.roi_selection));
+    end
 end
 
 function new_labels = replace_underscores(labels)
@@ -556,6 +568,12 @@ function [colors, color_idxx, roi_idxx, labels_sorted, roi_loc] = get_colored_la
     roi_loc = strrep(roi_loc, 'RL', 'R1');
     roi_loc = strrep(roi_loc, 'L', '');
     roi_loc = strrep(roi_loc, 'R', '');
+
+    % remove regions that were not selected
+    if ~isempty(EEG.roi.roi_selection)
+        roi_loc = roi_loc(cell2mat(EEG.roi.roi_selection));
+    end
+
     try
         [color_idxx,roi_idxx] = sort(str2double(roi_loc));
         labels_sorted = labels(roi_idxx);
@@ -587,8 +605,7 @@ end
         
 function roi_plotcoloredlobes( EEG, matrix, titleStr, measure, hemisphere, grouphems, region)
     % check if Desikan-Killiany atlas is used
-    n_roi_labels = size(matrix, 1); % only end if no region is selected 
-    if n_roi_labels == 68
+    if EEG.roi.nROI == 68
         isDKatlas = true;
     else
         isDKatlas = false;
@@ -666,10 +683,10 @@ function roi_plotcoloredlobes( EEG, matrix, titleStr, measure, hemisphere, group
             labels = labels(start_idx:end_idx);
             color_idxx = color_idxx(start_idx:end_idx);
         end
-        n_roi_labels = size(matrix, 1);
     else
         labels = get_labels(EEG);
     end
+    n_roi_labels = size(matrix, 1);
 
     % remove underscores in labels to avoid plotting bug
     labels = replace_underscores(labels);
