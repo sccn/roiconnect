@@ -17,12 +17,13 @@
 %  'resample'         - [integer] resample to the desired sampling rate. Default
 %                       is 100. Adujst the model order accordingly. ROIconnect
 %                       has only be tested with 100 Hz sampling rates.
-%  'fooof'            - ['on'|'off'] enable FOOOF analysis (the method is described here: https://fooof-tools.github.io/fooof/). Default is 'off'.
+%  'fooof'            - ['on'|'off'] enable FOOOF analysis (this method can be used to parameterize neural power spectra and is described here: https://fooof-tools.github.io/fooof/). Default is 'off'.
 %  'fooof_frange'     - [ ] FOOOF fitting range. Default is [1 30] like in the MATLAB example: 
 %                       https://github.com/fooof-tools/fooof_mat/blob/main/examples/fooof_example_one_spectrum.m.
 %  'freqresolution'   - [integer] Desired frequency resolution (in number of frequencies). If
 %                       specified, the signal is zero padded accordingly.
 %                       Default is 0 (means no padding).
+%  'chansel'          - [cell array of string] channel selection. Default is all.
 %
 % Other optional inputs:
 %  All ROI_ACTIVITY parameters are accepted as input and passed on.

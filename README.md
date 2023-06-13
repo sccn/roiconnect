@@ -32,9 +32,11 @@ cd <eeglab_install_location>/eeglab/plugins
 ``` 
 Next, clone the repository
 ```
-git clone https://github.com/arnodelorme/roiconnect.git
+git clone https://github.com/sccn/roiconnect.git
 ```
 That's it! If you want to run the plugin, please start [EEGLAB](https://github.com/sccn/eeglab#to-use-eeglab) first. You may need to add EEGLAB to the [MATLAB path](https://de.mathworks.com/help/matlab/ref/addpath.html).  
+
+Why is this EEGLAB plugin not in the EEGLAB plugin manager? The plugin is beta. Once it is completed, it will be added to the EEGLAB plugin manager. 
 
 📌 `test_pipes/` includes some test pipelines which can be used to get started.
 

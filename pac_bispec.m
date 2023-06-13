@@ -3,8 +3,8 @@
 %                are shown in Zandvoort and Nolte, 2021.
 %
 % Inputs:
-%  data   - (nchan x ntimepoints x ntrials) or (nchan x ntimepoints * ntrials) ROI data, requires prior source reconstruction 
-%  params - Set containing parameters for bispectrum computation
+%  data   - [array] (nchan x ntimepoints x ntrials) or (nchan x ntimepoints * ntrials) ROI data, requires prior source reconstruction 
+%  params - [struct] Struct containing parameters for bispectrum computation
 %  
 % Outputs:
 %   b_orig - ROI x ROI bispectrum
@@ -17,6 +17,7 @@
 
 function [b_orig, b_anti, b_orig_norm,b_anti_norm] = pac_bispec(data, params)
 
+% determine ROIs
 nroi = params.nROI;
 segleng = params.segleng;
 segshift = params.segshift;
