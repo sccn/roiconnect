@@ -59,5 +59,8 @@ toc
 cmp_roi_selection(roi_selection, squeeze(EEG3.roi.MIM(10, :, :)), squeeze(EEG4.roi.MIM(10, :, :))) 
 
 %% Plot connectivity 
+pop_roi_connectplot(EEG3, 'measure', 'mim', 'plotcortex', 'off', 'plotmatrix', 'on', 'freqrange', [8 13]);
+pop_roi_connectplot(EEG3, 'measure', 'mim', 'plotcortex', 'off', 'plotmatrix', 'on', 'freqrange', [8 13], 'region', 'central'); % region option disabled
+
 pop_roi_connectplot(EEG4, 'measure', 'mim', 'plotcortex', 'off', 'plotmatrix', 'on', 'freqrange', [8 13]);
 pop_roi_connectplot(EEG4, 'measure', 'mim', 'plotcortex', 'off', 'plotmatrix', 'on', 'freqrange', [8 13], 'region', 'central'); % region option disabled
