@@ -49,6 +49,7 @@
 %  'roi_selection'  - [cell array of integers] Cell array of ROI indices {1, 2, 3, ...} indicating for which regions (ROIs) connectivity should be computed. 
 %                     Default is empty (in this case, connectivity will be computed for all ROIs).
 %  'conn_stats'     - ['on'|'off'] Run statistics on connectivity metrics. Default is 'off'.
+%  'nshuf'          - [integer] number of shuffles for statistical significance testing. The first shuffle is the true value. Default is 1001. 
 %
 % Output:
 %  EEG - EEGLAB dataset with field 'roi' containing connectivity info.
@@ -172,7 +173,8 @@ g = finputcheck(options, ...
       'fcomb'          'struct'   { }                           struct; 
       'bs_outopts'     'integer'  { }                           1; 
       'roi_selection'  'cell'     { }                           { }; 
-      'conn_stats'     'string'   { }                           'off'}, 'pop_roi_connect');
+      'conn_stats'     'string'   { }                           'off'; ...
+      'nshuf'          'integer'  { }                           1001}, 'pop_roi_connect');
 if ischar(g), error(g); end
 
 % process multiple datasets
@@ -225,7 +227,7 @@ end
 % compute connectivity over snippets
 n_conn_metrics = length(options{2}); % number of connectivity metrics
 conn_matrices_snips = {};
-if strcmpi(g.snippet, 'on') && isempty(intersect(g.methods, {'PAC'}))
+if strcmpi(g.snippet, 'on') && isempty(intersect(g.methods, {'PAC'})) && strcmpi(g.conn_stats, 'off')
 
     snippet_length = g.snip_length; % seconds
     snip_eps = snippet_length/(size(EEG.data,2)/EEG.srate); % n epochs in snippet
@@ -270,6 +272,8 @@ if strcmpi(g.snippet, 'on') && isempty(intersect(g.methods, {'PAC'}))
             EEG.roi.(fc_name) = mean_conn; % store mean connectivity in EEG struct
         end
     end
+elseif strcmpi(g.conn_stats, 'on')
+    EEG = roi_connstats(EEG, g.methods, g.nshuf, g.roi_selection);
 else
     EEG = roi_connect(EEG, 'morder', g.morder, 'naccu', g.naccu, 'methods', g.methods,'freqresolution', g.freqresolution, ...
         'roi_selection', g.roi_selection);
