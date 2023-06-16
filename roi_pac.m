@@ -2,7 +2,7 @@
 % Wrapper function for pac_bispec().
 %
 % Usage:
-%  EEG = roi_pac(EEG, fcomb, bs_outopts, 'key', 'val'); 
+%  EEG = roi_pac(EEG, fcomb, bs_outopts); 
 %
 % Inputs:
 %   EEG           - EEGLAB dataset with ROI activity computed.
