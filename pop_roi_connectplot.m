@@ -318,12 +318,14 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
     if isempty(g.measure)
         error('You must define a measure to plot');
     end
-
-    if ~isempty(S.roi_selection)
-        warning("Plotting options ('region', 'hemisphere', 'grouphemispheres') are disabled when ROIs were explicitely selected.")
-        g.region = 'all';
-        g.hemisphere = 'all';
-        g.grouphemispheres = 'all';
+    
+    if isfield(S, 'roi_selection')
+        if ~isempty(S.roi_selection)
+            warning("Plotting options ('region', 'hemisphere', 'grouphemispheres') are disabled when ROIs were explicitely selected.")
+            g.region = 'all';
+            g.hemisphere = 'all';
+            g.grouphemispheres = 'all';
+        end
     end
     
     % colormap
@@ -541,8 +543,10 @@ function labels = get_labels(EEG)
     labels = cellstr(labels);
 
     % remove region labels that were not selected
-    if ~isempty(EEG.roi.roi_selection)
-        labels = labels(cell2mat(EEG.roi.roi_selection));
+    if isfield(EEG.roi, 'roi_selection')
+        if ~isempty(EEG.roi.roi_selection)
+            labels = labels(cell2mat(EEG.roi.roi_selection));
+        end
     end
 end
 
@@ -570,8 +574,10 @@ function [colors, color_idxx, roi_idxx, labels_sorted, roi_loc] = get_colored_la
     roi_loc = strrep(roi_loc, 'R', '');
 
     % remove regions that were not selected
-    if ~isempty(EEG.roi.roi_selection)
-        roi_loc = roi_loc(cell2mat(EEG.roi.roi_selection));
+    if isfield(EEG.roi, 'roi_selection')
+        if ~isempty(EEG.roi.roi_selection)
+            roi_loc = roi_loc(cell2mat(EEG.roi.roi_selection));
+        end
     end
 
     try
