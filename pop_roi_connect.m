@@ -48,6 +48,7 @@
 %                          5 - only store: b_anti, b_anti_norm
 %  'roi_selection'  - [cell array of integers] Cell array of ROI indices {1, 2, 3, ...} indicating for which regions (ROIs) connectivity should be computed. 
 %                     Default is empty (in this case, connectivity will be computed for all ROIs).
+%  'conn_stats'     - ['on'|'off'] Run statistics on connectivity metrics. Default is 'off'.
 %
 % Output:
 %  EEG - EEGLAB dataset with field 'roi' containing connectivity info.
@@ -170,7 +171,8 @@ g = finputcheck(options, ...
       'freqresolution' 'integer'  { }                           0; 
       'fcomb'          'struct'   { }                           struct; 
       'bs_outopts'     'integer'  { }                           1; 
-      'roi_selection'  'cell'     { }                           { } }, 'pop_roi_connect');
+      'roi_selection'  'cell'     { }                           { }; 
+      'conn_stats'     'string'   { }                           'off'}, 'pop_roi_connect');
 if ischar(g), error(g); end
 
 % process multiple datasets
@@ -223,7 +225,8 @@ end
 % compute connectivity over snippets
 n_conn_metrics = length(options{2}); % number of connectivity metrics
 conn_matrices_snips = {};
-if strcmpi(g.snippet, 'on')
+if strcmpi(g.snippet, 'on') && isempty(intersect(g.methods, {'PAC'}))
+
     snippet_length = g.snip_length; % seconds
     snip_eps = snippet_length/(size(EEG.data,2)/EEG.srate); % n epochs in snippet
     nsnips = floor(EEG.trials/snip_eps);
@@ -273,7 +276,11 @@ else
 end
 
 if ~isempty(intersect(g.methods, {'PAC'}))
-    EEG = roi_pac(EEG, g.fcomb, g.bs_outopts, g.roi_selection);
+    if strcmpi(g.snippet, 'on')
+        error('Snippet analysis for PAC has not been implemented yet.')
+    else
+        EEG = roi_pac(EEG, g.fcomb, g.bs_outopts, g.roi_selection);
+    end
 end
 
 if nargout > 1
