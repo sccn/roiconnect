@@ -22,5 +22,6 @@ EEG = pop_leadfield(EEG, 'sourcemodel',fullfile(eeglabp,'functions','supportfile
 EEG = pop_roi_activity(EEG, 'leadfield',EEG.dipfit.sourcemodel,'model','LCMV','modelparams',{0.05},'atlas','LORETA-Talairach-BAs','nPCA',3);
 
 % snippet analysis, individual snippets are stored
-EEG = pop_roi_connect(EEG, 'methods', { 'MIM' }, 'snippet', 'on', 'snip_length', 20, 'fcsave_format', 'all_snips');
+% EEG = pop_roi_connect(EEG, 'methods', { 'MIM' }, 'snippet', 'on', 'snip_length', 20, 'fcsave_format', 'all_snips');
+EEG = pop_roi_connect(EEG, 'morder',20,'naccu',[],'methods', {'CS', 'MIM'}, 'roi_selection', {}, 'snippet', 'on', 'snip_length', 20, 'fcsave_format', 'all_snips');
 disp(size(EEG.roi.MIM)) % n_snips, frequency, roi, roi
