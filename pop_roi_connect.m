@@ -49,6 +49,9 @@
 %  'roi_selection'  - [cell array of integers] Cell array of ROI indices {1, 2, 3, ...} indicating for which regions (ROIs) connectivity should be computed. 
 %                     Default is empty (in this case, connectivity will be computed for all ROIs).
 %  'conn_stats'     - ['on'|'off'] Run statistics on connectivity metrics. Default is 'off'.
+%  'nshuf'          - [integer] number of shuffles for statistical significance testing. The first shuffle is the true value. Default is 1001. 
+%  'freqrange'      - [min max] frequency range in Hz. This is used to compute and plot p-values. Default is to plot broadband power.
+%
 %
 % Output:
 %  EEG - EEGLAB dataset with field 'roi' containing connectivity info.
@@ -114,10 +117,12 @@ if nargin < 2
 
     rowg = [0.1 0.6 1 0.2];
     % uigeom = { 1 1 rowg rowg 1 rowg rowg [0.1 0.6 0.9 0.3] 1 rowg 1 [0.5 1 0.35 0.5] [0.5 1 0.35 0.5] [0.5 1 0.35 0.5] [1] [0.9 1.2 1] };
-    uigeom = { [1] [1.2 1] [1.2 1] [1.2 1] [1.2 1] [1.2 1] [1.2 1] [1] [0.2 1 0.35 0.8] [0.2 1 0.35 0.8] };
+    uigeom = { [1] [1.2 1] [1.2 1] [1.2 1] [1.2 1] [1.2 1] [1.2 1] [1.2 1] [1] [0.2 1 0.35 0.8] [0.2 1 0.35 0.8] };
     uilist = { { 'style' 'text' 'string' 'Select connectivity measures' 'fontweight' 'bold' } ...
                { 'style' 'checkbox' 'string' 'Cross-spectrum'               'tag' 'cs' 'value' 1  } {} ...
-               { 'style' 'checkbox' 'string' 'Coherence'                    'tag' 'coh' 'value' 0  } ... 
+               {'style' 'checkbox' 'string' '(Complex-valued) Coherency'                    'tag' 'ccoh' 'value' 0 } ...
+               { 'style' 'checkbox' 'string' 'Coherence'                    'tag' 'acoh' 'value' 0 } ...
+               { 'style' 'checkbox' 'string' 'Imaginary Coherency'                    'tag' 'icoh' 'value' 0  } ... 
                { 'style' 'checkbox' 'string' 'Weighted Phase Lag Index'   'tag' 'wpli' 'value' 0  } ...
                { 'style' 'checkbox' 'string' 'Granger Causality (GC)'          'tag' 'gc' 'value' 0   } ...
                { 'style' 'checkbox' 'string' 'Time-reversed GC'                'tag' 'trgc' 'value' 0   } ...
@@ -137,7 +142,7 @@ if nargin < 2
     % check we have the same naccu
     methods = {};
     if out.cs,    methods = [ methods { 'CS' } ]; end
-    if out.coh,   methods = [ methods { 'COH' } ]; end
+%     if out.coh,   methods = [ methods { 'COH' } ]; end
     if out.ccoh,   methods = [ methods { 'cCOH' } ]; end
     if out.acoh,   methods = [ methods { 'aCOH' } ]; end
     if out.icoh,   methods = [ methods { 'iCOH' } ]; end
@@ -172,7 +177,8 @@ g = finputcheck(options, ...
       'fcomb'          'struct'   { }                           struct; 
       'bs_outopts'     'integer'  { }                           1; 
       'roi_selection'  'cell'     { }                           { }; 
-      'conn_stats'     'string'   { }                           'off'}, 'pop_roi_connect');
+      'conn_stats'     'string'   { }                           'off'; ...
+      'nshuf'          'integer'  { }                           1001}, 'pop_roi_connect');
 if ischar(g), error(g); end
 
 % process multiple datasets
@@ -225,7 +231,7 @@ end
 % compute connectivity over snippets
 n_conn_metrics = length(options{2}); % number of connectivity metrics
 conn_matrices_snips = {};
-if strcmpi(g.snippet, 'on') && isempty(intersect(g.methods, {'PAC'}))
+if strcmpi(g.snippet, 'on') && isempty(intersect(g.methods, {'PAC'})) && strcmpi(g.conn_stats, 'off')
 
     snippet_length = g.snip_length; % seconds
     snip_eps = snippet_length/(size(EEG.data,2)/EEG.srate); % n epochs in snippet
@@ -270,6 +276,8 @@ if strcmpi(g.snippet, 'on') && isempty(intersect(g.methods, {'PAC'}))
             EEG.roi.(fc_name) = mean_conn; % store mean connectivity in EEG struct
         end
     end
+elseif strcmpi(g.conn_stats, 'on')
+    EEG = roi_connstats(EEG, g.methods, g.nshuf, g.roi_selection);
 else
     EEG = roi_connect(EEG, 'morder', g.morder, 'naccu', g.naccu, 'methods', g.methods,'freqresolution', g.freqresolution, ...
         'roi_selection', g.roi_selection);
