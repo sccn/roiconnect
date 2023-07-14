@@ -763,10 +763,15 @@ function roi_plotcoloredlobes( EEG, matrix, titleStr, measure, hemisphere, group
         imagesc(matrix); colormap(cmap);
     end
     cb = colorbar;
-    tf = isMATLABReleaseOlderThan("R2022a");
-    if tf
+%     tf = isMATLABReleaseOlderThan("R2022a");
+%     if tf
+%         caxis([clim_min clim_max])
+%     else
+%         clim([clim_min clim_max])
+%     end
+    try 
         caxis([clim_min clim_max])
-    else
+    catch
         clim([clim_min clim_max])
     end
     if isDKatlas == 1
