@@ -86,7 +86,7 @@ for iNet = 1:length(allnetworknames)
 end
 
 if isempty(indNet)
-    fprintf('Network %s not found\n', networkname);
+    fprintf('The brain region "%s" was not found (it is ok if it is not a brain region)\n', networkname);
 elseif ~isstruct(networkdefs)
     regions = roiTable.(allnetworknames{iNet});
 else
