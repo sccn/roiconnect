@@ -31,7 +31,7 @@
 %                       'MIC'   : Maximized Imaginary Coherency for each ROI
 %                       'PAC'   : Phase-amplitude coupling between ROIs
 %  'snippet'        - ['on'|off]  Option to compute connectivity over snippets. Default is 'off'. 
-%  'firstsnippet'   - ['on'|off]  Only use the first snippet (useful for fast comptuation). Default is 'off'. 
+%  'firstsnippet'   - ['on'|off]  Only use the first snippet (useful for fast computation). Default is 'off'. 
 %  'snip_length'    - ['on'|'off']  Length of the snippets. Default is 60 seconds.
 %  'fcsave_format'  - ['mean_snips'|'all_snips']  Option to save mean over snippets 
 %                     (shape: 101,68,68) or all snippets (shape: n_snips,101,68,68). Default is 'mean_snips.'
