@@ -80,7 +80,7 @@ end
 if isempty(g.labels)
     if strcmpi(g.brainimg, 'on')
         disp('Cannot plot on brain with area labels')
-        g.brainimg = 'off';g
+        g.brainimg = 'off';
     end
 end
 
