@@ -48,6 +48,10 @@
 %                          5 - only store: b_anti, b_anti_norm
 %  'roi_selection'  - [cell array of integers] Cell array of ROI indices {1, 2, 3, ...} indicating for which regions (ROIs) connectivity should be computed. 
 %                     Default is empty (in this case, connectivity will be computed for all ROIs).
+%  'conn_stats'     - ['on'|'off'] Run statistics on connectivity metrics. Default is 'off'.
+%  'nshuf'          - [integer] number of shuffles for statistical significance testing. The first shuffle is the true value. Default is 1001. 
+%  'freqrange'      - [min max] frequency range in Hz. This is used to compute and plot p-values. Default is to plot broadband power.
+%
 %
 % Output:
 %  EEG - EEGLAB dataset with field 'roi' containing connectivity info.
@@ -113,10 +117,12 @@ if nargin < 2
 
     rowg = [0.1 0.6 1 0.2];
     % uigeom = { 1 1 rowg rowg 1 rowg rowg [0.1 0.6 0.9 0.3] 1 rowg 1 [0.5 1 0.35 0.5] [0.5 1 0.35 0.5] [0.5 1 0.35 0.5] [1] [0.9 1.2 1] };
-    uigeom = { [1] [1.2 1] [1.2 1] [1.2 1] [1.2 1] [1.2 1] [1.2 1] [1] [0.2 1 0.35 0.8] [0.2 1 0.35 0.8] };
+    uigeom = { [1] [1.2 1] [1.2 1] [1.2 1] [1.2 1] [1.2 1] [1.2 1] [1.2 1] [1] [0.2 1 0.35 0.8] [0.2 1 0.35 0.8] };
     uilist = { { 'style' 'text' 'string' 'Select connectivity measures' 'fontweight' 'bold' } ...
                { 'style' 'checkbox' 'string' 'Cross-spectrum'               'tag' 'cs' 'value' 1  } {} ...
-               { 'style' 'checkbox' 'string' 'Coherence'                    'tag' 'coh' 'value' 0  } ... 
+               {'style' 'checkbox' 'string' '(Complex-valued) Coherency'                    'tag' 'ccoh' 'value' 0 } ...
+               { 'style' 'checkbox' 'string' 'Coherence'                    'tag' 'acoh' 'value' 0 } ...
+               { 'style' 'checkbox' 'string' 'Imaginary Coherency'                    'tag' 'icoh' 'value' 0  } ... 
                { 'style' 'checkbox' 'string' 'Weighted Phase Lag Index'   'tag' 'wpli' 'value' 0  } ...
                { 'style' 'checkbox' 'string' 'Granger Causality (GC)'          'tag' 'gc' 'value' 0   } ...
                { 'style' 'checkbox' 'string' 'Time-reversed GC'                'tag' 'trgc' 'value' 0   } ...
@@ -136,7 +142,7 @@ if nargin < 2
     % check we have the same naccu
     methods = {};
     if out.cs,    methods = [ methods { 'CS' } ]; end
-    if out.coh,   methods = [ methods { 'COH' } ]; end
+%     if out.coh,   methods = [ methods { 'COH' } ]; end
     if out.ccoh,   methods = [ methods { 'cCOH' } ]; end
     if out.acoh,   methods = [ methods { 'aCOH' } ]; end
     if out.icoh,   methods = [ methods { 'iCOH' } ]; end
@@ -170,7 +176,9 @@ g = finputcheck(options, ...
       'freqresolution' 'integer'  { }                           0; 
       'fcomb'          'struct'   { }                           struct; 
       'bs_outopts'     'integer'  { }                           1; 
-      'roi_selection'  'cell'     { }                           { } }, 'pop_roi_connect');
+      'roi_selection'  'cell'     { }                           { }; 
+      'conn_stats'     'string'   { }                           'off'; ...
+      'nshuf'          'integer'  { }                           1001}, 'pop_roi_connect');
 if ischar(g), error(g); end
 
 % process multiple datasets
@@ -221,9 +229,10 @@ if ~isempty(g.nepochs)
 end
 
 % compute connectivity over snippets
-n_conn_metrics = length(options{2}); % number of connectivity metrics
+n_conn_metrics = length(g.methods); % number of connectivity metrics
 conn_matrices_snips = {};
-if strcmpi(g.snippet, 'on')
+if strcmpi(g.snippet, 'on') && isempty(intersect(g.methods, {'PAC'})) && strcmpi(g.conn_stats, 'off')
+
     snippet_length = g.snip_length; % seconds
     snip_eps = snippet_length/(size(EEG.data,2)/EEG.srate); % n epochs in snippet
     nsnips = floor(EEG.trials/snip_eps);
@@ -241,7 +250,7 @@ if strcmpi(g.snippet, 'on')
         EEG.roi.source_roi_data = single(roi_snip);
         EEG = roi_connect(EEG, 'morder', g.morder, 'naccu', g.naccu, 'methods', g.methods,'freqresolution', g.freqresolution, 'roi_selection', g.roi_selection); % compute connectivity over one snippet
         for fc = 1:n_conn_metrics 
-            fc_name = options{2}{fc};
+            fc_name = g.methods{fc};
             fc_matrix = EEG.roi.(fc_name);
             conn_matrices_snips{isnip,fc} = fc_matrix; % store each connectivity metric for each snippet in separate structure
         end
@@ -249,7 +258,7 @@ if strcmpi(g.snippet, 'on')
     
     % compute mean over connectivity of each snippet
     for fc = 1:n_conn_metrics
-        fc_name = options{2}{fc};
+        fc_name = g.methods{fc};
         [first_dim, second_dim, third_dim] = size(conn_matrices_snips{1,fc});
 
         conn_cell = conn_matrices_snips(:,fc); % store all matrices of one metric in a cell
@@ -267,13 +276,19 @@ if strcmpi(g.snippet, 'on')
             EEG.roi.(fc_name) = mean_conn; % store mean connectivity in EEG struct
         end
     end
+elseif strcmpi(g.conn_stats, 'on')
+    EEG = roi_connstats(EEG, g.methods, g.nshuf, g.roi_selection);
 else
     EEG = roi_connect(EEG, 'morder', g.morder, 'naccu', g.naccu, 'methods', g.methods,'freqresolution', g.freqresolution, ...
         'roi_selection', g.roi_selection);
 end
 
 if ~isempty(intersect(g.methods, {'PAC'}))
-    EEG = roi_pac(EEG, g.fcomb, g.bs_outopts, g.roi_selection);
+    if strcmpi(g.snippet, 'on')
+        error('Snippet analysis for PAC has not been implemented yet.')
+    else
+        EEG = roi_pac(EEG, g.fcomb, g.bs_outopts, g.roi_selection);
+    end
 end
 
 if nargout > 1
