@@ -29,6 +29,7 @@
 %                       'MIC'   : Maximized Imaginary Coherency for each ROI
 %                       'PAC'   : Phase-amplitude coupling between ROIs
 %  'snippet'        - ['on'|off]  Option to compute connectivity over snippets. Default is 'off'. 
+%  'firstsnippet'   - ['on'|off]  Only use the first snippet (useful for fast comptuation). Default is 'off'. 
 %  'snip_length'    - ['on'|'off']  Length of the snippets. Default is 60 seconds.
 %  'fcsave_format'  - ['mean_snips'|'all_snips']  Option to save mean over snippets 
 %                     (shape: 101,68,68) or all snippets (shape: n_snips,101,68,68). Default is 'mean_snips.'
@@ -156,7 +157,8 @@ g = finputcheck(options, ...
       'naccu'          'integer'  { }                           0;
       'methods'        'cell'     { }                           { };
       'snippet'        'string'   { 'on', 'off' }               'off';
-      'nepochs'        'real'                {}                 [ ];
+      'firstsnippet'   'string'   { 'on', 'off' }               'off';
+      'nepochs'        'real'                {}               [];
       'snip_length'    'integer'  { }                           60; 
       'fcsave_format'  'string'   { 'mean_snips', 'all_snips'}  'mean_snips';
       'freqresolution' 'integer'  { }                           0; 
@@ -219,43 +221,49 @@ if strcmpi(g.snippet, 'on')
     snip_eps = snippet_length/(size(EEG.data,2)/EEG.srate); % n epochs in snippet
     nsnips = floor(EEG.trials/snip_eps);
     if nsnips < 1
-        error('Snippet length cannot exceed data length.')
-    end
-    diff = (EEG.trials * EEG.pnts/EEG.srate) - (nsnips * EEG.pnts/EEG.srate * snip_eps);
-    if diff ~= 0
-        warning(strcat(int2str(diff), ' seconds are thrown away.'));
-    end
-
-    source_roi_data_save = EEG.roi.source_roi_data;
-    for isnip = 1:nsnips
-        roi_snip = source_roi_data_save(:,:,(isnip-1)* snip_eps + 1 : (isnip-1)* snip_eps + snip_eps); % cut source data into snippets
-        EEG.roi.source_roi_data = single(roi_snip);
-        EEG = roi_connect(EEG, 'morder', g.morder, 'naccu', g.naccu, 'methods', g.methods,'freqresolution',g.freqresolution); % compute connectivity over one snippet
-        for fc = 1:n_conn_metrics 
-            fc_name = options{2}{fc};
-            fc_matrix = EEG.roi.(fc_name);
-            conn_matrices_snips{isnip,fc} = fc_matrix; % store each connectivity metric for each snippet in separate structure
+        warning('Snippet length cannot exceed data length. Using the whole data length.')
+        EEG = roi_connect(EEG, 'morder', g.morder, 'naccu', g.naccu, 'methods', g.methods,'freqresolution',g.freqresolution);
+    else
+        diff = (EEG.trials * EEG.pnts/EEG.srate) - (nsnips * EEG.pnts/EEG.srate * snip_eps);
+        if diff ~= 0
+            warning(strcat(int2str(diff), ' seconds are thrown away.'));
         end
-    end
-    
-    % compute mean over connectivity of each snippet
-    for fc = 1:n_conn_metrics
-        fc_name = options{2}{fc};
-        [first_dim, second_dim, third_dim] = size(conn_matrices_snips{1,fc});
 
-        conn_cell = conn_matrices_snips(:,fc); % store all matrices of one metric in a cell
-        mat = cell2mat(conn_cell);
-        reshaped = reshape(mat, first_dim, nsnips, second_dim, third_dim);
-        reshaped = squeeze(permute(reshaped, [2,1,3,4]));
-        if strcmpi(g.fcsave_format, 'all_snips')
-            EEG.roi.(fc_name) = reshaped;
-        else
-            if nsnips > 1
-                mean_conn = squeeze(mean(reshaped, 1)); 
-            else
-                mean_conn = reshaped;
+        if strcmpi(g.firstsnippet, 'on')
+            nsnips = 1;
+        end
+    
+        source_roi_data_save = EEG.roi.source_roi_data;
+        for isnip = 1:nsnips
+            roi_snip = source_roi_data_save(:,:,(isnip-1)* snip_eps + 1 : (isnip-1)* snip_eps + snip_eps); % cut source data into snippets
+            EEG.roi.source_roi_data = single(roi_snip);
+            EEG = roi_connect(EEG, 'morder', g.morder, 'naccu', g.naccu, 'methods', g.methods,'freqresolution',g.freqresolution); % compute connectivity over one snippet
+            for fc = 1:n_conn_metrics 
+                fc_name = options{2}{fc};
+                fc_matrix = EEG.roi.(fc_name);
+                conn_matrices_snips{isnip,fc} = fc_matrix; % store each connectivity metric for each snippet in separate structure
             end
-            EEG.roi.(fc_name) = mean_conn; % store mean connectivity in EEG struct
+        end
+        
+        % compute mean over connectivity of each snippet
+        for fc = 1:n_conn_metrics
+            fc_name = options{2}{fc};
+            [first_dim, second_dim, third_dim] = size(conn_matrices_snips{1,fc});
+    
+            conn_cell = conn_matrices_snips(:,fc); % store all matrices of one metric in a cell
+            mat = cell2mat(conn_cell);
+            reshaped = reshape(mat, first_dim, nsnips, second_dim, third_dim);
+            reshaped = squeeze(permute(reshaped, [2,1,3,4]));
+            if strcmpi(g.fcsave_format, 'all_snips')
+                EEG.roi.(fc_name) = reshaped;
+            else
+                if nsnips > 1
+                    mean_conn = squeeze(mean(reshaped, 1)); 
+                else
+                    mean_conn = reshaped;
+                end
+                EEG.roi.(fc_name) = mean_conn; % store mean connectivity in EEG struct
+            end
         end
     end
 else
