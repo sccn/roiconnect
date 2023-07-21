@@ -8,6 +8,7 @@ function MIM_s = shuffle_MIM(data,npcs,fres, nshuf)
     ninds = length(inds);
     
     warning('One iteration takes about 90 seconds.')
+    fprintf('Generating null distribution using %d shuffles...\n', nshuf)
     fprintf('Progress of %d:', nshuf);
     for ishuf = 1:nshuf %one iteration takes ~90 sec on my local laptop
         if mod(ishuf, 10) == 0
@@ -52,6 +53,7 @@ function MIM_s = shuffle_MIM(data,npcs,fres, nshuf)
         MIM_s(:, :, :, ishuf) = get_connect_mat(conn.MIM, nroi, +1);
         % [MIM_s(:,:,ishuf), ~, ~, ~, ~, ~] = fp_unwrap_conn(conn,nroi,filt1,PCA_inds);
     end
+    fprintf('\n');
 end
 
 function measure = get_connect_mat( measureOri, nROI, signVal)

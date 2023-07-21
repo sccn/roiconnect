@@ -114,9 +114,9 @@ function EEG = roi_connect(EEG, varargin)
     tmpMethods1 = intersect(g.methods, methodset1);
     if ~isempty(tmpMethods1)
         if isempty(g.roi_selection)
-            conn_mult = data2sctrgcmim(source_roi_data, EEG.pnts, g.morder, 0, g.naccu, [], inds, tmpMethods1, [], 'freqresolution', g.freqresolution);
+            conn_mult = data2sctrgcmim(source_roi_data, EEG.roi.pnts, g.morder, 0, g.naccu, [], inds, tmpMethods1, [], 'freqresolution', g.freqresolution);
         elseif ~isempty(g.roi_selection)
-            conn_mult = data2sctrgcmim(source_roi_data, EEG.pnts, g.morder, 0, g.naccu, [], inds, tmpMethods1, [], 'freqresolution', g.freqresolution, 'roi_selection', g.roi_selection, 'nPCA', nPCA);
+            conn_mult = data2sctrgcmim(source_roi_data, EEG.roi.pnts, g.morder, 0, g.naccu, [], inds, tmpMethods1, [], 'freqresolution', g.freqresolution, 'roi_selection', g.roi_selection, 'nPCA', nPCA);
             EEG.roi.roi_selection = g.roi_selection;
         end
         fields = fieldnames(conn_mult);
@@ -137,7 +137,7 @@ function EEG = roi_connect(EEG, varargin)
             elseif  strcmpi(tmpMethods1{iMethods}, 'GC') || strcmpi(tmpMethods1{iMethods}, 'TRGC')
                 TRGCnet = EEG.roi.(tmpMethods1{iMethods})(:, :, 1) - EEG.roi.(tmpMethods1{iMethods})(:, :, 2);
                 EEG.roi.(tmpMethods1{iMethods}) = get_connect_mat( TRGCnet, nROI, -1); 
-            else
+            else % wPLI
                 measure = rm_components(EEG.roi.(tmpMethods1{iMethods}), EEG.roi.nPCA, tmpMethods1{iMethods}); % only keep the first principal component
                 EEG.roi.(tmpMethods1{iMethods}) = measure;
             end
@@ -147,9 +147,9 @@ function EEG = roi_connect(EEG, varargin)
     tmpMethods2 = intersect(g.methods, methodset2);
     if ~isempty(tmpMethods2)
         if isempty(g.roi_selection)
-            conn_mult = data2spwctrgc(source_roi_data, EEG.pnts, g.morder, 0, g.naccu, [], tmpMethods2, [], 'freqresolution', g.freqresolution);
+            conn_mult = data2spwctrgc(source_roi_data, EEG.roi.pnts, g.morder, 0, g.naccu, [], tmpMethods2, [], 'freqresolution', g.freqresolution);
         else
-            conn_mult = data2spwctrgc(source_roi_data, EEG.pnts, g.morder, 0, g.naccu, [], tmpMethods2, [], 'freqresolution', g.freqresolution, 'roi_selection', g.roi_selection, 'nPCA', nPCA);
+            conn_mult = data2spwctrgc(source_roi_data, EEG.roi.pnts, g.morder, 0, g.naccu, [], tmpMethods2, [], 'freqresolution', g.freqresolution, 'roi_selection', g.roi_selection, 'nPCA', nPCA);
         end
         fields = fieldnames(conn_mult);
         for iField = 1:length(fields)
