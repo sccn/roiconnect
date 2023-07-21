@@ -220,11 +220,12 @@ if ~isequal(nvox, nvox2)
     error('There must be the same number of vertices/voxels in the leadfield and source model');
 end
 if isempty(g.chansel)
-    if isfield(EEG.dipfit, 'chansel')
-        g.chansel = EEG.dipfit.chansel;
-    else
-        g.chansel = 1:EEG.nbchan;
-    end
+    g.chansel = [1:EEG.nbchan];
+%     if isfield(EEG.dipfit, 'chansel')
+%         g.chansel = EEG.dipfit.chansel;
+%     else
+%         g.chansel = 1:EEG.nbchan;
+%     end
 else
     g.chansel = eeg_decodechan(EEG.chanlocs, g.chansel);
 end
