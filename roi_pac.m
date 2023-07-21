@@ -52,7 +52,7 @@ function EEG = roi_pac(EEG, fcomb, bs_outopts, roi_selection)
     segleng = ndat;
     segshift = floor(ndat/2);
     epleng = ndat;
-    fs = EEG.srate;
+    fs = EEG.roi.srate;
 
     params = [];
     params.nROI = nROI;

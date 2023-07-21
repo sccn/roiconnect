@@ -17,7 +17,12 @@
 %  'resample'         - [integer] resample to the desired sampling rate. Default
 %                       is 100. Adujst the model order accordingly. ROIconnect
 %                       has only be tested with 100 Hz sampling rates.
-%  'fooof'            - ['on'|'off'] enable FOOOF analysis (this method can be used to parameterize neural power spectra and is described here: https://fooof-tools.github.io/fooof/). Default is 'off'.
+%  'effectchanges'    - ['on'|'off'] apply resampling and epoching to the
+%                       dataset given as input. Otherwise, only update
+%                       EEG.roi structure. Default is 'off'.
+%  'fooof'            - ['on'|'off'] enable FOOOF analysis (this method can be 
+%                       used to parameterize neural power spectra and is described here: 
+%                       https://fooof-tools.github.io/fooof/). Default is 'off'.
 %  'fooof_frange'     - [ ] FOOOF fitting range. Default is [1 30] like in the MATLAB example: 
 %                       https://github.com/fooof-tools/fooof_mat/blob/main/examples/fooof_example_one_spectrum.m.
 %  'freqresolution'   - [integer] Desired frequency resolution (in number of frequencies). If
@@ -244,6 +249,7 @@ end
     'atlas'           'string'              {}               '';
     'resample'        'real'                {}               100;
     'regepochs'       'string'              { 'on' 'off'}    'off'; % ignored
+    'effectchanges'   'string'              { 'on' 'off'}    'off';
     'nPCA'            'real'                {}               3;
     'epochlen'        'real'                {}               2;
     'fooof'           'string'              { 'on' 'off'}    'off';
@@ -251,12 +257,13 @@ end
     'fooof_frange'     ''                   {}               [1 30]}, 'pop_roi_activity', 'ignore');
 if ischar(g), error(g); end
 
+EEGOUT = EEG;
 if ~isempty(g.resample) && ~isequal(EEG.srate, g.resample)
-    EEG = pop_resample(EEG, g.resample);
+    EEGOUT = pop_resample(EEGOUT, g.resample);
 end
-if EEG.trials == 1
+if EEGOUT.trials == 1
     recurrence = 2;
-    EEG = eeg_regepochs(EEG, recurrence, [0 2]);
+    EEGOUT = eeg_regepochs(EEGOUT, recurrence, [0 2]);
 end
 
 chansel = {};
@@ -276,10 +283,16 @@ else
     g.leadfield = EEG.dipfit.sourcemodel;
 end    
 
-EEG = roi_activity(EEG, 'leadfield', g.leadfield, 'headmodel', EEG.dipfit.hdmfile, ...
+EEGOUT = roi_activity(EEGOUT, 'leadfield', g.leadfield, 'headmodel', EEG.dipfit.hdmfile, ...
     'model', g.model, 'modelparams', g.modelparams, 'sourcemodel', sourceModelFile, ...
     'sourcemodel2mni', sourceModel2MNI, 'nPCA', g.nPCA,'fooof', g.fooof, 'fooof_frange', g.fooof_frange, ...
     'freqresolution', g.freqresolution, 'sourcemodelatlas', g.atlas, 'chansel', chansel, moreargs{:});
+
+if strcmpi(g.effectchanges, 'on')
+    EEG = EEGOUT;
+else
+    EEG.roi = EEGOUT.roi;
+end
 
 if nargout > 1
     for iOption = 1:2:length(options)
