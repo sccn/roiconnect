@@ -220,7 +220,11 @@ if ~isequal(nvox, nvox2)
     error('There must be the same number of vertices/voxels in the leadfield and source model');
 end
 if isempty(g.chansel)
-    g.chansel = [1:EEG.nbchan];
+    if isfield(EEG.dipfit, 'chansel')
+        g.chansel = EEG.dipfit.chansel;
+    else
+        g.chansel = 1:EEG.nbchan;
+    end
 else
     g.chansel = eeg_decodechan(EEG.chanlocs, g.chansel);
 end
@@ -328,7 +332,7 @@ if strcmpi(g.roiactivity, 'on')
     
     % compute power using the Welch method
     disp('Computing ROI activity...');
-    [tmpWelch,ftmp] = pwelch(tmpData(:,:), data_pnts, floor(data_pnts/2), data_pnts, EEG.srate); % ftmp should be equal frqs 
+    [tmpWelch,ftmp] = pwelch(tmpData, data_pnts, floor(data_pnts/2), data_pnts, EEG.srate); % ftmp should be equal frqs 
     tmpWelch = reshape(tmpWelch, size(tmpWelch,1), EEG.trials, size(source_voxel_data,2), size(source_voxel_data,3));
     tmpWelch = squeeze(mean(tmpWelch,2)); % remove trials size freqs x voxels x 3
     tmpWelch = squeeze(mean(tmpWelch,3)); % remove 3rd dim size freqs x voxels
@@ -385,6 +389,8 @@ EEG.roi.source_roi_power_norm = source_roi_power_norm; % used for cross-sprectum
 EEG.roi.freqs     = frqs;
 EEG.roi.nPCA      = g.nPCA;
 EEG.roi.nROI      = nROI;
+EEG.roi.pnts      = EEG.pnts;
+EEG.roi.srate     = EEG.srate;
 EEG.roi.atlas     = cortex.Atlas;
 EEG.roi.srate     = EEG.srate;
 EEG.roi.leadfield = g.leadfield;

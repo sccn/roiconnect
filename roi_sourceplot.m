@@ -12,7 +12,7 @@
 %                MNI locations.
 %
 % Required inputs:
-%  'freqselect' - [real] frequency of interest or frequency range of interest.
+%  'freqrange' - [real] frequency of interest or frequency range of interest.
 %                 Defaut is all frequencies.
 %
 % Example:

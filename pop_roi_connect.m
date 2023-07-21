@@ -32,7 +32,8 @@
 %                       'PAC'   : Phase-amplitude coupling between ROIs
 %  'snippet'        - ['on'|off]  Option to compute connectivity over snippets. Default is 'off'. 
 %  'firstsnippet'   - ['on'|off]  Only use the first snippet (useful for fast computation). Default is 'off'. 
-%  'snip_length'    - ['on'|'off']  Length of the snippets. Default is 60 seconds.
+%  'snip_length'    - ['on'|'off'] Length of the snippets. Default is 60 seconds.
+%  'erroronsnippet' - ['on'|'off'] Error if snippet too short. Default 'on'.
 %  'fcsave_format'  - ['mean_snips'|'all_snips']  Option to save mean over snippets 
 %                     (shape: 101,68,68) or all snippets (shape: n_snips,101,68,68). Default is 'mean_snips.'
 %  'freqresolution' - [integer] Desired frequency resolution (in number of frequencies). 
@@ -171,7 +172,8 @@ g = finputcheck(options, ...
       'naccu'          'integer'  { }                           0;
       'methods'        'cell'     { }                           { };
       'snippet'        'string'   { 'on', 'off' }               'off';
-      'firstsnippet'   'string'   { 'on', 'off' }               'off';
+      'firstsnippet'   'string'   { 'on', 'off' }               'off'; 
+      'erroronsnippet' 'string'   { 'on', 'off' }               'off'; 
       'nepochs'        'real'                {}               [];
       'snip_length'    'integer'  { }                           60; 
       'fcsave_format'  'string'   { 'mean_snips', 'all_snips'}  'mean_snips';
@@ -239,7 +241,12 @@ if strcmpi(g.snippet, 'on') && isempty(intersect(g.methods, {'PAC'})) && strcmpi
     snip_eps = snippet_length/(size(EEG.data,2)/EEG.srate); % n epochs in snippet
     nsnips = floor(EEG.trials/snip_eps);
     if nsnips < 1
-        error('Snippet length cannot exceed data length.')
+        if strcmpi(opt.erroronsnippet, 'on')
+            error('Snippet length cannot exceed data length.')
+        else
+            frpintf(2, 'Snippet length cannot exceed data length, using the whole data')
+            nsnips = 1;
+        end
     end
     diff = (EEG.trials * EEG.pnts/EEG.srate) - (nsnips * EEG.pnts/EEG.srate * snip_eps);
     if diff ~= 0
@@ -248,7 +255,9 @@ if strcmpi(g.snippet, 'on') && isempty(intersect(g.methods, {'PAC'})) && strcmpi
 
     source_roi_data_save = EEG.roi.source_roi_data;
     for isnip = 1:nsnips
-        roi_snip = source_roi_data_save(:,:,(isnip-1)* snip_eps + 1 : (isnip-1)* snip_eps + snip_eps); % cut source data into snippets
+        begSnip = (isnip-1)* snip_eps + 1;
+        endSnip = min((isnip-1)* snip_eps + snip_eps, size(source_roi_data_save,3));
+        roi_snip = source_roi_data_save(:,:, begSnip:endSnip ); % cut source data into snippets
         EEG.roi.source_roi_data = single(roi_snip);
         EEG = roi_connect(EEG, 'morder', g.morder, 'naccu', g.naccu, 'methods', g.methods,'freqresolution', g.freqresolution, 'roi_selection', g.roi_selection); % compute connectivity over one snippet
         for fc = 1:n_conn_metrics 
