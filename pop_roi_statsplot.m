@@ -66,16 +66,22 @@ function EEG = pop_roi_statsplot(EEG, varargin)
     netFC = squeeze(mean(matrix, 2));
     FC_pn = sum(netFC(:, 1) < netFC(:, 2:end), 2)./(size(matrix, 3) - 1);
 
-    % use FDR-correction for multiple comparison's correction 
-    [p_fdr, ~] = fdr(FC_pn, 0.05);
+    % use FDR-correction for multiple comparison's correction
+    alpha = 0.05; % add this as a parameter?
+    [p_fdr, ~] = fdr(FC_pn, alpha);
     FC_pn(FC_pn > p_fdr) = 1;
 
     % plot 
     load cm17;
     load cortex; 
-    FC_pn(FC_pn==0) = 1 / (size(netMIM, 2) - 1);  % 1 / nshuf
+    FC_pn(FC_pn==0) = 1 / (size(netFC, 2) - 1);  % 1 / nshuf
     data = -log10(FC_pn);
-    allplots_cortex_BS(cortex_highres, data, [min(data) max(data)], cm17a ,'-log(p)', 0.3);
-    h = textsc(title, 'title');
-    set(h, 'fontsize', 20);
+    try
+        allplots_cortex_BS(cortex_highres, data, [min(data) max(data)], cm17a ,'-log(p)', 0.3);
+        h = textsc(title, 'title');
+        set(h, 'fontsize', 20);
+    catch
+        warning('There are no "significant" p-values to be plotted. These are the p-values:')
+        disp(FC_pn)
+    end
 end
