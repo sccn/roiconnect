@@ -261,7 +261,7 @@ elseif strcmpi(g.model, 'LCMV')
     alpha = lcmv_reg*trace(C)/length(C);
     Cr = C + alpha*eye(nbchan);
     [~, P_eloreta] = lcmv(Cr, leadfield, struct('alpha', 0, 'onedim', 0));
-    source_voxel_data = single(reshape(tmpdata(:, :)'*P_eloreta(:, :), EEG.pnts*EEG.trials, nvox, 3));
+    source_voxel_data = reshape(tmpdata(:, :)'*P_eloreta(:, :), EEG.pnts*EEG.trials, nvox, 3);
     source_voxel_data = 10^3*source_voxel_data; % the units are nA*m
 else
     % transform the data to continuous so we can get an estimate for each sample
@@ -332,7 +332,7 @@ if strcmpi(g.roiactivity, 'on')
     
     % compute power using the Welch method
     disp('Computing ROI activity...');
-    [tmpWelch,ftmp] = pwelch(tmpData, data_pnts, 0, data_pnts, EEG.srate); % ftmp should be equal frqs 
+    [tmpWelch,ftmp] = pwelch(tmpData, data_pnts, data_pnts/2, data_pnts, EEG.srate); % ftmp should be equal frqs 
     tmpWelch = reshape(tmpWelch, size(tmpWelch,1), EEG.trials, size(source_voxel_data,2), size(source_voxel_data,3));
     tmpWelch = squeeze(mean(tmpWelch,2)); % remove trials size freqs x voxels x 3
     tmpWelch = squeeze(mean(tmpWelch,3)); % remove 3rd dim size freqs x voxels
