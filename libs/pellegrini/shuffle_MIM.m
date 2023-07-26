@@ -1,31 +1,40 @@
-function MIM_s = shuffle_MIM(data,npcs,fres, nshuf)
+function MIM_s = shuffle_MIM(data, npcs, fres, nshuf)
     %data is chan x l_epo x trials 
     % Copyright (c) 2022 Franziska Pellegrini and Stefan Haufe
     
-    [nchan,l_epo,nepo]= size(data);
+    [nchan, ndat, nepo] = size(data);
     
     [inds, PCA_inds] = fp_npcs2inds(npcs);
     ninds = length(inds);
+
+    CSpara = [];
+    CSpara.subave = 0;
+    CSpara.mywindow = hanning(ndat) ./ sqrt(hanning(ndat)' * hanning(ndat));
+%     CSpara.freqresolution = g.freqresolution;
+    CSpara.freqresolution = 0; % for now
     
     warning('One iteration takes about 90 seconds.')
     fprintf('Generating null distribution using %d shuffles...\n', nshuf)
     fprintf('Progress of %d:', nshuf);
-    for ishuf = 1:nshuf %one iteration takes ~90 sec on my local laptop
+    for ishuf = 1:nshuf % one iteration takes ~90 sec on my local laptop
         if mod(ishuf, 10) == 0
             fprintf('%d', ishuf);
         elseif mod(ishuf, 2) == 0
             fprintf('.');
         end
         
-        %shuffle trials
+        % shuffle trials
         if ishuf == 1
-            shuf_inds = 1:nepo; %true MIM values
+            shuf_inds = 1:nepo; % true MIM values
         else
             shuf_inds = randperm(nepo);   
         end
         
         clear MIM2 CS COH2
-        CS = fp_tsdata_to_cpsd(data, fres, 'WELCH', 1:nchan, 1:nchan,1:nepo,shuf_inds);
+
+        data_shuf = data(:, :, shuf_inds);
+        CS = data2cs_event_shuf(data(:, :)', data_shuf(:, :)', ndat, floor(ndat/2), ndat, [], CSpara);
+%         CS = fp_tsdata_to_cpsd(data, fres, 'WELCH', 1:nchan, 1:nchan,1:nepo,shuf_inds);
         
         for ifreq = 1:size(CS,3)
             clear pow
