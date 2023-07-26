@@ -47,11 +47,16 @@ function EEG = roi_connstats(EEG, methods, nshuf, roi_selection)
         warning('Statistics are only supported for MIM, more methods will be added.')
     end
 
-    methodset1 = { 'MIM' }; % the remaining methods will be added eventually
+    methodset1 = { 'CS' 'MIM' 'wPLI' 'cCOH' 'aCOH' 'iCOH'}; % the remaining methods will be added eventually
     tmpMethods1 = intersect(methods, methodset1);
     if ~isempty(tmpMethods1)
         npcs = repmat(EEG.roi.nPCA, 1, EEG.roi.nROI);
-        MIM_s = shuffle_MIM(data, npcs, EEG.srate, nshuf); % (nfreq, nROI, nROI, nshuf)
-        EEG.roi.MIM = MIM_s;
+        conn = shuffle_MIM(data, npcs, tmpMethods1, EEG.srate, nshuf); % (nfreq, nROI, nROI, nshuf)
+        for iMethod = 1:length(tmpMethods1)
+            EEG.roi.(tmpMethods1{iMethod}) = conn.(tmpMethods1{iMethod});
+            if strcmpi(tmpMethods1{iMethod}, 'MIM')
+                EEG.roi.inds = conn.inds;
+            end
+        end
     end
 end
