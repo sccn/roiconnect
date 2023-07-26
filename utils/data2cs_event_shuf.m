@@ -2,9 +2,8 @@
 % measurements using a permutation-based approach by shuffling the trials of the original data. 
 %
 % The off-diagonals of the cross-spectrum are calculated by multiplying the 
-% time-series of the unshuffled trial with the conjugate time-series
-% of the shuffled trial. The diagonals (power) are calculated by
-% multiplying the *unshuffled* time-series with its conjugate self.
+% unshuffled time-series with the trial-shuffled conjugate time-series. The diagonals (power) 
+% are calculated by multiplying the *unshuffled* time-series with its conjugate self.
 %
 % Usage:
 %   [cs, coh, wpli, nave] = data2cs_event(data_orig, data_shuf, segleng, segshift, epleng, maxfreqbin, para)
