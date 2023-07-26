@@ -17,7 +17,7 @@
 %                       'TRDTF' : Time-reversed directed transfer entropy
 %                       'MIM'   : Multivariate Interaction Measure for each ROI
 %                       'MIC'   : Maximized Imaginary Coherency for each ROI
-%  nshuf         - [integer] number of shuffles for statistical significance testing. The first shuffle is the true value. Default is 1001. 
+%  nshuf         - [integer] Number of shuffles for statistical significance testing. The first shuffle is the true value. Default is 1001. 
 %  roi_selection - [cell array of integers] Cell array of ROI indices {1, 2, 3, ...} indicating for which regions (ROIs) connectivity should be computed. 
 %                  Default is all (set to EEG.roi.nROI).
 
