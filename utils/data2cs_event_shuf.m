@@ -1,5 +1,5 @@
-% Calculates surrogate cross-spectra from data for event-related measurement 
-% using a permutation-based approach by shuffling the trials of the original data. 
+% Calculates surrogate cross-spectra from data for event-related
+% measurements using a permutation-based approach by shuffling the trials of the original data. 
 %
 % The off-diagonals of the cross-spectrum are calculated by multiplying the 
 % time-series of the unshuffled trial with the conjugate time-series
@@ -11,7 +11,7 @@
 %
 % Inputs:
 %   data_orig  - (ndat x nchan) original (unshuffled) data matrix, each colum is the time-series in one channel
-%   data_shuf  - (ndat x nchan) shuffled data matrix
+%   data_shuf  - (ndat x nchan) trial-shuffled data matrix
 %   segleng    - length of each segment in bins, e.g. segleng = 1000
 %   segshift   - numer of bins by which neighboring segments are shifted, 
 %                e.g. segshift = segleng/2 makes overlapping segments
