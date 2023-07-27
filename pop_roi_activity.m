@@ -14,6 +14,8 @@
 % Optional inputs:
 %  'epochlen'         - [float] epoch length (default is 2 seconds). ROIconnect
 %                       has not been tested with other epoch lenghts.
+%  'epochrecur'       - [float] epoch reccurence (in second). See
+%                       eeg_regepochs for more information.
 %  'resample'         - [integer] resample to the desired sampling rate. Default
 %                       is 100. Adujst the model order accordingly. ROIconnect
 %                       has only be tested with 100 Hz sampling rates.
@@ -252,6 +254,7 @@ end
     'effectchanges'   'string'              { 'on' 'off'}    'off';
     'nPCA'            'real'                {}               3;
     'epochlen'        'real'                {}               2;
+    'epochrecur'      'real'                {}               2;
     'fooof'           'string'              { 'on' 'off'}    'off';
     'freqresolution'   'integer'            {}               0;
     'fooof_frange'     ''                   {}               [1 30]}, 'pop_roi_activity', 'ignore');
@@ -262,14 +265,13 @@ if ~isempty(g.resample) && ~isequal(EEG.srate, g.resample)
     EEGOUT = pop_resample(EEGOUT, g.resample);
 end
 if EEGOUT.trials == 1
-    recurrence = 2;
-    EEGOUT = eeg_regepochs(EEGOUT, recurrence, [0 2]);
+    EEGOUT = eeg_regepochs(EEGOUT, g.epochrecur, [0 g.epochlen]);
 end
 
 chansel = {};
 if isempty(g.leadfield)
     g.leadfield = EEG.dipfit.sourcemodel;
-    chansel   = EEG.dipfit.sourcemodel.label;
+    chansel     = EEG.dipfit.sourcemodel.label;
 end
 if isstruct(g.leadfield) && isfield(g.leadfield, 'file')
     sourceModelFile = g.leadfield.file;
