@@ -113,13 +113,19 @@ if ~strcmpi(g.brainimg, 'off')
         coords = loadtxt('brain_coords.txt');
     end
     coords(:,1) = [];
+    ignoreAreas = { 'HippocampusR' 'HippocampusL' 'ThalamusL' 'ThalamusR' };
     for indLab = 1:length(g.labels)
         indCoord = strmatch( lower(g.labels{indLab}), lower(coords(1,:)) );
-        if isempty(indCoord)
-            disp('Could not find brain areas, plotting on circle')
-            g.brainimg = 'off';
-            break;
-            indLab = length(g.labels);
+        if isempty(indCoord) 
+            if ~ismember(g.labels{indLab}, ignoreAreas)
+                disp('Could not find brain areas, plotting on circle')
+                g.brainimg = 'off';
+                break;
+                indLab = length(g.labels);
+            else
+                x(indLab) = NaN;
+                y(indLab) = NaN;
+            end
         else
             x(indLab) = coords{2,indCoord};
             y(indLab) = coords{3,indCoord};
