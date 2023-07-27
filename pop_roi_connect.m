@@ -33,7 +33,7 @@
 %  'snippet'        - ['on'|off]  Option to compute connectivity over snippets. Default is 'off'. 
 %  'firstsnippet'   - ['on'|off]  Only use the first snippet (useful for fast computation). Default is 'off'. 
 %  'snip_length'    - ['on'|'off'] Length of the snippets. Default is 60 seconds.
-%  'erroronsnippet' - ['on'|'off'] Error if snippet too short. Default 'on'.
+%  'errornosnippet' - ['on'|'off'] Error if snippet too short. Default 'on'.
 %  'fcsave_format'  - ['mean_snips'|'all_snips']  Option to save mean over snippets 
 %                     (shape: 101,68,68) or all snippets (shape: n_snips,101,68,68). Default is 'mean_snips.'
 %  'freqresolution' - [integer] Desired frequency resolution (in number of frequencies). 
@@ -173,7 +173,7 @@ g = finputcheck(options, ...
       'methods'        'cell'     { }                           { };
       'snippet'        'string'   { 'on', 'off' }               'off';
       'firstsnippet'   'string'   { 'on', 'off' }               'off'; 
-      'erroronsnippet' 'string'   { 'on', 'off' }               'off'; 
+      'errornosnippet' 'string'   { 'on', 'off' }               'off'; 
       'nepochs'        'real'                {}               [];
       'snip_length'    'integer'  { }                           60; 
       'fcsave_format'  'string'   { 'mean_snips', 'all_snips'}  'mean_snips';
@@ -188,48 +188,12 @@ if ischar(g), error(g); end
 % process multiple datasets
 % -------------------------
 if length(EEG) > 1
-    eeglab_options;
     if nargin < 2
-        if option_storedisk
-            res = questdlg2( [ 'Data files on disk will be automatically overwritten.' 10 ...
-                                'Are you sure you want to proceed with this operation?' ], ...
-                            'Confirmation', 'Cancel', 'Proceed', 'Proceed');
-            switch lower(res)
-                case 'cancel', return;
-                case 'proceed'
-            end
-        end
-    end
-    % find common datasets accross subjects
-    % and limit the number of epochs
-    allsubjects = { EEG.subject };
-    for index = 1:length(allsubjects)
-        optionsSubj = options;
-        allinds = strmatch(allsubjects{index}, allsubjects, 'exact');
-
-        % datasets from the same subjects need to have the same number of epochs
-        TMPEEG = EEG(allinds);
-        if TMPEEG(1).trials > 1
-            optionsSubj = [ optionsSubj { 'nepochs' min([TMPEEG.trials]) }];
-        end
-        if nargin < 2
-            [ TMPEEG, com ] = eeg_eval( 'pop_roi_connect', TMPEEG, 'warning', 'off', 'params', optionsSubj );
-        else
-            [ TMPEEG, com ] = eeg_eval( 'pop_roi_connect', TMPEEG, 'params', optionsSubj );
-        end
-        EEG = eeg_store(EEG, TMPEEG, allinds);
+        [ EEG, com ] = eeg_eval( 'pop_roi_connect', EEG, 'warning', 'off', 'params', options );
+    else
+        [ EEG, com ] = eeg_eval( 'pop_roi_connect', EEG, 'params', options );
     end
     return
-end
-
-if ~isempty(g.nepochs) 
-    if EEG.trials < g.nepochs
-        error('Not enough data epochs')
-    elseif EEG.trials > g.nepochs
-        % epochSelect = shuffle(1:EEG.trials);
-        % better select contiguous epochs
-        EEG = pop_select(EEG, 'trial', 1:g.nepochs);
-    end
 end
 
 % compute connectivity over snippets
@@ -238,21 +202,27 @@ conn_matrices_snips = {};
 if strcmpi(g.snippet, 'on') && isempty(intersect(g.methods, {'PAC'})) && strcmpi(g.conn_stats, 'off')
 
     snippet_length = g.snip_length; % seconds
-    snip_eps = snippet_length/(size(EEG.data,2)/EEG.srate); % n epochs in snippet
-    nsnips = floor(EEG.trials/snip_eps);
+    trials = size(EEG.roi.source_roi_data,3);
+    pnts   = size(EEG.roi.source_roi_data,2);
+    snip_eps = snippet_length/(pnts/EEG.roi.srate); % n epochs in snippet
+    nsnips = floor(trials/snip_eps);
     if nsnips < 1
-        if strcmpi(opt.erroronsnippet, 'on')
-            error('Snippet length cannot exceed data length.')
+        if strcmpi(g.errornosnippet, 'on')
+            error('Snippet length cannot exceed data length.\n')
         else
-            frpintf(2, 'Snippet length cannot exceed data length, using the whole data')
+            fprintf(2, 'Snippet length cannot exceed data length, using the whole data\n')
             nsnips = 1;
         end
     end
-    diff = (EEG.trials * EEG.pnts/EEG.srate) - (nsnips * EEG.pnts/EEG.srate * snip_eps);
+    diff = (trials * pnts/EEG.roi.srate) - (nsnips * pnts/EEG.roi.srate * snip_eps);
     if diff ~= 0
         warning(strcat(int2str(diff), ' seconds are thrown away.'));
     end
 
+    if strcmpi(g.firstsnippet, 'on')
+        nsnips = 1;
+    end
+    
     source_roi_data_save = EEG.roi.source_roi_data;
     for isnip = 1:nsnips
         begSnip = (isnip-1)* snip_eps + 1;
@@ -265,10 +235,6 @@ if strcmpi(g.snippet, 'on') && isempty(intersect(g.methods, {'PAC'})) && strcmpi
             fc_matrix = EEG.roi.(fc_name);
             conn_matrices_snips{isnip,fc} = fc_matrix; % store each connectivity metric for each snippet in separate structure
         end
-    end
-
-    if strcmpi(g.firstsnippet, 'on')
-        nsnips = 1;
     end
     
     % compute mean over connectivity of each snippet
@@ -284,13 +250,14 @@ if strcmpi(g.snippet, 'on') && isempty(intersect(g.methods, {'PAC'})) && strcmpi
             EEG.roi.(fc_name) = reshaped;
         else
             if nsnips > 1
-                mean_conn = squeeze(mean(reshaped, 1)); 
+                mean_conn = squeeze(mean(reshaped, 1));
             else
                 mean_conn = reshaped;
             end
             EEG.roi.(fc_name) = mean_conn; % store mean connectivity in EEG struct
         end
     end
+
 elseif strcmpi(g.conn_stats, 'on')
     EEG = roi_connstats(EEG, g.methods, g.nshuf, g.roi_selection);
 else
