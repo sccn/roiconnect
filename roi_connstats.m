@@ -10,8 +10,6 @@
 %                       'aCOH'  : Coherence
 %                       'cCOH'  : (complex-valued) coherency
 %                       'iCOH'  : absolute value of the imaginary part of coherency
-%                       'GC'    : Granger Causality
-%                       'TRGC'  : Time-reversed Granger Causality
 %                       'wPLI'  : Weighted Phase Lag Index
 %                       'PDC'   : Partial directed coherence
 %                       'TRPDC' : Time-reversed partial directed coherence
@@ -19,7 +17,7 @@
 %                       'TRDTF' : Time-reversed directed transfer entropy
 %                       'MIM'   : Multivariate Interaction Measure for each ROI
 %                       'MIC'   : Maximized Imaginary Coherency for each ROI
-%  nshuf'        - [integer] number of shuffles for statistical significance testing. The first shuffle is the true value. Default is 101. 
+%  nshuf         - [integer] number of shuffles for statistical significance testing. The first shuffle is the true value. Default is 1001. 
 %  roi_selection - [cell array of integers] Cell array of ROI indices {1, 2, 3, ...} indicating for which regions (ROIs) connectivity should be computed. 
 %                  Default is all (set to EEG.roi.nROI).
 

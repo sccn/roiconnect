@@ -137,7 +137,7 @@ function EEG = roi_connect(EEG, varargin)
             elseif  strcmpi(tmpMethods1{iMethods}, 'GC') || strcmpi(tmpMethods1{iMethods}, 'TRGC')
                 TRGCnet = EEG.roi.(tmpMethods1{iMethods})(:, :, 1) - EEG.roi.(tmpMethods1{iMethods})(:, :, 2);
                 EEG.roi.(tmpMethods1{iMethods}) = get_connect_mat( TRGCnet, nROI, -1); 
-            else
+            else % wPLI
                 measure = rm_components(EEG.roi.(tmpMethods1{iMethods}), EEG.roi.nPCA, tmpMethods1{iMethods}); % only keep the first principal component
                 EEG.roi.(tmpMethods1{iMethods}) = measure;
             end
