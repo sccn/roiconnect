@@ -235,28 +235,29 @@ if strcmpi(g.snippet, 'on') && isempty(intersect(g.methods, {'PAC'})) && strcmpi
             fc_matrix = EEG.roi.(fc_name);
             conn_matrices_snips{isnip,fc} = fc_matrix; % store each connectivity metric for each snippet in separate structure
         end
-
-        % compute mean over connectivity of each snippet
-        for fc = 1:n_conn_metrics
-            fc_name = g.methods{fc};
-            [first_dim, second_dim, third_dim] = size(conn_matrices_snips{1,fc});
+    end
     
-            conn_cell = conn_matrices_snips(:,fc); % store all matrices of one metric in a cell
-            mat = cell2mat(conn_cell);
-            reshaped = reshape(mat, first_dim, nsnips, second_dim, third_dim);
-            reshaped = squeeze(permute(reshaped, [2,1,3,4]));
-            if strcmpi(g.fcsave_format, 'all_snips')
-                EEG.roi.(fc_name) = reshaped;
+    % compute mean over connectivity of each snippet
+    for fc = 1:n_conn_metrics
+        fc_name = g.methods{fc};
+        [first_dim, second_dim, third_dim] = size(conn_matrices_snips{1,fc});
+
+        conn_cell = conn_matrices_snips(:,fc); % store all matrices of one metric in a cell
+        mat = cell2mat(conn_cell);
+        reshaped = reshape(mat, first_dim, nsnips, second_dim, third_dim);
+        reshaped = squeeze(permute(reshaped, [2,1,3,4]));
+        if strcmpi(g.fcsave_format, 'all_snips')
+            EEG.roi.(fc_name) = reshaped;
+        else
+            if nsnips > 1
+                mean_conn = squeeze(mean(reshaped, 1));
             else
-                if nsnips > 1
-                    mean_conn = squeeze(mean(reshaped, 1)); 
-                else
-                    mean_conn = reshaped;
-                end
-                EEG.roi.(fc_name) = mean_conn; % store mean connectivity in EEG struct
+                mean_conn = reshaped;
             end
+            EEG.roi.(fc_name) = mean_conn; % store mean connectivity in EEG struct
         end
     end
+
 elseif strcmpi(g.conn_stats, 'on')
     EEG = roi_connstats(EEG, g.methods, g.nshuf, g.roi_selection);
 else
