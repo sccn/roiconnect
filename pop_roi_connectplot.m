@@ -343,9 +343,9 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         frq_inds = 1:length(S.freqs);
         titleStr = 'broadband';
     end
-    if length(frq_inds) == 1
-        error('Cannot plot a single frequency, select frequency range instead');
-    end
+%     if length(frq_inds) == 1
+%         error('Cannot plot a single frequency, select frequency range instead');
+%     end
 
     % plotting options
     allMeasures = { splot.acronym };
@@ -406,7 +406,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
 %                     MI = S.MIM(:, :);
                     MI = S.MIM;
                 end
-                matrix = squeeze(mean(MI(frq_inds, :, :)));
+                matrix = squeeze(mean(MI(frq_inds, :, :),1));
                 cortexPlot = mean(matrix, 2);
 
             case { 'crossspecpow' 'coh' 'crossspecimag' }

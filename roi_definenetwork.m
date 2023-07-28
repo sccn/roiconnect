@@ -2,9 +2,11 @@
 %                       have an Atlas loaded in EEG.roi.atlas
 % Usage:
 %  [EEG, networks] = roi_definenetwork(EEG, netTable, 'key', 'val'); 
+%  [roi, networks] = roi_definenetwork(roi, netTable, 'key', 'val'); 
 %
 % Inputs:
 %  EEG - EEGLAB dataset with ROI activity computed and Atlas loaded
+%  roi - EEGLAB EEG.roi substructure connectivity and Atlas
 %  netTable      - [string|table] Define network based on existing
 %                  ROIs. If a string is provided, the file is loaded as a
 %                  table. First row contains the names of the new ROI.
@@ -75,6 +77,14 @@ if nargin < 2
     return
 end
 
+if isfield(EEG, 'roi')
+    roi = EEG.roi;
+    flagEEG = true;
+else
+    roi = EEG;
+    flagEEG = false;
+end
+
 g = finputcheck(varargin, { ...
     'ignoremissing'    'string'    {'on' 'off'}    'off';
     'addrois'          ''          {}              [];
@@ -108,7 +118,7 @@ if ischar(g.addrois) && ~isempty(g.addrois)
 end
 
 try
-    allLabels = { EEG.roi.atlas.Scouts.Label };
+    allLabels = { roi.atlas.Scouts.Label };
 catch
     error('Atlas not found. Use pop_leadfield to choose a source model which contains an Atlas.');
 end
@@ -120,7 +130,7 @@ if ~isempty(g.addrois)
     ROIinds = cell(1, size(g.addrois,2));
 
     for iCol = 1:size(g.addrois,2) % scan columns
-        EEG.roi.atlas.Scouts(end+1).Label = colNames{iCol};
+        roi.atlas.Scouts(end+1).Label = colNames{iCol};
         
         inds = [];
         if isnumeric(g.addrois(1,iCol))
@@ -153,7 +163,7 @@ if ~isempty(g.addrois)
             end
         end
         ROIinds{iCol} = inds;
-        EEG.roi.atlas.Scouts(end).Vertices = vertcat(EEG.roi.atlas.Scouts(inds).Vertices);
+        roi.atlas.Scouts(end).Vertices = vertcat(roi.atlas.Scouts(inds).Vertices);
     end
     
     % add ROIs to connectivity matrix by combining info from origin ROIs (not ideal, better compute it directly)
@@ -177,7 +187,7 @@ end
 % define networks
 networks = [];
 colNames = fieldnames(roiTable);
-allLabels = lower({ EEG.roi.atlas.Scouts.Label });
+allLabels = lower({ roi.atlas.Scouts.Label });
 for iCol = 1:size(roiTable,2) % scan columns
     
     networks(end+1).name = colNames{iCol};
@@ -210,7 +220,13 @@ for iCol = 1:size(roiTable,2) % scan columns
     
 end
 
-EEG.roi.atlas.networks = networks;
+roi.atlas.networks = networks;
+
+if flagEEG
+    EEG.roi = roi;
+else
+    EEG = roi;
+end
 
 % % augment connectivity rows/cols A, B, C, D
 % % new areas (A,B) and (C,D)
