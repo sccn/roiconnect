@@ -56,6 +56,8 @@ if ~exist('cs2coh')
     addpath(fullfile(p, 'libs/nolte'));
     addpath(fullfile(p, 'libs/ssgc_v1.0'));
     addpath(fullfile(p, 'libs/brainstorm'));
+    addpath(fullfile(p, 'libs/pellegrini'));
+    addpath(fullfile(p, 'utils'));
 end
 
 % use global variable to assess ROI status

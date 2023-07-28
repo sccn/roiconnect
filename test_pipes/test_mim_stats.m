@@ -22,6 +22,6 @@ EEG = pop_leadfield(EEG, 'sourcemodel',fullfile(eeglabp,'functions','supportfile
 EEG = pop_roi_activity(EEG, 'leadfield',EEG.dipfit.sourcemodel,'model','LCMV','modelparams',{0.05},'atlas','LORETA-Talairach-BAs','nPCA',3);
 
 %% Create null distribution
-EEG = pop_roi_connect(EEG, 'methods', {'COH', 'MIM'}, 'conn_stats', 'on', 'nshuf', 1001); % takes very long!
+EEG = pop_roi_connect(EEG, 'methods', {'CS' 'cCOH', 'wPLI' 'MIM'}, 'conn_stats', 'on', 'nshuf', 1001); % takes very long!
 % load('test_pipes/MIM_shuf.mat')
 pop_roi_statsplot(EEG, 'measure', 'MIM', 'freqrange', [8 13]);
