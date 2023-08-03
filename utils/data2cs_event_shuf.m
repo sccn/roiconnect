@@ -25,6 +25,8 @@
 %                   
 %                   para.proj -> must be a set of vector in channel space, if it exists then the raw output 
 %                   contains the single trial Fourier-transform in that channel
+%                   para.freqresolution -> Desired frequency resolution (in number of frequencies). 
+%                   If specified, the signal is zero padded accordingly. Default is 0 (means no padding).
 %
 % Outputs:
 %   cs   - (nchan x chan x maxfreqbin x nseg) tensor, cs(:,:,f,i) contains the cross-spectrum at frequency f and segment i

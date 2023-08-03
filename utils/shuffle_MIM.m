@@ -49,8 +49,7 @@ function conn = shuffle_MIM(data, npcs, output, nshuf, varargin)
     CSpara = [];
     CSpara.subave = 0;
     CSpara.mywindow = hanning(ndat) ./ sqrt(hanning(ndat)' * hanning(ndat));
-%     CSpara.freqresolution = g.freqresolution;
-    CSpara.freqresolution = 0; % for now
+    CSpara.freqresolution = g.freqresolution;
     
 %     warning('One iteration takes about 90 seconds.')
     fprintf('Generating null distribution using %d shuffles...\n', nshuf)
