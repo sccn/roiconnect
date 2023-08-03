@@ -29,6 +29,7 @@
 % Outputs:
 %   cs   - (nchan x chan x maxfreqbin x nseg) tensor, cs(:,:,f,i) contains the cross-spectrum at frequency f and segment i
 %   coh  - complex coherency calculated from cs
+%   wpli - weighted phase lag index calculated from cs
 %   nave - number of averages
 %
 % Authors: 
