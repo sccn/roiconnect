@@ -1,8 +1,29 @@
-function conn = shuffle_MIM(data, npcs, output, nshuf, varargin)
-    % TO DO: 
-    %   - add proper documentation
+% Wrapper function to compute surrogate FC metrics that are based on the
+% cross-spectrum, incl. MIM/MIC, cCOH, iCOH, aCOH and wPLI.
+%
+% Usage: 
+%   conn = shuffle_MIM(data, npcs, output, nshuf, 'freqresolution', <freqresolution>, 'roi_selection', <roi_selection>); 
+%
+% Inputs:
+%   data             - (nchan x len_epoch x ntrials) source ROI data
+%   npcs             - (1 x nROIs) vector, each entry contains the number of principal components (PCs)
+%   output           - [cell array of string] Cell array of methods e.g. {'CS' 'MIM' 'wPLI' 'cCOH' 'aCOH' 'iCOH'}
+%   nshuf            - [integer] number of shuffles
+% 
+% Optional inputs:
+%   'freqresolution' - [integer] Desired frequency resolution (in number of frequencies). If
+%                       specified, the signal is zero padded accordingly. Default is 0 (means no padding).
+%   'roi_selection'  - [cell array of integers] Cell array of ROI indices {1, 2, 3, ...} indicating for which regions (ROIs) connectivity should be computed. 
+%                       Default is all (set to EEG.roi.nROI).
+% Outputs
+%   conn             - [struct] Struct of (nfreq x nROI x nROI x nshuf) FC metrics
+%
+% Authors: 
+%   Franziska Pellegrini, franziska.pellegrini@charite.de
+%   Stefan Haufe, haufe@tu-berlin.de
+%   Tien Dung Nguyen, tien-dung.nguyen@charite.de
 
-    %data is chan x l_epo x trials 
+function conn = shuffle_MIM(data, npcs, output, nshuf, varargin)
     % Copyright (c) 2022 Franziska Pellegrini and Stefan Haufe
 
     % decode input parameters

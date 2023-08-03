@@ -51,7 +51,7 @@ function EEG = roi_connstats(EEG, varargin)
         g.methods{coh_idx} = 'aCOH';
     end
 
-    methodset1 = { 'CS' 'MIM' 'wPLI' 'cCOH' 'aCOH' 'iCOH'}; % GC/TRGC, PDC/TRPDC, DTF/TRDTF not included (yet)
+    methodset1 = { 'CS' 'MIM' 'wPLI' 'cCOH' 'aCOH' 'iCOH' }; % GC/TRGC, PDC/TRPDC, DTF/TRDTF not included (yet)
     tmpMethods1 = intersect(g.methods, methodset1);
     if ~isempty(tmpMethods1)
         npcs = repmat(EEG.roi.nPCA, 1, EEG.roi.nROI);

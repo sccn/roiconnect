@@ -11,11 +11,11 @@
 % Inputs:
 %   data_orig  - (ndat x nchan) original (unshuffled) data matrix, each colum is the time-series in one channel
 %   data_shuf  - (ndat x nchan) trial-shuffled data matrix
-%   segleng    - length of each segment in bins, e.g. segleng = 1000
-%   segshift   - numer of bins by which neighboring segments are shifted, 
+%   segleng    - [integer] length of each segment in bins, e.g. segleng = 1000
+%   segshift   - [integer] numer of bins by which neighboring segments are shifted, 
 %                e.g. segshift = segleng/2 makes overlapping segments
-%   epleng     - length of each epoch
-%   maxfreqbin - max. frequency in bins
+%   epleng     - [integer] length of each epoch
+%   maxfreqbin - [integer] max. frequency in bins
 %   para       - optional structure:
 %                   para.segave = 0   -> no averaging across segments
 %                   para.segave neq 0 -> averaging across segments (default is 0)
