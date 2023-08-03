@@ -45,12 +45,12 @@ function EEG = pop_roi_statsplot(EEG, varargin)
     
     % extract frequency indices
     if ~isempty(g.freqrange)
-        try
+        if length(g.freqrange) == 1
+            frq_inds = find(S.freqs == g.freqrange(1)); 
+            title = sprintf('%1.1f Hz', g.freqrange(1));
+        else
             frq_inds = find(S.freqs >= g.freqrange(1) & S.freqs < g.freqrange(2));
             title = sprintf('%1.1f-%1.1f Hz frequency band', g.freqrange(1), g.freqrange(2));
-        catch
-            frq_inds = find(S.freqs == g.freqrange(1)); % if a single frequency is passed
-            title = sprintf('%1.1f Hz', g.freqrange(1));
         end
     else
         frq_inds = 1:length(S.freqs);
