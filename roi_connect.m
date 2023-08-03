@@ -101,8 +101,8 @@ function EEG = roi_connect(EEG, varargin)
 
 
     if ~isempty(intersect(g.methods, {'COH'}))
-        warning("'COH' is not supported anymore and will be replaced with aCOH (coherence). " + ...
-            "Please double-check with the documentation if this is what you want.")
+        warning("'COH' is not supported anymore and will be replaced with 'aCOH' (coherence). " + ...
+            "Please double-check with the documentation if this is what you really want.")
         coh_idx = strcmpi(g.methods, 'COH');
         g.methods{coh_idx} = 'aCOH';
     end
@@ -138,7 +138,8 @@ function EEG = roi_connect(EEG, varargin)
                 TRGCnet = EEG.roi.(tmpMethods1{iMethods})(:, :, 1) - EEG.roi.(tmpMethods1{iMethods})(:, :, 2);
                 EEG.roi.(tmpMethods1{iMethods}) = get_connect_mat( TRGCnet, nROI, -1); 
             else % wPLI
-                measure = rm_components(EEG.roi.(tmpMethods1{iMethods}), EEG.roi.nPCA, tmpMethods1{iMethods}); % only keep the first principal component
+                warning(strcat("Only the first principal component will be used to determine ", tmpMethods1{iMethods}))
+                measure = rm_components(EEG.roi.(tmpMethods1{iMethods}), EEG.roi.nPCA); % only keep the first principal component
                 EEG.roi.(tmpMethods1{iMethods}) = measure;
             end
         end
@@ -158,31 +159,9 @@ function EEG = roi_connect(EEG, varargin)
 
         % only keep the first principal component
         for iMethods = 1:length(tmpMethods2)
-            measure = rm_components(EEG.roi.(tmpMethods2{iMethods}), EEG.roi.nPCA, tmpMethods2{iMethods}); % only keep the first principal component
+            warning(strcat("Only the first principal component will be used to determine ", tmpMethods2{iMethods}))
+            measure = rm_components(EEG.roi.(tmpMethods2{iMethods}), EEG.roi.nPCA); % only keep the first principal component
             EEG.roi.(tmpMethods2{iMethods}) = measure;
-        end
-    end
-
-    function measure = get_connect_mat( measureOri, nROI, signVal)
-        % create a ROI x ROI connectivity matrix, if needed
-        % TRGCmat(f, ii, jj) is net TRGC from jj to ii
-        measure = [];
-        iinds = 0;
-        for iroi = 1:nROI
-            for jroi = (iroi+1):nROI
-                iinds = iinds + 1;
-                measure(:, iroi, jroi) = signVal * measureOri(:, iinds);
-                measure(:, jroi, iroi) = measureOri(:, iinds);
-            end
-        end
-    end
-
-    function measure = rm_components(measure, nPCA, method)
-        % only keep the first PC
-        % measure has the size (n_freq, nROI*nPCA, nROI*nPCA)
-        if nPCA > 1
-            warning(strcat("Only the first principal component will be used to determine ", method))
-            measure = measure(:, 1:nPCA:end, 1:nPCA:end);
         end
     end
 end

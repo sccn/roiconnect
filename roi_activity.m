@@ -305,7 +305,6 @@ end
     
 % number of ROIs in the Desikan-Killiany Atlas
 nROI  = length(cortex.Atlas.Scouts);
-nPCAs = zeros(1, nROI);
 
 % ROI labels
 labels = {cortex.Atlas.Scouts.Label};
@@ -332,7 +331,7 @@ if strcmpi(g.roiactivity, 'on')
     source_roi_power = zeros(nfreq, nROI);
     
     % compute power using the Welch method
-    disp('Computing ROI activity...');
+    fprintf('Computing ROI activity:');
     [tmpWelch,ftmp] = pwelch(tmpData, data_pnts, floor(data_pnts/2), data_pnts, EEG.srate); % ftmp should be equal frqs 
     tmpWelch = reshape(tmpWelch, size(tmpWelch,1), EEG.trials, size(source_voxel_data,2), size(source_voxel_data,3));
     tmpWelch = squeeze(mean(tmpWelch,2)); % remove trials size freqs x voxels x 3
@@ -347,13 +346,17 @@ if strcmpi(g.roiactivity, 'on')
         PS_corrected = zeros(size(frqs, 1), size(frqs, 2), nROI);
     end
     
+    source_roi_data = zeros(size(source_voxel_data,1), g.nPCA*nROI);
     for iROI = 1:nROI
+        if mod(iROI, 5) == 0
+            fprintf('.');
+        end
         ind_roi = cortex.Atlas.Scouts(iROI).Vertices;
         [~, source_roi_power_norm(iROI)] = roi_getpower(source_voxel_data, ind_roi); 
         source_roi_power(:,iROI) = mean(tmpWelch(:, ind_roi),2); % shape: (101, nROI)
-        
-        [source_roi_data_tmp, nPCAs(iROI)] = roi_getact(source_voxel_data, ind_roi, g.nPCA);
-        source_roi_data = cat(2, source_roi_data, source_roi_data_tmp);
+
+        [source_roi_data_tmp, nPCA(iROI)] = roi_getact(source_voxel_data, ind_roi, g.nPCA);
+        source_roi_data(:, (iROI-1)*g.nPCA+1:iROI*g.nPCA) = source_roi_data_tmp;
         if strcmpi(g.fooof, 'on')
             ps1 = source_roi_power(:,iROI);
             fooof_result = fooof(frqs, ps1, f_range, settings, true);
@@ -362,9 +365,9 @@ if strcmpi(g.roiactivity, 'on')
             slope(iROI) = fooof_result.aperiodic_params(2);
             y = (-slope(iROI) .* log10(frqs)) + offset;
             PS_corrected(:,:,iROI) = 10*log10(ps1)-10*y;
-            
         end
     end
+    fprintf('\n');
 
     % version with nPCA components
     source_roi_data = permute(reshape(source_roi_data, EEG.pnts, EEG.trials, []), [3 1 2]);

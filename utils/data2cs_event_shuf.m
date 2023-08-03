@@ -11,11 +11,11 @@
 % Inputs:
 %   data_orig  - (ndat x nchan) original (unshuffled) data matrix, each colum is the time-series in one channel
 %   data_shuf  - (ndat x nchan) trial-shuffled data matrix
-%   segleng    - length of each segment in bins, e.g. segleng = 1000
-%   segshift   - numer of bins by which neighboring segments are shifted, 
+%   segleng    - [integer] length of each segment in bins, e.g. segleng = 1000
+%   segshift   - [integer] numer of bins by which neighboring segments are shifted, 
 %                e.g. segshift = segleng/2 makes overlapping segments
-%   epleng     - length of each epoch
-%   maxfreqbin - max. frequency in bins
+%   epleng     - [integer] length of each epoch
+%   maxfreqbin - [integer] max. frequency in bins
 %   para       - optional structure:
 %                   para.segave = 0   -> no averaging across segments
 %                   para.segave neq 0 -> averaging across segments (default is 0)
@@ -25,10 +25,13 @@
 %                   
 %                   para.proj -> must be a set of vector in channel space, if it exists then the raw output 
 %                   contains the single trial Fourier-transform in that channel
+%                   para.freqresolution -> Desired frequency resolution (in number of frequencies). 
+%                   If specified, the signal is zero padded accordingly. Default is 0 (means no padding).
 %
 % Outputs:
 %   cs   - (nchan x chan x maxfreqbin x nseg) tensor, cs(:,:,f,i) contains the cross-spectrum at frequency f and segment i
 %   coh  - complex coherency calculated from cs
+%   wpli - weighted phase lag index calculated from cs
 %   nave - number of averages
 %
 % Authors: 

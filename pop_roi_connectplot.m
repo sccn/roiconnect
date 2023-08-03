@@ -22,7 +22,7 @@
 %                           'mim' : Multivariate Interaction Measure for each ROI
 %                           'pac' : Phase-amplitude coupling for a certain frequency (band) combination based on bicoherence
 %                           'pac_anti': Phase-amplitude coupling for a certain frequency (band) combination based on the antisymmetrized bicoherence
-%  'freqrange'            - [min max] frequency range in Hz. Default is to plot broadband power.
+%  'freqrange'            - [min max] frequency range or [integer] single frequency in Hz. Default is to plot broadband power.
 %  'smooth'               - [float] smoothing factor for cortex surface plotting
 %  'plotcortex'           - ['on'|'off'] plot results on smooth cortex. Default is 'on'
 %  'plotcortexparams'     - [cell] ...
@@ -335,16 +335,18 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
     % replace low-resolution with high-resolution cortex
     load cortex;
     
-    % frequency range
+    % extract frequency indices
     if ~isempty(g.freqrange)
-        frq_inds = find(S.freqs >= g.freqrange(1) & S.freqs < g.freqrange(2));
-        titleStr = sprintf('%1.1f-%1.1f Hz frequency band', g.freqrange(1), g.freqrange(2));
+        if length(g.freqrange) == 1
+            frq_inds = find(S.freqs == g.freqrange(1)); 
+            titleStr = sprintf('%1.1f Hz', g.freqrange(1));
+        else
+            frq_inds = find(S.freqs >= g.freqrange(1) & S.freqs < g.freqrange(2));
+            titleStr = sprintf('%1.1f-%1.1f Hz frequency band', g.freqrange(1), g.freqrange(2));
+        end
     else
         frq_inds = 1:length(S.freqs);
         titleStr = 'broadband';
-    end
-    if length(frq_inds) == 1
-        error('Cannot plot a single frequency, select frequency range instead');
     end
 
     % plotting options
@@ -406,7 +408,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
 %                     MI = S.MIM(:, :);
                     MI = S.MIM;
                 end
-                matrix = squeeze(mean(MI(frq_inds, :, :)));
+                matrix = squeeze(mean(MI(frq_inds, :, :),1));
                 cortexPlot = mean(matrix, 2);
 
             case { 'crossspecpow' 'coh' 'crossspecimag' }

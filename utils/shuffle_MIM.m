@@ -1,21 +1,76 @@
-function conn = shuffle_MIM(data, npcs, output, fres, nshuf)
-    % TO DO: 
-    %   - add proper documentation
-    %   - add g.freqresolution
+% Wrapper function to compute surrogate FC metrics that are based on the
+% cross-spectrum, incl. MIM/MIC, cCOH, iCOH, aCOH and wPLI.
+%
+% Usage: 
+%   conn = shuffle_MIM(data, npcs, output, nshuf, 'freqresolution', <freqresolution>, 'roi_selection', <roi_selection>); 
+%
+% Inputs:
+%   data             - (nchan x len_epoch x ntrials) source ROI data
+%   npcs             - (1 x nROIs) vector, each entry contains the number of principal components (PCs)
+%   output           - [cell array of string] Cell array of methods e.g. {'CS' 'MIM' 'wPLI' 'cCOH' 'aCOH' 'iCOH'}
+%   nshuf            - [integer] number of shuffles
+% 
+% Optional inputs:
+%   'freqresolution' - [integer] Desired frequency resolution (in number of frequencies). If
+%                       specified, the signal is zero padded accordingly. Default is 0 (means no padding).
+%   'roi_selection'  - [cell array of integers] Cell array of ROI indices {1, 2, 3, ...} indicating for which regions (ROIs) connectivity should be computed. 
+%                       Default is all (set to EEG.roi.nROI).
+% Outputs
+%   conn             - [struct] Struct of (nfreq x nROI x nROI x nshuf) FC metrics
+%
+% Authors: 
+%   Franziska Pellegrini, franziska.pellegrini@charite.de
+%   Stefan Haufe, haufe@tu-berlin.de
+%   Tien Dung Nguyen, tien-dung.nguyen@charite.de
 
-    %data is chan x l_epo x trials 
+function conn = shuffle_MIM(data, npcs, output, nshuf, varargin)
     % Copyright (c) 2022 Franziska Pellegrini and Stefan Haufe
+
+    % decode input parameters
+    g = finputcheck(varargin, { ...
+        'freqresolution'  'integer'  { }    0;
+        'roi_selection'   'cell'     { }    { } }, 'shuffle_MIM'); 
+    if ischar(g), error(g); end
     
     [nchan, ndat, nepo] = size(data);
 
-    [inds, PCA_inds] = fp_npcs2inds(npcs);
-    ninds = length(inds);
+%     [inds, PCA_inds] = fp_npcs2inds(npcs);
+%     ninds = length(inds);
+    inds = {}; ninds = 0;
+    if isempty(g.roi_selection)
+        nROI = nchan/npcs(1);
+    else
+        nROI = length(g.roi_selection);
+    end
+    nPCA = npcs(1);
+    for iroi = 1:nROI
+        for jroi = (iroi+1):nROI
+            inds{ninds+1} = {(iroi-1)*nPCA + [1:nPCA], (jroi-1)*nPCA + [1:nPCA]};
+            ninds = ninds + 1;
+        end
+    end
+
+    % choose ROIs if desired, take number of PCs into account
+    if ~isempty(g.roi_selection)
+        data_new = zeros(nROI * nPCA, size(data, 2), size(data, 3));
+        
+        start_idx_new  = 1;
+        end_idx_new = nPCA;
+        for iroi = 1:nROI
+            end_idx = g.roi_selection{iroi} * nPCA;
+            start_idx = end_idx - (nPCA - 1);
+            data_new(start_idx_new:end_idx_new, :, :) = data(start_idx:end_idx, :, :);
+    
+            start_idx_new = start_idx_new + nPCA;
+            end_idx_new = start_idx_new + nPCA - 1;
+        end
+        data = data_new;
+    end
 
     CSpara = [];
     CSpara.subave = 0;
     CSpara.mywindow = hanning(ndat) ./ sqrt(hanning(ndat)' * hanning(ndat));
-%     CSpara.freqresolution = g.freqresolution;
-    CSpara.freqresolution = 0; % for now
+    CSpara.freqresolution = g.freqresolution;
     
 %     warning('One iteration takes about 90 seconds.')
     fprintf('Generating null distribution using %d shuffles...\n', nshuf)
@@ -62,10 +117,9 @@ function conn = shuffle_MIM(data, npcs, output, fres, nshuf)
                 [~ , MIM2(:, iind)] =  roi_mim2(cCOH(subset, subset, :), subinds{1}, subinds{2});
             end
         end         
-        nroi = nchan/npcs(1);
         
         % reshape (in the case of MIM) or only keep the first principal component (other metrics)
-        MIM_s(:, :, :, ishuf) = get_connect_mat(MIM2, nroi, +1);
+        MIM_s(:, :, :, ishuf) = get_connect_mat(MIM2, nROI, +1);
         CS_s(:, :, :, ishuf) = rm_components(permute(CS, [3 1 2 4]), npcs(1));
         cCOH_s(:, :, :, ishuf) = rm_components(permute(cCOH, [3 1 2 4]), npcs(1));
         aCOH_s(:, :, :, ishuf) = rm_components(permute(aCOH, [3 1 2 4]), npcs(1));
