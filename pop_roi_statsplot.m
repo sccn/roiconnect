@@ -16,7 +16,8 @@
 %                       'TRDTF' : Time-reversed directed transfer entropy
 %                       'MIM'   : Multivariate Interaction Measure for each ROI
 %                       'MIC'   : Maximized Imaginary Coherency for each ROI
-%  'freqrange' - [min max] frequency range in Hz. Default is to plot broadband power.
+%  'freqrange' - [min max] frequency range or [integer] single frequency in Hz. Default is to plot broadband power.
+%  'alpha'     - [integer] Significance level. Default is 0.05.
 
 function EEG = pop_roi_statsplot(EEG, varargin)
 
@@ -33,7 +34,8 @@ function EEG = pop_roi_statsplot(EEG, varargin)
     % -----------------------
     g = finputcheck(varargin,  { 
         'measure'        'string'   { }    '';
-        'freqrange'      'real'     { }    []}, 'pop_roi_statsplot');
+        'freqrange'      'real'     { }    []; ...
+        'alpha'          'integer'  { }    0.05}, 'pop_roi_statsplot');
     if ischar(g), error(g); end
     S = EEG.roi;
 
@@ -43,12 +45,12 @@ function EEG = pop_roi_statsplot(EEG, varargin)
     
     % extract frequency indices
     if ~isempty(g.freqrange)
-        try
+        if length(g.freqrange) == 1
+            frq_inds = find(S.freqs == g.freqrange(1)); 
+            title = sprintf('%1.1f Hz', g.freqrange(1));
+        else
             frq_inds = find(S.freqs >= g.freqrange(1) & S.freqs < g.freqrange(2));
             title = sprintf('%1.1f-%1.1f Hz frequency band', g.freqrange(1), g.freqrange(2));
-        catch
-            frq_inds = find(S.freqs == g.freqrange(1)); % if a single frequency is passed
-            title = sprintf('%1.1f Hz', g.freqrange(1));
         end
     else
         frq_inds = 1:length(S.freqs);
@@ -67,8 +69,7 @@ function EEG = pop_roi_statsplot(EEG, varargin)
     FC_pn = sum(netFC(:, 1) < netFC(:, 2:end), 2)./(size(matrix, 3) - 1);
 
     % use FDR-correction for multiple comparison's correction
-    alpha = 0.05; % add this as a parameter?
-    [p_fdr, ~] = fdr(FC_pn, alpha);
+    [p_fdr, ~] = fdr(FC_pn, g.alpha);
     FC_pn(FC_pn > p_fdr) = 1;
 
     % plot 

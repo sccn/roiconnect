@@ -23,6 +23,8 @@ function [cs, coh, wpli, nave]=data2cs_event(data,segleng,segshift,epleng,maxfre
 %       if it exists then the output raw contains the single trial
 %       Fourier-transform in that channel
 %
+%       para.freqresolution != 0 -> Desired frequency resolution (in number of frequencies). 
+%       If specified, the signal is zero padded accordingly.
 %
 % output:
 % cs: nchan by chan by maxfreqbin by nseg tensor cs(:,:,f,i) contains
