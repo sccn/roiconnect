@@ -55,7 +55,7 @@ function EEG = roi_connstats(EEG, varargin)
     tmpMethods1 = intersect(g.methods, methodset1);
     if ~isempty(tmpMethods1)
         npcs = repmat(EEG.roi.nPCA, 1, EEG.roi.nROI);
-        conn = shuffle_MIM(data, npcs, tmpMethods1, EEG.srate, g.nshuf); % (nfreq, nROI, nROI, nshuf)
+        conn = shuffle_MIM(data, npcs, tmpMethods1, g.nshuf, 'freqresolution', g.freqresolution, 'roi_selection', g.roi_selection); % (nfreq, nROI, nROI, nshuf)
         for iMethod = 1:length(tmpMethods1)
             EEG.roi.(tmpMethods1{iMethod}) = conn.(tmpMethods1{iMethod});
             if strcmpi(tmpMethods1{iMethod}, 'MIM')

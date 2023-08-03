@@ -1,15 +1,50 @@
-function conn = shuffle_MIM(data, npcs, output, fres, nshuf)
+function conn = shuffle_MIM(data, npcs, output, nshuf, varargin)
     % TO DO: 
     %   - add proper documentation
-    %   - add g.freqresolution
 
     %data is chan x l_epo x trials 
     % Copyright (c) 2022 Franziska Pellegrini and Stefan Haufe
+
+    % decode input parameters
+    g = finputcheck(varargin, { ...
+        'freqresolution'  'integer'  { }    0;
+        'roi_selection'   'cell'     { }    { } }, 'shuffle_MIM'); 
+    if ischar(g), error(g); end
     
     [nchan, ndat, nepo] = size(data);
 
-    [inds, PCA_inds] = fp_npcs2inds(npcs);
-    ninds = length(inds);
+%     [inds, PCA_inds] = fp_npcs2inds(npcs);
+%     ninds = length(inds);
+    inds = {}; ninds = 0;
+    if isempty(g.roi_selection)
+        nROI = nchan/npcs(1);
+    else
+        nROI = length(g.roi_selection);
+    end
+    nPCA = npcs(1);
+    for iroi = 1:nROI
+        for jroi = (iroi+1):nROI
+            inds{ninds+1} = {(iroi-1)*nPCA + [1:nPCA], (jroi-1)*nPCA + [1:nPCA]};
+            ninds = ninds + 1;
+        end
+    end
+
+    % choose ROIs if desired, take number of PCs into account
+    if ~isempty(g.roi_selection)
+        data_new = zeros(nROI * nPCA, size(data, 2), size(data, 3));
+        
+        start_idx_new  = 1;
+        end_idx_new = nPCA;
+        for iroi = 1:nROI
+            end_idx = g.roi_selection{iroi} * nPCA;
+            start_idx = end_idx - (nPCA - 1);
+            data_new(start_idx_new:end_idx_new, :, :) = data(start_idx:end_idx, :, :);
+    
+            start_idx_new = start_idx_new + nPCA;
+            end_idx_new = start_idx_new + nPCA - 1;
+        end
+        data = data_new;
+    end
 
     CSpara = [];
     CSpara.subave = 0;
@@ -62,10 +97,9 @@ function conn = shuffle_MIM(data, npcs, output, fres, nshuf)
                 [~ , MIM2(:, iind)] =  roi_mim2(cCOH(subset, subset, :), subinds{1}, subinds{2});
             end
         end         
-        nroi = nchan/npcs(1);
         
         % reshape (in the case of MIM) or only keep the first principal component (other metrics)
-        MIM_s(:, :, :, ishuf) = get_connect_mat(MIM2, nroi, +1);
+        MIM_s(:, :, :, ishuf) = get_connect_mat(MIM2, nROI, +1);
         CS_s(:, :, :, ishuf) = rm_components(permute(CS, [3 1 2 4]), npcs(1));
         cCOH_s(:, :, :, ishuf) = rm_components(permute(cCOH, [3 1 2 4]), npcs(1));
         aCOH_s(:, :, :, ishuf) = rm_components(permute(aCOH, [3 1 2 4]), npcs(1));
