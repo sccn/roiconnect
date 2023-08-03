@@ -101,8 +101,8 @@ function EEG = roi_connect(EEG, varargin)
 
 
     if ~isempty(intersect(g.methods, {'COH'}))
-        warning("'COH' is not supported anymore and will be replaced with aCOH (coherence). " + ...
-            "Please double-check with the documentation if this is what you want.")
+        warning("'COH' is not supported anymore and will be replaced with 'aCOH' (coherence). " + ...
+            "Please double-check with the documentation if this is what you really want.")
         coh_idx = strcmpi(g.methods, 'COH');
         g.methods{coh_idx} = 'aCOH';
     end
