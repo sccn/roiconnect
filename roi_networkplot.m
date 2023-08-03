@@ -102,7 +102,7 @@ end
     'plotmode'    'string'    {'2D' '3D' 'both' 'none' }  '2D';
     'plotopt'     'cell'      {}              {};
     'filename'    'string'    {}              '';
-    'threshold'   {'string' 'float'}     {}              0.1;
+    'threshold'   {'string' 'float'}     { {} {} }              0.1;
     'precomputed'    'struct'    {}      struct([]);
     }, 'roi_networkplot', 'ignore');
 if isstr(g)
