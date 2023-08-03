@@ -102,11 +102,14 @@ end
     'plotmode'    'string'    {'2D' '3D' 'both' 'none' }  '2D';
     'plotopt'     'cell'      {}              {};
     'filename'    'string'    {}              '';
-    'threshold'   'float'     {}              0.1;
+    'threshold'   {'string' 'float'}     {}              0.1;
     'precomputed'    'struct'    {}      struct([]);
     }, 'roi_networkplot', 'ignore');
 if isstr(g)
     error(g);
+end
+if ischar(g.threshold) || isstring(g.threshold)
+    g.threshold = str2double(g.threshold);
 end
 if ~isempty(g.filename) % remove file extension
     [filePath,g.filename] = fileparts(g.filename);
