@@ -11,10 +11,6 @@
 %                       'cCOH'  : (complex-valued) coherency
 %                       'iCOH'  : absolute value of the imaginary part of coherency
 %                       'wPLI'  : Weighted Phase Lag Index
-%                       'PDC'   : Partial directed coherence
-%                       'TRPDC' : Time-reversed partial directed coherence
-%                       'DTF'   : Directed transfer entropy
-%                       'TRDTF' : Time-reversed directed transfer entropy
 %                       'MIM'   : Multivariate Interaction Measure for each ROI
 %                       'MIC'   : Maximized Imaginary Coherency for each ROI
 %  nshuf         - [integer] Number of shuffles for statistical significance testing. The first shuffle is the true value. Default is 1001. 
@@ -47,7 +43,7 @@ function EEG = roi_connstats(EEG, methods, nshuf, roi_selection)
         warning('Statistics are only supported for MIM, more methods will be added.')
     end
 
-    methodset1 = { 'CS' 'MIM' 'wPLI' 'cCOH' 'aCOH' 'iCOH'}; % the remaining methods will be added eventually
+    methodset1 = { 'CS' 'MIM' 'wPLI' 'cCOH' 'aCOH' 'iCOH'}; % GC/TRGC, PDC/TRPDC, DTF/TRDTF not included (yet)
     tmpMethods1 = intersect(methods, methodset1);
     if ~isempty(tmpMethods1)
         npcs = repmat(EEG.roi.nPCA, 1, EEG.roi.nROI);
