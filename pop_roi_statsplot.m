@@ -16,7 +16,7 @@
 %                       'TRDTF' : Time-reversed directed transfer entropy
 %                       'MIM'   : Multivariate Interaction Measure for each ROI
 %                       'MIC'   : Maximized Imaginary Coherency for each ROI
-%  'freqrange' - [min max] Frequency range in Hz. Default is to plot broadband power.
+%  'freqrange' - [min max] frequency range or [integer] single frequency in Hz. Default is to plot broadband power.
 %  'alpha'     - [integer] Significance level. Default is 0.05.
 
 function EEG = pop_roi_statsplot(EEG, varargin)
