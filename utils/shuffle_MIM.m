@@ -114,12 +114,13 @@ function conn = shuffle_MIM(data, npcs, output, nshuf, varargin)
                 subinds = {1:length(inds{iind}{1}), length(inds{iind}{1}) + (1:length(inds{iind}{2}))};
                 
                 %MIC and MIM
-                [~ , MIM2(:, iind)] =  roi_mim2(cCOH(subset, subset, :), subinds{1}, subinds{2});
+                [MIC2(:, iind) , MIM2(:, iind)] =  roi_mim2(cCOH(subset, subset, :), subinds{1}, subinds{2});
             end
         end         
         
         % reshape (in the case of MIM) or only keep the first principal component (other metrics)
         MIM_s(:, :, :, ishuf) = get_connect_mat(MIM2, nROI, +1);
+        MIC_s(:, :, :, ishuf) = get_connect_mat(MIC2, nROI, +1);
         CS_s(:, :, :, ishuf) = rm_components(permute(CS, [3 1 2 4]), npcs(1));
         cCOH_s(:, :, :, ishuf) = rm_components(permute(cCOH, [3 1 2 4]), npcs(1));
         aCOH_s(:, :, :, ishuf) = rm_components(permute(aCOH, [3 1 2 4]), npcs(1));
