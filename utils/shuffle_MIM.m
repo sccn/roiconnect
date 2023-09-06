@@ -15,6 +15,8 @@
 %                       specified, the signal is zero padded accordingly. Default is 0 (means no padding).
 %   'roi_selection'  - [cell array of integers] Cell array of ROI indices {1, 2, 3, ...} indicating for which regions (ROIs) connectivity should be computed. 
 %                       Default is all (set to EEG.roi.nROI).
+%   'poolsize'       - [integer] Number of workers in the parallel pool (check parpool documentation) for parallel computing
+% 
 % Outputs
 %   conn             - [struct] Struct of (nfreq x nROI x nROI x nshuf) FC metrics
 %
@@ -29,7 +31,8 @@ function conn = shuffle_MIM(data, npcs, output, nshuf, varargin)
     % decode input parameters
     g = finputcheck(varargin, { ...
         'freqresolution'  'integer'  { }    0;
-        'roi_selection'   'cell'     { }    { } }, 'shuffle_MIM'); 
+        'roi_selection'   'cell'     { }    { }; ...
+        'poolsize'        'integer'  { }     1 }, 'shuffle_MIM'); 
     if ischar(g), error(g); end
     
     [nchan, ndat, nepo] = size(data);
@@ -74,8 +77,10 @@ function conn = shuffle_MIM(data, npcs, output, nshuf, varargin)
     
 %     warning('One iteration takes about 90 seconds.')
     fprintf('Generating null distribution using %d shuffles...\n', nshuf)
-    fprintf('Progress of %d:', nshuf);
-    for ishuf = 1:nshuf 
+    fprintf('Progress of %d:\n', nshuf);
+
+    parpool(g.poolsize)
+    parfor ishuf = 1:nshuf 
         if mod(ishuf, 10) == 0
             fprintf('%d', ishuf);
         elseif mod(ishuf, 2) == 0
@@ -89,16 +94,16 @@ function conn = shuffle_MIM(data, npcs, output, nshuf, varargin)
             shuf_inds = randperm(nepo);   
         end
         
-        clear MIM2 CS
-
         data_shuf = data(:, :, shuf_inds);
         [CS, ~, wPLI, ~] = data2cs_event_shuf(data(:, :)', data_shuf(:, :)', ndat, floor(ndat/2), ndat, [], CSpara);
 %         CS = fp_tsdata_to_cpsd(data, fres, 'WELCH', 1:nchan, 1:nchan,1:nepo,shuf_inds);
-        
+        nfreqs = size(CS, 3);
+
         if ~isempty(intersect(output, {'MIM', 'MIC', 'cCOH' 'iCOH', 'aCOH'}))
-            clear cCOH iCOH aCOH
+            cCOH = zeros(nchan, nchan, nfreqs)
+            aCOH = zeros(nchan, nchan, nfreqs)
+            iCOH = zeros(nchan, nchan, nfreqs)
             for ifreq = 1:size(CS,3)
-                clear pow 
                 pow = real(diag(CS(:,:,ifreq)));
                 cCOH(:,:,ifreq) = CS(:,:,ifreq) ./ sqrt(pow*pow');
                 aCOH(:,:,ifreq) = abs(CS(:,:,ifreq)) ./ sqrt(pow*pow');
@@ -107,6 +112,8 @@ function conn = shuffle_MIM(data, npcs, output, nshuf, varargin)
         end
         
         % loop over sender/receiver combinations to compute time-reversed GC
+        MIM2 = zeros(nfreqs, ninds)
+        MIC2 = zeros(nfreqs, ninds)
         for iind = 1:ninds
             if ~isequal(inds{iind}{1}, inds{iind}{2})
                 %ind configuration
@@ -134,5 +141,8 @@ function conn = shuffle_MIM(data, npcs, output, nshuf, varargin)
     for iout = 1:length(output)
         eval(['conn.' output{iout} ' = ' output{iout} '_s;'])
     end
+    % shut down current parallel pool
+    poolobj = gcp('nocreate');
+    delete(poolobj);
     fprintf('\n');
 end
