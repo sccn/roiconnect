@@ -20,8 +20,11 @@ EEG = pop_leadfield(EEG, 'sourcemodel',fullfile(eeglabp,'functions','supportfile
     'sourcemodel2mni',[0 -24 -45 0 0 -1.5708 1000 1000 1000] ,'downsample',1);
 
 EEG = pop_roi_activity(EEG, 'leadfield',EEG.dipfit.sourcemodel,'model','LCMV','modelparams',{0.05},'atlas','LORETA-Talairach-BAs','nPCA',3);
-EEG = pop_roi_connect(EEG, 'methods', {'MIM', 'TRGC'});
+tic
+EEG = pop_roi_connect(EEG, 'methods', {'MIM'});
+toc
 
 %% Plot barplot
 % plot barplot with specified frequency band
-EEG = pop_roi_connectplot(EEG, 'measure', 'roipsd', 'plotcortex', 'off', 'plotbarplot', 'on', 'freqrange', [4 8]);
+% pop_roi_connectplot(EEG, 'measure', 'roipsd', 'plotcortex', 'off', 'plotbarplot', 'on', 'freqrange', [4 8]);
+pop_roi_connectplot(EEG, 'measure', 'MIM', 'plotcortex', 'off', 'plotmatrix', 'on', 'freqrange', [4 8]);

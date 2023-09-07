@@ -192,7 +192,7 @@ if abs(nboot) < 1 % no bootstrap
         
         if ~isempty(intersect(output, {'MIM', 'MIC'}))
         %MIC and MIM
-          [MIC(:, iind) , MIM(:, iind)] =  roi_mim2(cCOH, inds{iind}{1}, inds{iind}{2});    
+          [MIC(:, iind) , MIM(:, iind)] =  roi_mim2_v2(cCOH, inds{iind}{1}, inds{iind}{2});    
         end
         
         if ~isempty(intersect(output, {'GC', 'TRGC'}))
@@ -235,7 +235,7 @@ if abs(nboot) < 1 % no bootstrap
      
         if ~isempty(intersect(output, {'MIM', 'MIC'}))
           %MIC and MIM
-          [MIC(:, iind) , MIM(:, iind)] =  roi_mim2(cCOH(subset, subset, :), subinds{1}, subinds{2});
+          [MIC(:, iind) , MIM(:, iind)] =  roi_mim2_v2(cCOH(subset, subset, :), subinds{1}, subinds{2});
         end
         
         if ~isempty(intersect(output, {'GC', 'TRGC'}))
@@ -340,7 +340,7 @@ else % bootstrap
           
           if ~isempty(intersect(output, {'MIM', 'MIC'}))
             %MIC and MIM
-            [MIC(:, iind, iboot) , MIM(:, iind, iboot)] =  roi_mim2(cCOH_, inds{iind}{1}, inds{iind}{2});  
+            [MIC(:, iind, iboot) , MIM(:, iind, iboot)] =  roi_mim2_v2(cCOH_, inds{iind}{1}, inds{iind}{2});  
           end
           
           if ~isempty(intersect(output, {'GC', 'TRGC'}))
@@ -377,7 +377,7 @@ else % bootstrap
           
           if ~isempty(intersect(output, {'MIM', 'MIC'}))
             %MIC and MIM
-            [MIC(:, iind, iboot) , MIM(:, iind, iboot)] =  roi_mim2(cCOH_(subset, subset, :), subinds{1}, subinds{2});
+            [MIC(:, iind, iboot) , MIM(:, iind, iboot)] =  roi_mim2_v2(cCOH_(subset, subset, :), subinds{1}, subinds{2});
           end
 
           if ~isempty(intersect(output, {'GC', 'TRGC'}))

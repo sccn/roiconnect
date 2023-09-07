@@ -53,7 +53,7 @@
 %  'conn_stats'     - ['on'|'off'] Run statistics on connectivity metrics. Default is 'off'.
 %  'nshuf'          - [integer] number of shuffles for statistical significance testing. The first shuffle is the true value. Default is 1001. 
 %  'freqrange'      - [min max] frequency range in Hz. This is used to compute and plot p-values. Default is to plot broadband power.
-%
+%  'poolsize'       - [integer] Number of workers in the parallel pool (check parpool documentation) for parallel computing
 %
 % Output:
 %  EEG - EEGLAB dataset with field 'roi' containing connectivity info.
@@ -182,7 +182,8 @@ g = finputcheck(options, ...
       'bs_outopts'     'integer'  { }                           1; 
       'roi_selection'  'cell'     { }                           { }; 
       'conn_stats'     'string'   { }                           'off'; ...
-      'nshuf'          'integer'  { }                           1001}, 'pop_roi_connect');
+      'nshuf'          'integer'  { }                           1001; ...
+      'poolsize'       'integer'  { }                           1}, 'pop_roi_connect');
 if ischar(g), error(g); end
 
 % process multiple datasets
@@ -259,7 +260,7 @@ if strcmpi(g.snippet, 'on') && isempty(intersect(g.methods, {'PAC'})) && strcmpi
     end
 
 elseif strcmpi(g.conn_stats, 'on')
-    EEG = roi_connstats(EEG, 'methods', g.methods, 'nshuf', g.nshuf, 'roi_selection', g.roi_selection, 'freqresolution', g.freqresolution);
+    EEG = roi_connstats(EEG, 'methods', g.methods, 'nshuf', g.nshuf, 'roi_selection', g.roi_selection, 'freqresolution', g.freqresolution, 'poolsize', g.poolsize);
 else
     EEG = roi_connect(EEG, 'morder', g.morder, 'naccu', g.naccu, 'methods', g.methods,'freqresolution', g.freqresolution, ...
         'roi_selection', g.roi_selection);
