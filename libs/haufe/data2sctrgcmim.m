@@ -184,93 +184,96 @@ if abs(nboot) < 1 % no bootstrap
     end
 
     %% loop over sender/receiver combinations to compute (time-reversed) GC 
-    for iind = 1:ninds   
-      if ~isequal(inds{iind}{1}, inds{iind}{2})
-        if verbose
-          disp(['testing connection ' num2str(iind) '/' num2str(ninds) ': [' num2str(inds{iind}{1}) '] <-> [' num2str(inds{iind}{2}) '], conditional'])
+    for iind = 1:ninds
+        if ~isequal(inds{iind}{1}, inds{iind}{2})
+            if verbose
+                disp(['testing connection ' num2str(iind) '/' num2str(ninds) ': [' num2str(inds{iind}{1}) '] <-> [' num2str(inds{iind}{2}) '], conditional'])
+            end
+
+            if ~isempty(intersect(output, {'MIM', 'MIC'}))
+                %MIC and MIM
+                [MIC(:, iind) , MIM(:, iind)] =  roi_mim2(cCOH, inds{iind}{1}, inds{iind}{2});
+            end
+
+            if ~isempty(intersect(output, {'GC', 'TRGC'}))
+                GC(:, iind, 1) = iss_SGC(eA2, eC2, eK2, eV2, z, inds{iind}{2}, inds{iind}{1});
+                GC(:, iind, 2) = iss_SGC(eA2, eC2, eK2, eV2, z, inds{iind}{1}, inds{iind}{2});
+
+                if ~isempty(intersect(output, {'TRGC'}))
+                    GCR = iss_SGC(eA2R, eC2R, eK2R, eV2R, z, inds{iind}{2}, inds{iind}{1});
+                    TRGC(:, iind, 1) = GC(:, iind, 1) - GCR';
+                    GCR = iss_SGC(eA2R, eC2R, eK2R, eV2R, z, inds{iind}{1}, inds{iind}{2});
+                    TRGC(:, iind, 2) = GC(:, iind, 2) - GCR';
+                end
+            end
+        else
+            if ~isempty(intersect(output, {'GC', 'TRGC'}))
+                GC(:, iind, 1:2) = 0;
+                TRGC(:, iind, 1:2) = 0;
+            end
         end
-        
-        if ~isempty(intersect(output, {'MIM', 'MIC'}))
-        %MIC and MIM
-          [MIC(:, iind) , MIM(:, iind)] =  roi_mim2(cCOH, inds{iind}{1}, inds{iind}{2});    
-        end
-        
-        if ~isempty(intersect(output, {'GC', 'TRGC'}))
-          GC(:, iind, 1) = iss_SGC(eA2, eC2, eK2, eV2, z, inds{iind}{2}, inds{iind}{1});
-          GC(:, iind, 2) = iss_SGC(eA2, eC2, eK2, eV2, z, inds{iind}{1}, inds{iind}{2});
-          
-          if ~isempty(intersect(output, {'TRGC'}))
-            GCR = iss_SGC(eA2R, eC2R, eK2R, eV2R, z, inds{iind}{2}, inds{iind}{1});
-            TRGC(:, iind, 1) = GC(:, iind, 1) - GCR';
-            GCR = iss_SGC(eA2R, eC2R, eK2R, eV2R, z, inds{iind}{1}, inds{iind}{2});
-            TRGC(:, iind, 2) = GC(:, iind, 2) - GCR';
-          end
-        end
-      else       
-        if ~isempty(intersect(output, {'GC', 'TRGC'}))
-          GC(:, iind, 1:2) = 0;
-          TRGC(:, iind, 1:2) = 0;
-        end
-      end
-    end      
+    end
   else
   % (time-reversed) GC just between sender and receiver sets
 
     % loop over sender/receiver combinations to compute time-reversed GC 
     fprintf('Progress of %d:', ninds);
-    for iind = 1:ninds  
+    GC1 = zeros(length(z), ninds);
+    GC2 = zeros(length(z), ninds);
+    TRGC1 = zeros(length(z), ninds);
+    TRGC2 = zeros(length(z), ninds);
+    for iind = 1:ninds
         if mod(iind,100) == 0
             fprintf('%d', iind);
         elseif mod(iind, 10) == 0
             fprintf('.');
         end
-      if ~isequal(inds{iind}{1}, inds{iind}{2})
-        if verbose
-          disp(['testing connection ' num2str(iind) '/' num2str(ninds) ': [' num2str(inds{iind}{1}) '] <-> [' num2str(inds{iind}{2}) ']'])
-        end
-        %ind configuration 
-        subset = [inds{iind}{1} inds{iind}{2}];
-        nsubsetvars = length(subset);
-        subinds = {1:length(inds{iind}{1}), length(inds{iind}{1}) + (1:length(inds{iind}{2}))};
-     
-        if ~isempty(intersect(output, {'MIM', 'MIC'}))
-          %MIC and MIM
-          [MIC(:, iind) , MIM(:, iind)] =  roi_mim2(cCOH(subset, subset, :), subinds{1}, subinds{2});
-        end
-        
-        if ~isempty(intersect(output, {'GC', 'TRGC'}))
-          % autocovariance to full forward VAR model
-          [A, SIG] = autocov_to_var3(G(subset, subset, :));
+        if ~isequal(inds{iind}{1}, inds{iind}{2})
+            if verbose
+                disp(['testing connection ' num2str(iind) '/' num2str(ninds) ': [' num2str(inds{iind}{1}) '] <-> [' num2str(inds{iind}{2}) ']'])
+            end
+            %ind configuration
+            subset = [inds{iind}{1} inds{iind}{2}];
+            nsubsetvars = length(subset);
+            subinds = {1:length(inds{iind}{1}), length(inds{iind}{1}) + (1:length(inds{iind}{2}))};
 
-          % forward VAR model to state space VARMA models
-          [eA2, eC2, eK2, eV2, eVy2] = varma2iss(reshape(A, nsubsetvars, []), [], SIG, eye(nsubsetvars)); 
+            if ~isempty(intersect(output, {'MIM', 'MIC'}))
+                %MIC and MIM
+                [MIC(:, iind) , MIM(:, iind)] =  roi_mim2(cCOH(subset, subset, :), subinds{1}, subinds{2});
+            end
 
-          % GC and TRGC computation
-          GC(:, iind, 1) = iss_SGC(eA2, eC2, eK2, eV2, z, subinds{2}, subinds{1});
-          GC(:, iind, 2) = iss_SGC(eA2, eC2, eK2, eV2, z, subinds{1}, subinds{2});
-          
-          if ~isempty(intersect(output, {'TRGC'}))
-            % backward autocovariance to full backward VAR model
-            [AR, SIGR] = autocov_to_var3(permute(G(subset, subset, :), [2 1 3]));
+            if ~isempty(intersect(output, {'GC', 'TRGC'}))
+                % autocovariance to full forward VAR model
+                [A, SIG] = autocov_to_var3(G(subset, subset, :));
 
-            % backward VAR to VARMA
-            [eA2R, eC2R, eK2R, eV2R, eVy2R] = varma2iss(reshape(AR, nsubsetvars, []), [], SIGR, eye(nsubsetvars));
-            GCR = iss_SGC(eA2R, eC2R, eK2R, eV2R, z, subinds{2}, subinds{1});
-            TRGC(:, iind, 1) = GC(:, iind, 1) - GCR';
-            GCR = iss_SGC(eA2R, eC2R, eK2R, eV2R, z, subinds{1}, subinds{2});
-            TRGC(:, iind, 2) = GC(:, iind, 2) - GCR';
-          end
+                % forward VAR model to state space VARMA models
+                [eA2, eC2, eK2, eV2, eVy2] = varma2iss(reshape(A, nsubsetvars, []), [], SIG, eye(nsubsetvars));
+
+                % GC and TRGC computation
+                GC1(:, iind) = iss_SGC(eA2, eC2, eK2, eV2, z, subinds{2}, subinds{1});
+                GC2(:, iind) = iss_SGC(eA2, eC2, eK2, eV2, z, subinds{1}, subinds{2});
+
+                if ~isempty(intersect(output, {'TRGC'}))
+                    % backward autocovariance to full backward VAR model
+                    [AR, SIGR] = autocov_to_var3(permute(G(subset, subset, :), [2 1 3]));
+
+                    % backward VAR to VARMA
+                    [eA2R, eC2R, eK2R, eV2R, eVy2R] = varma2iss(reshape(AR, nsubsetvars, []), [], SIGR, eye(nsubsetvars));
+                    GCR = iss_SGC(eA2R, eC2R, eK2R, eV2R, z, subinds{2}, subinds{1});
+                    TRGC1(:, iind) = GC1(:, iind) - GCR';
+                    GCR = iss_SGC(eA2R, eC2R, eK2R, eV2R, z, subinds{1}, subinds{2});
+                    TRGC2(:, iind) = GC2(:, iind) - GCR';
+                end
+            end
+            %
+            %         F = autocov_to_pwcgc(G(subset, subset, :));
+            %         FR = autocov_to_pwcgc(permute(G(subset, subset, :), [2 1 3]));
         end
-%         
-%         F = autocov_to_pwcgc(G(subset, subset, :));
-%         FR = autocov_to_pwcgc(permute(G(subset, subset, :), [2 1 3]));
-      else
-        if ~isempty(intersect(output, {'GC', 'TRGC'}))
-          GC(:, iind, 1:2) = 0;
-          TRGC(:, iind, 1:2) = 0;
-        end
-      end
     end
+    GC = GC1;
+    GC(:,:,2) = GC2;
+    TRGC = TRGC1;
+    TRGC(:,:,2) = TRGC2;
     fprintf('\n');
   end
 else % bootstrap
