@@ -21,6 +21,7 @@
 %  'freqresolution'   - [integer] Desired frequency resolution (in number of frequencies). If
 %                       specified, the signal is zero padded accordingly.
 %                       Default is 0 (means no padding).
+%   'poolsize'        - [integer] Number of workers in the parallel pool (check parpool documentation) for parallel computing
 
 function EEG = roi_connstats(EEG, varargin)
 
@@ -41,7 +42,8 @@ function EEG = roi_connstats(EEG, varargin)
         'methods'         'cell'     { }            { }; 
         'nshuf'           'integer'  { }            1001;
         'freqresolution'  'integer'  { }            0;
-        'roi_selection'   'cell'     { }            { }  }, 'roi_connstats');    
+        'roi_selection'   'cell'     { }            { }; ...
+        'poolsize'        'integer'  { }              1 }, 'roi_connstats');    
     if ischar(g), error(g); end
 
     if ~isempty(intersect(g.methods, {'COH'}))
@@ -51,14 +53,14 @@ function EEG = roi_connstats(EEG, varargin)
         g.methods{coh_idx} = 'aCOH';
     end
 
-    methodset1 = { 'CS' 'MIM' 'wPLI' 'cCOH' 'aCOH' 'iCOH' }; % GC/TRGC, PDC/TRPDC, DTF/TRDTF not included (yet)
+    methodset1 = { 'CS' 'MIM' 'MIC' 'wPLI' 'cCOH' 'aCOH' 'iCOH' }; % GC/TRGC, PDC/TRPDC, DTF/TRDTF not included (yet)
     tmpMethods1 = intersect(g.methods, methodset1);
     if ~isempty(tmpMethods1)
         npcs = repmat(EEG.roi.nPCA, 1, EEG.roi.nROI);
-        conn = shuffle_MIM(data, npcs, tmpMethods1, g.nshuf, 'freqresolution', g.freqresolution, 'roi_selection', g.roi_selection); % (nfreq, nROI, nROI, nshuf)
+        conn = shuffle_MIM(data, npcs, tmpMethods1, g.nshuf, 'freqresolution', g.freqresolution, 'roi_selection', g.roi_selection, 'poolsize', g.poolsize); % (nfreq, nROI, nROI, nshuf)
         for iMethod = 1:length(tmpMethods1)
             EEG.roi.(tmpMethods1{iMethod}) = conn.(tmpMethods1{iMethod});
-            if strcmpi(tmpMethods1{iMethod}, 'MIM')
+            if strcmpi(tmpMethods1{iMethod}, 'MIM') || strcmpi(tmpMethods1{iMethod}, 'MIC')
                 EEG.roi.inds = conn.inds;
             end
         end
