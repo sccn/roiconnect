@@ -95,7 +95,7 @@ g = finputcheck(varargin, { ...
     'model'            'string'             { 'eLoretaFieldtrip' 'lcmvFieldtrip' 'eLoreta' 'lcmv' } 'lcmv';
     'nPCA'             'integer'            { }              3;
     'downsample'       'integer'            { }              1;
-    'chansel'          'cell'               { }              {};
+    'chansel'          {'integer' 'cell'}   { {} {} }       {};
     'roiactivity'      'string'             { 'on' 'off' }  'on';
     'channelpower'     'string'             { 'on' 'off' }  'off';
     'exportvoxact'     'string'             { 'on' 'off' }  'off';
@@ -226,7 +226,7 @@ if isempty(g.chansel)
 %     else
 %         g.chansel = 1:EEG.nbchan;
 %     end
-else
+elseif iscell(g.chansel)
     g.chansel = eeg_decodechan(EEG.chanlocs, g.chansel);
 end
 if ~isequal(size(leadfield,1), length(g.chansel))
