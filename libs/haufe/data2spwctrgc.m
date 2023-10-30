@@ -133,7 +133,7 @@ if abs(nboot) < 1 % no bootstrap
 
     if verbose; disp(['computing cross-spectrum']); end
 
-    CS = data2cs_event(data(:, :)',ndat, ndat - (floor(ndat/2)), ndat , [], CSpara);
+    [CS, ~, wPLI, ~] = data2cs_event(data(:, :)', ndat, floor(ndat/2), ndat, [], CSpara);
     ASR = log(norm(imag(CS(:)))/norm(real(CS(:))));
     fprintf('ASR: %1.4f\n', ASR);
 

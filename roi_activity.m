@@ -41,6 +41,7 @@
 %  'freqresolution'   - [integer] Desired frequency resolution (in number of frequencies). If
 %                       specified, the signal is zero padded accordingly.
 %                       Default is 0 (means no padding).
+%  'lowmemory'        - ['on'|'off'] options to run the code with low memory, though, it might take significantly longer to complete.
 %
 % Output:
 %  EEG - EEGLAB dataset with field 'roi' containing connectivity info.
@@ -86,23 +87,24 @@ end
 % decode input parameters
 % -----------------------
 g = finputcheck(varargin, { ...
-    'leadfield'        {'struct' 'string'}  {{} {}}         '';
-    'headmodel'        'string'             { }             ''; % sometimes useful when loading volume to see which voxels are inside/outside
-    'sourcemodel'      'string'             { }             '';
-    'sourcemodel2mni'  'real'               { }             [];
-    'sourcemodelatlas' 'string'             { }             '';
-    'modelparams'      'cell'               { }         { 0.05 };
-    'model'            'string'             { 'eLoretaFieldtrip' 'lcmvFieldtrip' 'eLoreta' 'lcmv' } 'lcmv';
-    'nPCA'             'integer'            { }              3;
-    'downsample'       'integer'            { }              1;
-    'chansel'          'cell'               { }              {};
-    'roiactivity'      'string'             { 'on' 'off' }  'on';
-    'channelpower'     'string'             { 'on' 'off' }  'off';
-    'exportvoxact'     'string'             { 'on' 'off' }  'off';
-    'fooof'            'string'             { 'on' 'off'}   'off';
-    'fooof_frange'     ''                   {}              [1 30];
-    'freqresolution'   'integer'            {}               0;
-    'outputdir'        'string'  { }              '' }, 'roi_activity');
+    'leadfield'         {'struct' 'string'}  {{} {}}         '';
+    'headmodel'         'string'             { }             ''; % sometimes useful when loading volume to see which voxels are inside/outside
+    'sourcemodel'       'string'             { }             '';
+    'sourcemodel2mni'   'real'               { }             [];
+    'sourcemodelatlas'  'string'             { }             '';
+    'modelparams'       'cell'               { }         { 0.05 };
+    'model'             'string'             { 'eLoretaFieldtrip' 'lcmvFieldtrip' 'eLoreta' 'lcmv' } 'lcmv';
+    'nPCA'              'integer'            { }              3;
+    'downsample'        'integer'            { }              1;
+    'chansel'           {'integer' 'cell'}   { {} {} }       {};
+    'roiactivity'       'string'             { 'on' 'off' }  'on';
+    'channelpower'      'string'             { 'on' 'off' }  'off';
+    'exportvoxact'      'string'             { 'on' 'off' }  'off';
+    'fooof'             'string'             { 'on' 'off'}   'off';
+    'fooof_frange'      ''                   {}              [1 30];
+    'freqresolution'    'integer'            {}               0;
+    'lowmemory'         'string'             { 'on' 'off'}    'off';              
+    'outputdir'         'string'  { }              '' }, 'roi_activity');
 if ischar(g), error(g); end
 if isempty(g.leadfield), error('Leadfield is mandatory parameter'); end
 
@@ -226,7 +228,7 @@ if isempty(g.chansel)
 %     else
 %         g.chansel = 1:EEG.nbchan;
 %     end
-else
+elseif iscell(g.chansel)
     g.chansel = eeg_decodechan(EEG.chanlocs, g.chansel);
 end
 if ~isequal(size(leadfield,1), length(g.chansel))
@@ -243,7 +245,7 @@ nbchan = length(g.chansel);
 H = eye(nbchan) - ones(nbchan) ./ nbchan;
 
 % apply to data and leadfield
-tmpdata = reshape(H*EEG.data(g.chansel, :), nbchan, EEG.pnts, EEG.trials);
+tmpData = reshape(H*EEG.data(g.chansel, :), nbchan, EEG.pnts, EEG.trials);
 leadfield = reshape(H*leadfield(:, :), nbchan, nvox, 3);
 
 %% source reconstruction
@@ -253,16 +255,16 @@ if strcmpi(g.model, 'eLoreta')
     P_eloreta = mkfilt_eloreta_v2(leadfield, g.modelparams{:});
     
     % project to source space
-    source_voxel_data = reshape(tmpdata(:, :)'*P_eloreta(:, :), EEG.pnts*EEG.trials, nvox, 3);
+    source_voxel_data = reshape(tmpData(:, :)'*P_eloreta(:, :), EEG.pnts*EEG.trials, nvox, 3);
 elseif strcmpi(g.model, 'LCMV')
-    C = cov(tmpdata(:, :)');
+    C = cov(tmpData(:, :)');
     if length(g.modelparams) == 1
         lcmv_reg = g.modelparams{1};
     end
     alpha = lcmv_reg*trace(C)/length(C);
     Cr = C + alpha*eye(nbchan);
     [~, P_eloreta] = lcmv(Cr, leadfield, struct('alpha', 0, 'onedim', 0));
-    source_voxel_data = reshape(tmpdata(:, :)'*P_eloreta(:, :), EEG.pnts*EEG.trials, nvox, 3);
+    source_voxel_data = reshape(tmpData(:, :)'*P_eloreta(:, :), EEG.pnts*EEG.trials, nvox, 3);
     source_voxel_data = 10^3*source_voxel_data; % the units are nA*m
 else
     % transform the data to continuous so we can get an estimate for each sample
@@ -310,6 +312,7 @@ nROI  = length(cortex.Atlas.Scouts);
 labels = {cortex.Atlas.Scouts.Label};
 
 % keep only the first nPCA strongest components for each ROI
+clear tmpData
 if strcmpi(g.roiactivity, 'on')
     nfreq = fres + 1;
     tmpData = reshape(source_voxel_data, EEG.pnts, EEG.trials*size(source_voxel_data,2)*size(source_voxel_data,3));
@@ -331,8 +334,24 @@ if strcmpi(g.roiactivity, 'on')
     source_roi_power = zeros(nfreq, nROI);
     
     % compute power using the Welch method
-    fprintf('Computing ROI activity:');
-    [tmpWelch,ftmp] = pwelch(tmpData, data_pnts, floor(data_pnts/2), data_pnts, EEG.srate); % ftmp should be equal frqs 
+    if strcmpi(g.lowmemory, 'off')
+        % default version
+        [tmpWelch, ftmp] = pwelch(tmpData, data_pnts, floor(data_pnts/2), data_pnts, EEG.srate); % ftmp should be equal frqs 
+    else
+        % version for less memory, can be very slow
+        warning('The sequential spectral estimation can take a very long time. It is recommended to run the faster version on a computer/cluster with enough memory.')
+        tmpWelch = zeros(nfreq, size(tmpData, 2));
+        fprintf('Progress of %d:', size(tmpData, 2));
+        for ivox = 1:size(tmpData, 2)
+            if mod(ivox, 10000) == 0
+                fprintf('%d', ivox);
+            elseif mod(ivox, 1000) == 0
+                fprintf('.');
+            end
+            [tmpWelch(:, ivox), ftmp] = pwelch(tmpData(:, ivox), data_pnts, floor(data_pnts/2), data_pnts, EEG.srate); % ftmp should be equal frqs 
+        end
+        fprintf('\n');
+    end
     tmpWelch = reshape(tmpWelch, size(tmpWelch,1), EEG.trials, size(source_voxel_data,2), size(source_voxel_data,3));
     tmpWelch = squeeze(mean(tmpWelch,2)); % remove trials size freqs x voxels x 3
     tmpWelch = squeeze(mean(tmpWelch,3)); % remove 3rd dim size freqs x voxels
@@ -347,6 +366,7 @@ if strcmpi(g.roiactivity, 'on')
     end
     
     source_roi_data = zeros(size(source_voxel_data,1), g.nPCA*nROI);
+    fprintf('Computing ROI activity:');
     for iROI = 1:nROI
         if mod(iROI, 5) == 0
             fprintf('.');

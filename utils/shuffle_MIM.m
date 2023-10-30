@@ -79,24 +79,13 @@ function conn = shuffle_MIM(data, npcs, output, nshuf, varargin)
     fprintf('Generating null distribution using %d shuffles...\n', nshuf)
     fprintf('Progress of %d:\n', nshuf);
 
-    % if Parallel Processing Toolbox is installed then do line 83-84 else
-    % do line 85 as for not parfor
-    % if Parallel Processing Toolbox is installed do parpool else not
-    %parpool(g.poolsize)
-
-    % Check if Parallel Processing Toolbox is available and licensed
+    % check if Parallel Processing Toolbox is available and licensed
     if license('test', 'Distrib_Computing_Toolbox') && ~isempty(ver('parallel'))
-        % If g.poolsize is defined, create a parallel pool of that size
         if isfield(g, 'poolsize') && isnumeric(g.poolsize) && g.poolsize > 0
-            % Check if there's already an existing parallel pool
+            % check if there's already an existing parallel pool
             currentPool = gcp('nocreate');
             if isempty(currentPool)
                 parpool(g.poolsize);
-            else
-                % Optionally, adjust current pool size to g.poolsize
-                % If this is needed, delete the currentPool and then initiate a new one
-                % delete(currentPool);
-                % parpool(g.poolsize);
             end
         end
     else
