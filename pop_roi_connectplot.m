@@ -115,6 +115,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
 
     if isfield(EEG.roi, 'source_roi_power')
         splot(end+1).label  = 'ROI based power spectrum';
+        splot(end  ).labelshort = 'ROI PSD';
         splot(end  ).acronym  = 'ROIPSD';
         splot(end  ).unit   = 'Power (dB)'; % not used yet
         splot(end  ).cortex = cortexFlag;
@@ -486,6 +487,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
             cortexTitle = [ plotOpt.labelshort ' (' titleStr ')' ];
             if isempty(g.plotcortexseedregion)
                 allplots_cortex_BS(cortex_highres, cortexPlot, [min(cortexPlot) max(cortexPlot)], cm17a, upper(g.measure), g.smooth);
+%                 allplots_cortex_BS(cortex_highres, cortexPlot, [min(cortexPlot) max(cortexPlot)], cm17a, upper(splot.unit), g.smooth);
 %                 allplots_cortex_BS(S.cortex, cortexPlot, [min(cortexPlot) max(cortexPlot)], cm17a, plotOpt.unit, g.smooth);
             else
                 cortexTitle = [ cortexTitle ' for area ' int2str(seed_idx)];

@@ -82,6 +82,6 @@ function EEG = pop_roi_statsplot(EEG, varargin)
         h = textsc(title, 'title');
         set(h, 'fontsize', 20);
     catch
-        warning('There are no "significant" p-values to be plotted. These are the p-values:')
+        warning('There are no "significant" p-values to be plotted.')
     end
 end

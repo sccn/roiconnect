@@ -31,6 +31,8 @@
 %                       specified, the signal is zero padded accordingly.
 %                       Default is 0 (means no padding).
 %  'chansel'          - [cell array of string] channel selection. Default is all.
+%  'lowmemory'        - ['on'|'off'] options to run the code with low memory, though, it might take significantly longer to complete.
+%
 %
 % Other optional inputs:
 %  All ROI_ACTIVITY parameters are accepted as input and passed on.
@@ -257,6 +259,7 @@ end
     'epochrecur'      'real'                {}               2;
     'fooof'           'string'              { 'on' 'off'}    'off';
     'freqresolution'   'integer'            {}               0;
+    'lowmemory'         'string'             { 'on' 'off'}    'off';              
     'fooof_frange'     ''                   {}               [1 30]}, 'pop_roi_activity', 'ignore');
 if ischar(g), error(g); end
 
@@ -288,7 +291,7 @@ end
 EEGOUT = roi_activity(EEGOUT, 'leadfield', g.leadfield, 'headmodel', EEG.dipfit.hdmfile, ...
     'model', g.model, 'modelparams', g.modelparams, 'sourcemodel', sourceModelFile, ...
     'sourcemodel2mni', sourceModel2MNI, 'nPCA', g.nPCA,'fooof', g.fooof, 'fooof_frange', g.fooof_frange, ...
-    'freqresolution', g.freqresolution, 'sourcemodelatlas', g.atlas, 'chansel', chansel, moreargs{:});
+    'freqresolution', g.freqresolution, 'sourcemodelatlas', g.atlas, 'lowmemory', g.lowmemory, 'chansel', chansel, moreargs{:});
 
 if strcmpi(g.effectchanges, 'on')
     EEG = EEGOUT;

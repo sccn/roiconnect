@@ -79,7 +79,19 @@ function conn = shuffle_MIM(data, npcs, output, nshuf, varargin)
     fprintf('Generating null distribution using %d shuffles...\n', nshuf)
     fprintf('Progress of %d:\n', nshuf);
 
-    parpool(g.poolsize)
+    % check if Parallel Processing Toolbox is available and licensed
+    if license('test', 'Distrib_Computing_Toolbox') && ~isempty(ver('parallel'))
+        if isfield(g, 'poolsize') && isnumeric(g.poolsize) && g.poolsize > 0
+            % check if there's already an existing parallel pool
+            currentPool = gcp('nocreate');
+            if isempty(currentPool)
+                parpool(g.poolsize);
+            end
+        end
+    else
+        disp('Parallel Processing Toolbox is not installed or licensed.');
+    end
+
     parfor ishuf = 1:nshuf 
         if mod(ishuf, 10) == 0
             fprintf('%d', ishuf);
@@ -95,20 +107,22 @@ function conn = shuffle_MIM(data, npcs, output, nshuf, varargin)
         end
         
         data_shuf = data(:, :, shuf_inds);
-        [CS, ~, wPLI, ~] = data2cs_event_shuf(data(:, :)', data_shuf(:, :)', ndat, floor(ndat/2), ndat, [], CSpara);
+
+        % Starts here
+        [CS, ~, wPLI, ~] = data2cs_event_shuf(data(:, :)', data_shuf(:, :)', ndat, floor(ndat/2), ndat, [], CSpara); 
 %         CS = fp_tsdata_to_cpsd(data, fres, 'WELCH', 1:nchan, 1:nchan,1:nepo,shuf_inds);
         nfreqs = size(CS, 3);
 
         if ~isempty(intersect(output, {'MIM', 'MIC', 'cCOH' 'iCOH', 'aCOH'}))
-            cCOH = zeros(nchan, nchan, nfreqs)
-            aCOH = zeros(nchan, nchan, nfreqs)
-            iCOH = zeros(nchan, nchan, nfreqs)
+            cCOH = zeros(nROI * nPCA, nROI * nPCA, nfreqs)
+            aCOH = zeros(nROI * nPCA, nROI * nPCA, nfreqs)
+            iCOH = zeros(nROI * nPCA, nROI * nPCA, nfreqs)
             for ifreq = 1:size(CS,3)
                 pow = real(diag(CS(:,:,ifreq)));
                 cCOH(:,:,ifreq) = CS(:,:,ifreq) ./ sqrt(pow*pow');
                 aCOH(:,:,ifreq) = abs(CS(:,:,ifreq)) ./ sqrt(pow*pow');
                 iCOH(:,:,ifreq) = abs(imag(CS(:,:,ifreq) ./ sqrt(pow*pow')));
-            end
+            end          
         end
         
         % loop over sender/receiver combinations to compute time-reversed GC
@@ -142,7 +156,15 @@ function conn = shuffle_MIM(data, npcs, output, nshuf, varargin)
         eval(['conn.' output{iout} ' = ' output{iout} '_s;'])
     end
     % shut down current parallel pool
-    poolobj = gcp('nocreate');
-    delete(poolobj);
+    %poolobj = gcp('nocreate');
+    %delete(poolobj);
+
+    % shut down current parallel pool only if the toolbox is available
+    if license('test', 'Distrib_Computing_Toolbox') && ~isempty(ver('parallel'))
+        poolobj = gcp('nocreate');
+        if ~isempty(poolobj)
+            delete(poolobj);
+        end
+    end
     fprintf('\n');
 end
