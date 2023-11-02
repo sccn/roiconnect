@@ -6,6 +6,7 @@ ROIconnect is a freely available open-source plugin to [EEGLAB](https://github.c
 
 📚 Check out the following papers to learn about recommended methods and pipelines for connectivity experiments:
 > Pellegrini, F., Delorme, A., Nikulin, V., & Haufe, S. (2023). Identifying good practices for detecting inter-regional linear functional connectivity from EEG. NeuroImage, 120218. [doi: 10.1016/j.neuroimage.2023.120218](https://doi.org/10.1016/j.neuroimage.2023.120218)
+> 
 > Pellegrini, F., Nguyen, T.D., Herrera,T., Nikulin, V., Nolte, G., & Haufe, S. (2023). Distinguishing between- from within-site phase-amplitude coupling using antisymmetrized bispectra. bioRxiv 2023.10.26.564193. [https://doi.org/10.1101/2023.10.26.564193](https://doi.org/10.1101/2023.10.26.564193)
 
 ⚠️ Disclaimer: This plugin implements the best-practice pipeline that we identified for our studied setting. We believe it can be used in such environments without hesitation. Additional code to reproduce our experiments entirely is provided in a [separate repository](https://github.com/fpellegrini/FCsim). In the medium term, we intend to extend this plugin for other use cases, which will be backed up by respective validation studies.
