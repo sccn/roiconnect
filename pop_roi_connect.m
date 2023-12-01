@@ -260,7 +260,9 @@ if strcmpi(g.snippet, 'on') && isempty(intersect(g.methods, {'PAC'})) && strcmpi
     end
 
 elseif strcmpi(g.conn_stats, 'on')
-    EEG = roi_connstats(EEG, 'methods', g.methods, 'nshuf', g.nshuf, 'roi_selection', g.roi_selection, 'freqresolution', g.freqresolution, 'poolsize', g.poolsize);
+    % Pass fcomb
+    EEG = roi_connstats(EEG, 'methods', g.methods, 'nshuf', g.nshuf, 'roi_selection', g.roi_selection, 'freqresolution', g.freqresolution, 'poolsize', g.poolsize, 'fcomb', g.fcomb);
+    %EEG = roi_connstats(EEG, 'methods', g.methods, 'nshuf', g.nshuf, 'roi_selection', g.roi_selection, 'freqresolution', g.freqresolution, 'poolsize', g.poolsize);
 else
     EEG = roi_connect(EEG, 'morder', g.morder, 'naccu', g.naccu, 'methods', g.methods,'freqresolution', g.freqresolution, ...
         'roi_selection', g.roi_selection);

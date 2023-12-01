@@ -38,12 +38,15 @@ function EEG = roi_connstats(EEG, varargin)
     end
 
     % decode input parameters
+    % Add fcomb in parameter list
     g = finputcheck(varargin, { ...
         'methods'         'cell'     { }            { }; 
         'nshuf'           'integer'  { }            1001;
         'freqresolution'  'integer'  { }            0;
         'roi_selection'   'cell'     { }            { }; ...
-        'poolsize'        'integer'  { }              1 }, 'roi_connstats');    
+        'poolsize'        'integer'  { }              1 ; ...
+        'fcomb'           'struct'   { }            { }; ...
+        },'roi_connstats');    
     if ischar(g), error(g); end
 
     if ~isempty(intersect(g.methods, {'COH'}))
@@ -54,7 +57,10 @@ function EEG = roi_connstats(EEG, varargin)
     end
 
     methodset1 = { 'CS' 'MIM' 'MIC' 'wPLI' 'cCOH' 'aCOH' 'iCOH' }; % GC/TRGC, PDC/TRPDC, DTF/TRDTF not included (yet)
+    methodset2 = {'PAC'} ;
     tmpMethods1 = intersect(g.methods, methodset1);
+    tmpMethods2 = intersect(g.methods, methodset2);
+
     if ~isempty(tmpMethods1)
         npcs = repmat(EEG.roi.nPCA, 1, EEG.roi.nROI);
         conn = shuffle_MIM(data, npcs, tmpMethods1, g.nshuf, 'freqresolution', g.freqresolution, 'roi_selection', g.roi_selection, 'poolsize', g.poolsize); % (nfreq, nROI, nROI, nshuf)
@@ -63,6 +69,18 @@ function EEG = roi_connstats(EEG, varargin)
             if strcmpi(tmpMethods1{iMethod}, 'MIM') || strcmpi(tmpMethods1{iMethod}, 'MIC')
                 EEG.roi.inds = conn.inds;
             end
+        end
+    end
+    %
+    if ~isempty(tmpMethods2)
+        npcs = repmat(EEG.roi.nPCA, 1, EEG.roi.nROI);
+        
+        % Add parameter
+        conn = shuffle_BS(data, npcs, tmpMethods2, g.nshuf, 'freqresolution', g.freqresolution, 'roi_selection', g.roi_selection, 'poolsize', g.poolsize, 'fcomb', g.fcomb);
+        for iMethod = 1:length(tmpMethods2)
+            EEG.roi.(tmpMethods2{iMethod}) = conn.(tmpMethods2{iMethod});
+            %if strcmpi(tmpMethods2{iMethod}, 'PAC')
+            %    EEG.roi.inds = conn.inds;
         end
     end
 end
