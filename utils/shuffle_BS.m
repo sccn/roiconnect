@@ -32,7 +32,7 @@ function conn = shuffle_BS(data, npcs, output, nshuf, varargin)
         'freqresolution'  'integer'  { }    0;
         'roi_selection'   'cell'     { }    { }; ...
         'poolsize'        'integer'  { }     1 ;...
-        'fcomb'           'struct'   { }    { };
+        'fcomb'           'struct'   { }    struct;
         }, 'shuffle_BS'); 
     if ischar(g), error(g); end
     
@@ -77,7 +77,7 @@ function conn = shuffle_BS(data, npcs, output, nshuf, varargin)
     % CSpara.freqresolution = g.freqresolution;
     % CSpara.nshuf = g.nshuf;
     
-%     warning('One iteration takes about 90 seconds.')
+    % warning('One iteration takes about 90 seconds.')
     fprintf('Generating null distribution using %d shuffles...\n', nshuf)
     fprintf('Progress of %d:\n', nshuf);
 
