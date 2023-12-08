@@ -20,7 +20,7 @@ EEG = pop_leadfield(EEG, 'sourcemodel',fullfile(eeglabp,'plugins','dipfit','LORE
     'sourcemodel2mni',[0 -24 -45 0 0 -1.5708 1000 1000 1000] ,'downsample',1);
 
 
-EEG = pop_roi_activity(EEG, 'leadfield',EEG.dipfit.sourcemodel,'model','LCMV','modelparams',{0.05},'atlas','LORETA-Talairach-BAs','nPCA',3, 'chansel', EEG.dipfit.chansel);
+EEG = pop_roi_activity(EEG, 'leadfield',EEG.dipfit.sourcemodel,'model','LCMV','modelparams',{0.05},'atlas','LORETA-Talairach-BAs','nPCA',3);
 
 %% Test bispectrum for single frequency inputs
 low = 10;
@@ -31,7 +31,7 @@ fcomb.high = high;
 
 
 %EEG1 = pop_roi_connect(EEG, 'methods', {'PAC', 'MIM', 'COH'}, 'fcomb', fcomb); % test all 3 connectivity functions (data2spwctrgc, data2strgcmim, roi_pac)
-EEG2 = pop_roi_connect(EEG, 'methods', {'PAC'}, 'fcomb', fcomb, 'bs_outopts', 5, 'conn_stats', 'on', 'nshuf', 4); % compute only b_orig, b_orig_norm
+EEG2 = pop_roi_connect(EEG, 'methods', {'PAC'}, 'fcomb', fcomb, 'bs_outopts', 5, 'conn_stats', 'off', 'nshuf', 4); % compute only b_orig, b_orig_norm
 %EEG3 = pop_roi_connect(EEG, 'methods', {'PAC'}, 'fcomb', fcomb, 'bs_outopts', 5); % compute only b_anti, b_anti_norm
 
 %% Test bispectrum for frequency band inputs
@@ -44,6 +44,7 @@ fcomb.high = high;
 tic
 EEG4 = pop_roi_connect(EEG, 'methods', {'PAC', 'MIM', 'COH'}, 'fcomb', fcomb); % test all 3 connectivity functions (data2spwctrgc, data2strgcmim, roi_pac)toc
 toc
+EEG5 = pop_roi_connect(EEG, 'methods', {'PAC'}, 'fcomb', fcomb, 'conn_stats', 'on', 'nshuf', 2); 
 
 %% Test PAC plotting
 % Test for single frequency inputs

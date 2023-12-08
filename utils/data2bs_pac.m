@@ -15,7 +15,7 @@
 % Copyright (C) Franziska Pellegrini, franziska.pellegrini@charite.de,
 %               Tien Dung Nguyen, tien-dung.nguyen@charite.de
 
-function [b_orig, b_anti, b_orig_norm,b_anti_norm] = pac_bispec(data, params)
+function [b_orig, b_anti, b_orig_norm,b_anti_norm] = data2bs_pac(data, params)
 
 % determine ROIs
 nroi = params.nROI;
@@ -57,9 +57,12 @@ end
 
 for proi = 1:nroi 
     for aroi = proi:nroi
-        % upper freqs
         X = data([proi aroi],:,:); 
+        
+        % upper freqs
         [bs_up,~] = data2bs_event(X(:,:)', segleng, segshift, epleng, freqinds_up); 
+        % call function bs2pac(bs_up), this function does everything below and can hopefully then also be called in shuffle_BS (need to include nshuf info at some point)
+       
         biv_orig_up = squeeze(([abs(bs_up(1, 2, 2, :)) abs(bs_up(2, 1, 1, :))])); % [Bkmm, Bmkk], k=proi, m=aroi
         xx = bs_up - permute(bs_up, [2 1 3 4]); %Bkmm - Bmkm
         biv_anti_up = ([abs(xx(1, 2, 2, :)) abs(xx(2, 1, 1, :))]);

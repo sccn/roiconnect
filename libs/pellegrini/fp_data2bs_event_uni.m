@@ -19,12 +19,14 @@ function [cs,nave]=fp_data2bs_event_uni(data,segleng,segshift,epleng,freqpairs,n
 % para: structure which is eventually used later
 %
 % output:
-% cs: nchan by nchan by nchan by number_of_frequency_pairs by number of shuffles 
+% cs: nchan by nchan by nchan by peak_combination (=2) by number of shuffles 
 % tensor such that
-%  cs(i,j,k,f,ishuf)=<x(f1)_i*x(f2)_j*conj(x(f1+f2-1)_k)>
-%  where f1=freqpairs(f,1) and  f2=freqpairs(f,1),
+%  cs(i,j,k,ishuf)=<x(f1)_i*x(f2)_j*conj(x(f1+f2-1)_k)>
+%  where f1=freqpairs(f,1) and  f2=freqpairs(f,2),
 %  x=fft(data) and the average is over epeochs and segments. 
-% Note that this function is restricted to one frequency combination only! 
+%
+% NOTE that this function is restricted to one frequency combination only!
+% The addition for frequency BANDS will be added in the future.
 %
 % if para.fave=0 then cs contains a fifth argument denoting
 % the   segment.
@@ -54,7 +56,7 @@ for ishuf = 1:nshuf
     if ishuf == 1 %the first shuffle contains the true order
         inds = 1:nep;
     else
-        inds = randperm(nep,nep); %indices for shuffling of epochs for channel2 
+        inds = randperm(nep,nep); %indices for shuffling of epochs for channel 2 
     end
     
     for j=1:nep %loop over epochs 
@@ -85,7 +87,7 @@ for ishuf = 1:nshuf
         nave=nave+1;
     end
     
-    %shape cs: chan x chan x chan x freqcombi x shuffles 
+    %shape cs: chan x chan x chan x peak_combination x shuffles 
     cs(:,:,:,1,ishuf) = cs1./nave; 
     cs(:,:,:,2,ishuf) = cs2./nave; 
     

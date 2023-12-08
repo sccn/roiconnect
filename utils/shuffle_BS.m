@@ -134,13 +134,15 @@ function conn = shuffle_BS(data, npcs, output, nshuf, varargin)
     else
         fcomb = fcomb;
     end
+    [BS, ~] =fp_data2bs_event_uni(data(:, :)', ndat, floor(ndat/2), ndat, fcomb, nshuf); % nchan, nchan, nchan, npeaks, nshuf
+    % bs_up = BS(:, :, :, 1, :)
+    % bs_low = BS(:, :, :, 2, :)
 
-    % function [cs,nave]=fp_data2bs_event_uni(data,       segleng, segshift,       epleng, freqpairs,    nshuf)
-    [CS, ~] =fp_data2bs_event_uni(data(:, :)', ndat,   floor(ndat/2),   ndat      , fcomb,     nshuf); 
-    %[CS, ~] = fp_data2bs_event_uni(data(:, :)', ndat, floor(ndat/2), ndat, freqpairs, nshuf);
-
-    nfreqs = size(CS, 3);
-
+    for proi = 1:nROI
+        for aroi = proi:nROI
+            % do your stuff
+        end
+    end
 
     % PAC = zeros(nfreqs, ninds);
     
