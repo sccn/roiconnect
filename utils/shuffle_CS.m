@@ -25,7 +25,7 @@
 %   Stefan Haufe, haufe@tu-berlin.de
 %   Tien Dung Nguyen, tien-dung.nguyen@charite.de
 
-function conn = shuffle_MIM(data, npcs, output, nshuf, varargin)
+function conn = shuffle_CS(data, npcs, output, nshuf, varargin)
     % Copyright (c) 2022 Franziska Pellegrini and Stefan Haufe
 
     % decode input parameters
@@ -105,7 +105,6 @@ function conn = shuffle_MIM(data, npcs, output, nshuf, varargin)
         else
             shuf_inds = randperm(nepo);   
         end
-        
         data_shuf = data(:, :, shuf_inds);
 
         % Starts here
@@ -155,9 +154,6 @@ function conn = shuffle_MIM(data, npcs, output, nshuf, varargin)
     for iout = 1:length(output)
         eval(['conn.' output{iout} ' = ' output{iout} '_s;'])
     end
-    % shut down current parallel pool
-    %poolobj = gcp('nocreate');
-    %delete(poolobj);
 
     % shut down current parallel pool only if the toolbox is available
     if license('test', 'Distrib_Computing_Toolbox') && ~isempty(ver('parallel'))
