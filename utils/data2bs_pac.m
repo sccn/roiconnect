@@ -63,28 +63,28 @@ for proi = 1:nroi
         [bs_up,~] = data2bs_event(X(:,:)', segleng, segshift, epleng, freqinds_up); 
         % call function bs2pac(bs_up), this function does everything below and can hopefully then also be called in shuffle_BS (need to include nshuf info at some point)
        
-        biv_orig_up = squeeze(([abs(bs_up(1, 2, 2, :)) abs(bs_up(2, 1, 1, :))])); % [Bkmm, Bmkk], k=proi, m=aroi
+        biv_orig_up = squeeze(([mean(abs(bs_up(1, 2, 2, :))) mean(abs(bs_up(2, 1, 1, :)))])); % [Bkmm, Bmkk], average over frequency bands
         xx = bs_up - permute(bs_up, [2 1 3 4]); %Bkmm - Bmkm
-        biv_anti_up = ([abs(xx(1, 2, 2, :)) abs(xx(2, 1, 1, :))]);
+        biv_anti_up = squeeze(([abs(xx(1, 2, 2, :)) abs(xx(2, 1, 1, :))]));
         
         % normalized by threenorm
         [RTP_up,~] = data2bs_threenorm(X(:,:)', segleng, segshift, epleng, freqinds_up); 
         bicoh_up = bs_up ./ RTP_up;
-        bicoh_up = mean(bicoh_up, 4);
+        bicoh_up = mean(bicoh_up, 4); % average over frequency bands
         biv_orig_up_norm = ([abs(bicoh_up(1, 2, 2)) abs(bicoh_up(2, 1, 1))]);
         xx = bicoh_up-permute(bicoh_up, [2 1 3]);
         biv_anti_up_norm = ([abs(xx(1, 2, 2)) abs(xx(2, 1, 1))]);
         
         % lower freqs
         [bs_low,~] = data2bs_event(X(:,:)', segleng, segshift, epleng, freqinds_low);
-        biv_orig_low = squeeze(([abs(bs_low(1, 2, 2, :)) abs(bs_low(2, 1, 1, :))]));
+        biv_orig_low = squeeze(([mean(abs(bs_low(1, 2, 2, :))) mean(abs(bs_low(2, 1, 1, :)))]));
         xx = bs_low - permute(bs_low, [2 1 3, 4]);
-        biv_anti_low = ([abs(xx(1, 2, 2, :)) abs(xx(2, 1, 1, :))]);
+        biv_anti_low = squeeze(([abs(xx(1, 2, 2, :)) abs(xx(2, 1, 1, :))]));
         
         % normalized by threenorm
         [RTP_low,~] = data2bs_threenorm(X(:,:)', segleng, segshift, epleng, freqinds_low);
         bicoh_low = bs_low ./ RTP_low;
-        bicoh_low = mean(bicoh_low, 4);
+        bicoh_low = mean(bicoh_low, 4); % average over frequency bands
         biv_orig_low_norm = ([abs(bicoh_low(1, 2, 2)) abs(bicoh_low(2, 1, 1))]);
         xx = bicoh_low-permute(bicoh_low, [2 1 3]);
         biv_anti_low_norm = ([abs(xx(1, 2, 2)) abs(xx(2, 1, 1))]);
@@ -93,7 +93,7 @@ for proi = 1:nroi
         b_orig(aroi,proi) = mean([biv_orig_up(1) biv_orig_low(1)]); 
         b_orig(proi,aroi) = mean([biv_orig_up(2) biv_orig_low(2)]);
         b_anti(aroi,proi) = mean([biv_anti_up(1) biv_anti_low(1)]);  
-        b_anti(proi,aroi) = mean([biv_anti_up(2) biv_anti_low(2)]);  
+        b_anti(proi,aroi) = mean([biv_anti_up(2) biv_anti_low(2)]); 
         
         % normalized versions
         b_orig_norm(aroi,proi) = mean([biv_orig_up_norm(1) biv_orig_low_norm(1)]);
