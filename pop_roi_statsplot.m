@@ -1,4 +1,5 @@
-% pop_roi_statsplot() - Generate p-values from FC null distributions and plots them.
+% pop_roi_statsplot() - Generate p-values from FC null distributions and plots them. Based on Franziska Pellegrini's script
+% fp_plot_fc_shuffletest.
 %
 % Inputs:
 %   EEG        -  EEGLAB dataset with ROI activity computed.

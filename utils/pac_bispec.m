@@ -60,7 +60,7 @@ for proi = 1:nroi
         % upper freqs
         X = data([proi aroi],:,:); 
         [bs_up,~] = data2bs_event(X(:,:)', segleng, segshift, epleng, freqinds_up); 
-        biv_orig_up = ([abs(bs_up(1, 2, 2, :)) abs(bs_up(2, 1, 1, :))]);
+        biv_orig_up = squeeze(([abs(bs_up(1, 2, 2, :)) abs(bs_up(2, 1, 1, :))])); % [Bkmm, Bmkk], k=proi, m=aroi
         xx = bs_up - permute(bs_up, [2 1 3 4]); %Bkmm - Bmkm
         biv_anti_up = ([abs(xx(1, 2, 2, :)) abs(xx(2, 1, 1, :))]);
         
@@ -74,7 +74,7 @@ for proi = 1:nroi
         
         % lower freqs
         [bs_low,~] = data2bs_event(X(:,:)', segleng, segshift, epleng, freqinds_low);
-        biv_orig_low = ([abs(bs_low(1, 2, 2, :)) abs(bs_low(2, 1, 1, :))]);
+        biv_orig_low = squeeze(([abs(bs_low(1, 2, 2, :)) abs(bs_low(2, 1, 1, :))]));
         xx = bs_low - permute(bs_low, [2 1 3, 4]);
         biv_anti_low = ([abs(xx(1, 2, 2, :)) abs(xx(2, 1, 1, :))]);
         
@@ -86,6 +86,7 @@ for proi = 1:nroi
         xx = bicoh_low-permute(bicoh_low, [2 1 3]);
         biv_anti_low_norm = ([abs(xx(1, 2, 2)) abs(xx(2, 1, 1))]);
         
+        % PAC_km(f1, f2) = 0.5 * |Bkmm(f1, f2-f1)| + 0.5 * |Bkmm(f1, f2)|
         b_orig(aroi,proi) = mean([biv_orig_up(1) biv_orig_low(1)]); 
         b_orig(proi,aroi) = mean([biv_orig_up(2) biv_orig_low(2)]);
         b_anti(aroi,proi) = mean([biv_anti_up(1) biv_anti_low(1)]);  

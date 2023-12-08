@@ -105,7 +105,6 @@ function conn = shuffle_CS(data, npcs, output, nshuf, varargin)
         else
             shuf_inds = randperm(nepo);   
         end
-        
         data_shuf = data(:, :, shuf_inds);
 
         % Starts here
