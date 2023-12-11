@@ -28,7 +28,7 @@ fs = params.fs;
 fres = fs;
 frqs = sfreqs(fres, fs);
 
-% extract all frequencies in the selected bands
+% extract all individual frequencies in the selected bands
 size_low = size(fcomb.low, 2);
 size_high = size(fcomb.high, 2);
 inds_low = frqs >= fcomb.low(1) & frqs <= fcomb.low(size_low);
