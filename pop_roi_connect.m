@@ -201,12 +201,12 @@ end
 n_conn_metrics = length(g.methods); % number of connectivity metrics
 conn_matrices_snips = {};
 if strcmpi(g.snippet, 'on') && isempty(intersect(g.methods, {'PAC'})) && strcmpi(g.conn_stats, 'off')
-
+    
     snippet_length = g.snip_length; % seconds
     trials = size(EEG.roi.source_roi_data,3);
     pnts   = size(EEG.roi.source_roi_data,2);
-    snip_eps = snippet_length/(pnts/EEG.roi.srate); % n epochs in snippet
-    nsnips = floor(trials/snip_eps);
+    snip_eps = snippet_length/(pnts/EEG.roi.srate); % snip length/epoch length (how many trials for each snippet)
+    nsnips = floor(trials/snip_eps); 
     if nsnips < 1
         if strcmpi(g.errornosnippet, 'on')
             error('Snippet length cannot exceed data length.\n')
