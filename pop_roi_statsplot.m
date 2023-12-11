@@ -1,4 +1,5 @@
-% pop_roi_statsplot() - Generate p-values from FC null distributions and plots them.
+% pop_roi_statsplot() - Generate p-values from FC null distributions and plots them. Based on Franziska Pellegrini's script
+% fp_plot_fc_shuffletest.
 %
 % Inputs:
 %   EEG        -  EEGLAB dataset with ROI activity computed.
@@ -18,6 +19,8 @@
 %                       'MIC'   : Maximized Imaginary Coherency for each ROI
 %  'freqrange' - [min max] frequency range or [integer] single frequency in Hz. Default is to plot broadband power.
 %  'alpha'     - [integer] Significance level. Default is 0.05.
+%
+%   Author: Tien Dung Nguyen, tien-dung.nguyen@charite.de
 
 function EEG = pop_roi_statsplot(EEG, varargin)
 

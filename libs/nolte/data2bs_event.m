@@ -17,7 +17,7 @@ function [cs,csn,nave]=data2bs_event(data,segleng,segshift,epleng,freqpairs,para
 % cs: nchan by nchan by nchan by number_of_frequency_pairs 
 %      (by number_of_segments) tensor such that 
 %  cs(i,j,k,f)=<x(f1)_i*x(f2)_j*conj(x(f1+f2-1)_k)>
-%  where f1=freqpairs(f,1) and  f2=freqpairs(f,1),
+%  where f1=freqpairs(f,1) and  f2=freqpairs(f,2),
 %  x=fft(data) and the average is over epeochs and segments
 % 
 % if para.fave=0 then cs contains a fifth argument denoting 
