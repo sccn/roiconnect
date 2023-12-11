@@ -31,10 +31,10 @@ frqs = sfreqs(fres, fs);
 % extract all individual frequencies in the selected bands
 size_low = size(fcomb.low, 2);
 size_high = size(fcomb.high, 2);
-inds_low = frqs >= fcomb.low(1) & frqs <= fcomb.low(size_low);
-inds_high = frqs >= fcomb.high(1) & frqs <= fcomb.high(size_high);
-frqs_low = frqs(inds_low); 
-frqs_high = frqs(inds_high);
+mask_inds_low = frqs >= fcomb.low(1) & frqs <= fcomb.low(size_low);
+mask_inds_high = frqs >= fcomb.high(1) & frqs <= fcomb.high(size_high);
+frqs_low = frqs(mask_inds_low); 
+frqs_high = frqs(mask_inds_high);
 
 % determine all frequency combinations
 [m, n] = ndgrid(frqs_low, frqs_high);
