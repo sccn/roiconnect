@@ -224,17 +224,39 @@ if strcmpi(g.snippet, 'on') && isempty(intersect(g.methods, {'PAC'})) && strcmpi
         nsnips = 1;
     end
     
+    % check if Parallel Processing Toolbox is available and licensed
+    if license('test', 'Distrib_Computing_Toolbox') && ~isempty(ver('parallel'))
+        if isfield(g, 'poolsize') && isnumeric(g.poolsize) && g.poolsize > 0
+            % check if there's already an existing parallel pool
+            currentPool = gcp('nocreate');
+            if isempty(currentPool)
+                parpool(g.poolsize);
+            end
+        end
+    else
+        disp('Parallel Processing Toolbox is not installed or licensed.');
+    end
+
     source_roi_data_save = EEG.roi.source_roi_data;
-    for isnip = 1:nsnips
+    parfor isnip = 1:nsnips
+        EEG1 = EEG;
         begSnip = (isnip-1)* snip_eps + 1;
         endSnip = min((isnip-1)* snip_eps + snip_eps, size(source_roi_data_save,3));
         roi_snip = source_roi_data_save(:,:, begSnip:endSnip ); % cut source data into snippets
-        EEG.roi.source_roi_data = single(roi_snip);
-        EEG = roi_connect(EEG, 'morder', g.morder, 'naccu', g.naccu, 'methods', g.methods,'freqresolution', g.freqresolution, 'roi_selection', g.roi_selection); % compute connectivity over one snippet
+        EEG1.roi.source_roi_data = single(roi_snip);
+        EEG1 = roi_connect(EEG1, 'morder', g.morder, 'naccu', g.naccu, 'methods', g.methods,'freqresolution', g.freqresolution, 'roi_selection', g.roi_selection); % compute connectivity over one snippet
         for fc = 1:n_conn_metrics 
             fc_name = g.methods{fc};
-            fc_matrix = EEG.roi.(fc_name);
+            fc_matrix = EEG1.roi.(fc_name);
             conn_matrices_snips{isnip,fc} = fc_matrix; % store each connectivity metric for each snippet in separate structure
+        end
+    end
+
+    % shut down current parallel pool only if the toolbox is available
+    if license('test', 'Distrib_Computing_Toolbox') && ~isempty(ver('parallel'))
+        poolobj = gcp('nocreate');
+        if ~isempty(poolobj)
+            delete(poolobj);
         end
     end
     
