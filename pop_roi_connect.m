@@ -41,7 +41,7 @@
 %  'fcomb'          - [struct] Frequency combination for which PAC is computed (in Hz). Must have fields 'low' and 
 %                     'high' with fcomb.low < fcomb.high. For example, fcomb.low = 10 and fcomb.high = 50 if single 
 %                     frequencies are used. fcomb.low = [4 8] and fcomb.high = [48 50] if frequency bands are used 
-%                     (might take a long time to compute so use with caution). Default is {} (this will cause an error).
+%                     (might take a long time to compute so use with caution). Default is {} (this will cause an error when PAC is selected).
 %  'bs_outopts'     - [integer] Option which bispectral tensors should be stored in EEG.roi.PAC. Default is 1.
 %                          1 - store all tensors: b_orig, b_anti, b_orig_norm, b_anti_norm
 %                          2 - only store: b_orig, b_anti
