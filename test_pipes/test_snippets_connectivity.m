@@ -21,7 +21,13 @@ EEG = pop_leadfield(EEG, 'sourcemodel',fullfile(eeglabp,'functions','supportfile
 
 EEG = pop_roi_activity(EEG, 'leadfield',EEG.dipfit.sourcemodel,'model','LCMV','modelparams',{0.05},'atlas','LORETA-Talairach-BAs','nPCA',3, 'chansel', EEG.dipfit.chansel);
 
-% snippet analysis, individual snippets are stored
-EEG = pop_roi_connect(EEG, 'methods', { 'MIM' }, 'snippet', 'on', 'snip_length', 20); % 'fcsave_format', 'mean_snips'
-% EEG = pop_roi_connect(EEG, 'morder',20,'naccu',[],'methods', {'CS', 'MIM'}, 'roi_selection', {}, 'snippet', 'on', 'snip_length', 20, 'fcsave_format', 'all_snips');
+%% Snippet analysis, individual snippets are stored
+% EEG = pop_roi_connect(EEG, 'methods', { 'MIM' }, 'snippet', 'on', 'snip_length', 20); % 'fcsave_format', 'mean_snips'
+EEG = pop_roi_connect(EEG, 'morder',20,'naccu',[],'methods', {'CS', 'MIM'}, 'roi_selection', {}, 'snippet', 'on', 'snip_length', 20, 'fcsave_format', 'all_snips');
+
+% test for PAC
+fcomb.low = [8 10];
+fcomb.high = [20 22];
+EEG1 = pop_roi_connect(EEG, 'morder', 20,'naccu', [], 'methods', {'MIM', 'PAC'}, 'roi_selection', {}, 'fcomb', fcomb, 'snippet', 'on', 'snip_length', 20, 'fcsave_format', 'all_snips');
+EEG2 = pop_roi_connect(EEG, 'morder', 20,'naccu', [], 'methods', {'PAC'}, 'roi_selection', {}, 'fcomb', fcomb, 'snippet', 'on', 'snip_length', 20, 'fcsave_format', 'mean_snips');
 disp(size(EEG.roi.MIM)) % n_snips, frequency, roi, roi
