@@ -41,7 +41,7 @@
 %  'fcomb'          - [struct] Frequency combination for which PAC is computed (in Hz). Must have fields 'low' and 
 %                     'high' with fcomb.low < fcomb.high. For example, fcomb.low = 10 and fcomb.high = 50 if single 
 %                     frequencies are used. fcomb.low = [4 8] and fcomb.high = [48 50] if frequency bands are used 
-%                     (might take a long time to compute so use with caution). Default is {} (this will cause an error when PAC is selected).
+%                     (might take a long time to compute so use with caution). Default is {} (this will cause an error).
 %  'bs_outopts'     - [integer] Option which bispectral tensors should be stored in EEG.roi.PAC. Default is 1.
 %                          1 - store all tensors: b_orig, b_anti, b_orig_norm, b_anti_norm
 %                          2 - only store: b_orig, b_anti
@@ -198,14 +198,15 @@ if length(EEG) > 1
 end
 
 % compute connectivity over snippets
-if strcmpi(g.snippet, 'on') && strcmpi(g.conn_stats, 'off')
-    % n_conn_metrics = length(g.methods); 
+n_conn_metrics = length(g.methods); % number of connectivity metrics
+conn_matrices_snips = {};
+if strcmpi(g.snippet, 'on') && isempty(intersect(g.methods, {'PAC'})) && strcmpi(g.conn_stats, 'off')
 
     snippet_length = g.snip_length; % seconds
     trials = size(EEG.roi.source_roi_data,3);
     pnts   = size(EEG.roi.source_roi_data,2);
-    snip_eps = snippet_length/(pnts/EEG.roi.srate); % snip length/epoch length (how many trials for each snippet)
-    nsnips = floor(trials/snip_eps); 
+    snip_eps = snippet_length/(pnts/EEG.roi.srate); % n epochs in snippet
+    nsnips = floor(trials/snip_eps);
     if nsnips < 1
         if strcmpi(g.errornosnippet, 'on')
             error('Snippet length cannot exceed data length.\n')
@@ -223,129 +224,58 @@ if strcmpi(g.snippet, 'on') && strcmpi(g.conn_stats, 'off')
         nsnips = 1;
     end
     
-    % check if Parallel Processing Toolbox is available and licensed
-    if license('test', 'Distrib_Computing_Toolbox') && ~isempty(ver('parallel'))
-        if isfield(g, 'poolsize') && isnumeric(g.poolsize) && g.poolsize > 0
-            % check if there's already an existing parallel pool
-            currentPool = gcp('nocreate');
-            if isempty(currentPool)
-                parpool(g.poolsize);
-            end
-        end
-    else
-        disp('Parallel Processing Toolbox is not installed or licensed.');
-    end
-
-    tmplist1 = setdiff(g.methods, {'PAC'}); % list of fc metrics without PAC
-    tmplist2 = intersect(g.methods, {'PAC'});
-    % store each connectivity metric for each snippet in separate structure
-    fc_matrices_snips = cell(nsnips, length(tmplist1));
-    if ~isempty(tmplist2) 
-        switch g.bs_outopts % number of PAC metrics (check documentation)
-            case 1
-                bs_matrices_snips = cell(nsnips, 4); 
-                fns = cell(nsnips, 4);
-            otherwise
-                bs_matrices_snips = cell(nsnips, 2);
-                fns = cell(nsnips, 2);
-        end
-    end
     source_roi_data_save = EEG.roi.source_roi_data;
-    parfor isnip = 1:nsnips
-%     for isnip = 1:nsnips
-        EEG1 = EEG;
+    for isnip = 1:nsnips
         begSnip = (isnip-1)* snip_eps + 1;
         endSnip = min((isnip-1)* snip_eps + snip_eps, size(source_roi_data_save,3));
         roi_snip = source_roi_data_save(:,:, begSnip:endSnip ); % cut source data into snippets
-        EEG1.roi.source_roi_data = single(roi_snip);
-        EEG1 = roi_connect(EEG1, 'morder', g.morder, 'naccu', g.naccu, 'methods', g.methods,'freqresolution', g.freqresolution, 'roi_selection', g.roi_selection); % compute connectivity over one snippet
-        if ~isempty(intersect(g.methods, {'PAC'})) 
-            EEG1 = roi_pac(EEG1, g.fcomb, g.bs_outopts, g.roi_selection);
-        end
-        if ~isempty(tmplist1)
-            tmp_fc_matrices = cell(1, length(tmplist1));
-            for fc = 1:length(tmplist1) 
-                fc_name = g.methods{fc};
-                fc_matrix = EEG1.roi.(fc_name);
-                tmp_fc_matrices{fc} = fc_matrix;
-            end
-            fc_matrices_snips(isnip, :) = tmp_fc_matrices; 
-        end
-        if ~isempty(tmplist2)
-            tmp_fns = fieldnames(EEG1.roi.PAC);
-            tmp_bs_matrices = cell(1, length(tmp_fns));
-            for bs = 1:length(tmp_fns)
-                bs_matrix = EEG1.roi.PAC.(tmp_fns{bs});
-                tmp_bs_matrices{bs} = bs_matrix;
-            end
-            bs_matrices_snips(isnip, :) = tmp_bs_matrices; 
-            fns(isnip, :) = tmp_fns;
-        end
-    end
-
-    % shut down current parallel pool only if the toolbox is available
-    if license('test', 'Distrib_Computing_Toolbox') && ~isempty(ver('parallel'))
-        poolobj = gcp('nocreate');
-        if ~isempty(poolobj)
-            delete(poolobj);
+        EEG.roi.source_roi_data = single(roi_snip);
+        EEG = roi_connect(EEG, 'morder', g.morder, 'naccu', g.naccu, 'methods', g.methods,'freqresolution', g.freqresolution, 'roi_selection', g.roi_selection); % compute connectivity over one snippet
+        for fc = 1:n_conn_metrics 
+            fc_name = g.methods{fc};
+            fc_matrix = EEG.roi.(fc_name);
+            conn_matrices_snips{isnip,fc} = fc_matrix; % store each connectivity metric for each snippet in separate structure
         end
     end
     
     % compute mean over connectivity of each snippet
-    if ~isempty(tmplist1)
-        for fc = 1:length(tmplist1)
-            fc_name = g.methods{fc};
-    
-            [first_dim, second_dim, third_dim] = size(fc_matrices_snips{1,fc});
-            conn_cell = fc_matrices_snips(:, fc); % store all matrices of one metric in a cell
-            mat = cell2mat(conn_cell);
-            reshaped = reshape(mat, first_dim, nsnips, second_dim, third_dim);
-            reshaped = squeeze(permute(reshaped, [2, 1, 3, 4]));
-            if strcmpi(g.fcsave_format, 'all_snips')
-                EEG.roi.(fc_name) = reshaped;
-            else
-                if nsnips > 1
-                    mean_conn = squeeze(mean(reshaped, 1));
-                else
-                    mean_conn = reshaped;
-                end
-                EEG.roi.(fc_name) = mean_conn; % store mean connectivity in EEG struct
-            end
-        end
-    end
-    if ~isempty(tmplist2)
-        fns = fns(1, :);
-        for bs = 1:length(fns)
-            [second_dim, third_dim] = size(bs_matrices_snips{1, bs});
-            conn_cell = bs_matrices_snips(:, bs); % store all matrices of one metric in a cell
-            mat = cell2mat(conn_cell);
-            reshaped = reshape(mat, second_dim, nsnips, third_dim);
-            reshaped = squeeze(permute(reshaped, [2, 1, 3]));
-            if strcmpi(g.fcsave_format, 'all_snips')
-                EEG.roi.PAC.(fns{bs}) = reshaped;
-            else
-                if nsnips > 1
-                    mean_conn = squeeze(mean(reshaped, 1));
-                else
-                    mean_conn = reshaped;
-                end
-                EEG.roi.PAC.(fns{bs}) = mean_conn; % store mean connectivity in EEG struct
-            end
-        end
-    end
-end
+    for fc = 1:n_conn_metrics
+        fc_name = g.methods{fc};
+        [first_dim, second_dim, third_dim] = size(conn_matrices_snips{1,fc});
 
-% TO-DO: add snippet option for stats mode
-if strcmpi(g.conn_stats, 'on')
+        conn_cell = conn_matrices_snips(:,fc); % store all matrices of one metric in a cell
+        mat = cell2mat(conn_cell);
+        reshaped = reshape(mat, first_dim, nsnips, second_dim, third_dim);
+        reshaped = squeeze(permute(reshaped, [2,1,3,4]));
+        if strcmpi(g.fcsave_format, 'all_snips')
+            EEG.roi.(fc_name) = reshaped;
+        else
+            if nsnips > 1
+                mean_conn = squeeze(mean(reshaped, 1));
+            else
+                mean_conn = reshaped;
+            end
+            EEG.roi.(fc_name) = mean_conn; % store mean connectivity in EEG struct
+        end
+    end
+
+elseif strcmpi(g.conn_stats, 'on')
+    % Pass fcomb
     EEG = roi_connstats(EEG, 'methods', g.methods, 'nshuf', g.nshuf, 'roi_selection', g.roi_selection, 'freqresolution', g.freqresolution, 'poolsize', g.poolsize, 'fcomb', g.fcomb);
     %EEG = roi_connstats(EEG, 'methods', g.methods, 'nshuf', g.nshuf, 'roi_selection', g.roi_selection, 'freqresolution', g.freqresolution, 'poolsize', g.poolsize);
+else
+    EEG = roi_connect(EEG, 'morder', g.morder, 'naccu', g.naccu, 'methods', g.methods,'freqresolution', g.freqresolution, ...
+        'roi_selection', g.roi_selection);
 end
-if strcmpi(g.snippet, 'off')
-    EEG = roi_connect(EEG, 'morder', g.morder, 'naccu', g.naccu, 'methods', g.methods,'freqresolution', g.freqresolution, 'roi_selection', g.roi_selection);
-    if strcmpi(g.snippet, 'off') && ~isempty(intersect(g.methods, {'PAC'}))
+
+if ~isempty(intersect(g.methods, {'PAC'}))
+    if strcmpi(g.snippet, 'on')
+        error('Snippet analysis for PAC has not been implemented yet.')
+    else
         EEG = roi_pac(EEG, g.fcomb, g.bs_outopts, g.roi_selection);
     end
 end
+
 if nargout > 1
     com = sprintf( 'EEG = pop_roi_connect(EEG, %s);', vararg2str( options ));
 end
