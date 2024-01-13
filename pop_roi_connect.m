@@ -279,8 +279,8 @@ if strcmpi(g.snippet, 'on') && strcmpi(g.conn_stats, 'off')
                 tmp_bs_matrices{bs} = bs_matrix;
             end
             bs_matrices_snips(isnip, :) = tmp_bs_matrices; 
+            fns(isnip, :) = tmp_fns;
         end
-        fns(isnip, :) = tmp_fns;
     end
 
     % shut down current parallel pool only if the toolbox is available
@@ -292,7 +292,6 @@ if strcmpi(g.snippet, 'on') && strcmpi(g.conn_stats, 'off')
     end
     
     % compute mean over connectivity of each snippet
-    fns = fns(1, :);
     if ~isempty(tmplist1)
         for fc = 1:length(tmplist1)
             fc_name = g.methods{fc};
@@ -315,6 +314,7 @@ if strcmpi(g.snippet, 'on') && strcmpi(g.conn_stats, 'off')
         end
     end
     if ~isempty(tmplist2)
+        fns = fns(1, :);
         for bs = 1:length(fns)
             [second_dim, third_dim] = size(bs_matrices_snips{1, bs});
             conn_cell = bs_matrices_snips(:, bs); % store all matrices of one metric in a cell
