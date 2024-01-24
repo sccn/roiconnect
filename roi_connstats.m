@@ -22,6 +22,9 @@
 %                       specified, the signal is zero padded accordingly.
 %                       Default is 0 (means no padding).
 %   'poolsize'        - [integer] Number of workers in the parallel pool (check parpool documentation) for parallel computing
+% Authors: 
+%   Tien Dung Nguyen, tien-dung.nguyen@charite.de
+%   Zixuan Liu, zixuan.liu@campus.tu-berlin.de
 
 function EEG = roi_connstats(EEG, varargin)
 
@@ -75,12 +78,10 @@ function EEG = roi_connstats(EEG, varargin)
     if ~isempty(tmpMethods2)
         npcs = repmat(EEG.roi.nPCA, 1, EEG.roi.nROI);
         
-        % Add parameter
-        conn = shuffle_BS(data, npcs, tmpMethods2, g.nshuf, 'freqresolution', g.freqresolution, 'roi_selection', g.roi_selection, 'poolsize', g.poolsize, 'fcomb', g.fcomb);
+        fs = EEG.roi.srate;
+        conn = shuffle_BS(data, npcs, tmpMethods2, g.nshuf, fs, 'freqresolution', g.freqresolution, 'roi_selection', g.roi_selection, 'poolsize', g.poolsize, 'fcomb', g.fcomb);
         for iMethod = 1:length(tmpMethods2)
             EEG.roi.(tmpMethods2{iMethod}) = conn.(tmpMethods2{iMethod});
-            %if strcmpi(tmpMethods2{iMethod}, 'PAC')
-            %    EEG.roi.inds = conn.inds;
         end
     end
 end
