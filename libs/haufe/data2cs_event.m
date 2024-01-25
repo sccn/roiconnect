@@ -41,6 +41,7 @@ end
 segave=0;
 mydetrend=0;
 proj=[];
+desired_nfreq=0;
 if isfield(para,'segave')
     segave = para.segave;
 end
