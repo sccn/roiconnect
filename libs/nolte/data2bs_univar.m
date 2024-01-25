@@ -16,7 +16,15 @@ function [cs,csnr,nave]=data2bs_univar(data,segleng,segshift,epleng,maxfreqbins,
 %             The frequency resolution, df, is given by the physical length of a
 %             segment, say T. Then df=1/T. E.g. if T=2 seconds, the maxfreqbins=101
 %             means that the maximum physical frequency is 50 Hertz.
-% para: structure which is eventually used later
+%
+% if para.chancomb = [i,j,k], then the bispectrum is computed for the
+%   respective channel combination. For example, if para.chancomb = [1,2,1],
+%   then the output will be cs([1,2,1], f1, f2) = <x(f1)_1*x(f2)_2*conj(x(f1+f2-1)_1)>
+%   (for a comparison, check the default output). In this example, at least two channels 
+%   are required.
+% 
+% if para.freqresolution != 0 -> Desired frequency resolution (in number of frequencies). 
+%       If specified, the signal is zero padded accordingly.
 %
 % output: 
 % cs: nchan  by nf by nf tensor for nf frequencies (i.e. nf=maxfreqbins)   
@@ -42,21 +50,38 @@ if nargin>5
     if isfield(para,'mywindow');
        mywindow=repmat(para.mywindow,1,nchan);
     end
+    if isfield(para,'chancomb')
+        try
+            ichan = para.chancomb(1);
+            jchan = para.chancomb(2);
+            kchan = para.chancomb(3);
+
+            % check if there are enough channels
+            max_chans = max([ichan, jchan, kchan]);
+            if nchan < max_chans
+                warning('Not enough channels, check the documentation of the "para.chancomb" parameter. Proceeding with the default option.')
+                para = rmfield(para, 'chancomb');
+            end
+        catch
+            warning('Problem using the "para.chancomb" parameter. Please check the documentation. Proceeding with the default option.')
+            para = rmfield(para, 'chancomb');
+        end
+    end
 end
 
-
-
-
-
 nep=floor(ndat/epleng);
-
 nseg=floor((epleng-segleng)/segshift)+1; %total number of segments
 
-
- cs=zeros(nchan,nf,nf);
- csnr=zeros(nchan,nf,nf);
- csn=zeros(nchan,2*nf-1);
- %csloc=zeros(nf,nf);
+if nargin > 5 && isfield(para, 'chancomb')
+    cs = zeros(nf, nf);
+    csnr = zeros(nf, nf);
+    csn = zeros(1, 2*nf-1);
+else
+    cs=zeros(nchan,nf,nf);
+    csnr=zeros(nchan,nf,nf);
+    csn=zeros(nchan,2*nf-1);
+    %csloc=zeros(nf,nf);
+end
 
 %figure;plot(mywindow);
 nave=0;
@@ -68,10 +93,16 @@ for j=1:nep;
       datalocfft=fft(dataloc.*mywindow);
       datalocfft=datalocfft(1:2*nf-1,:);
       cslocn=((abs(datalocfft)).^3)';
-      for ichan=1:nchan;
-          xx=hankel(conj(datalocfft(1:2*nf-1,ichan)));
-          csloc(ichan,:,:)=(datalocfft(1:nf,ichan)*transpose(datalocfft(1:nf,ichan))).*xx(1:nf,1:nf);
-          cs(ichan,:,:)=cs(ichan,:,:)+csloc(ichan,:,:);
+      if nargin > 5 && isfield(para, 'chancomb')
+          xx=hankel(conj(datalocfft(1:2*nf-1,kchan)));
+          csloc(:,:)=(datalocfft(1:nf,ichan)*transpose(datalocfft(1:nf,jchan))).*xx(1:nf,1:nf);
+          cs(:,:)=cs(:,:)+csloc(:,:);
+      else
+          for ichan=1:nchan;
+              xx=hankel(conj(datalocfft(1:2*nf-1,ichan)));
+              csloc(ichan,:,:)=(datalocfft(1:nf,ichan)*transpose(datalocfft(1:nf,ichan))).*xx(1:nf,1:nf);
+              cs(ichan,:,:)=cs(ichan,:,:)+csloc(ichan,:,:);
+          end
       end
       %xxx=squeeze(csloc(1,1:3,1:3))
       
