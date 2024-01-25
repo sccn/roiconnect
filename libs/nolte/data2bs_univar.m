@@ -1,7 +1,7 @@
 
 function [cs,csnr,nave]=data2bs_univar(data,segleng,segshift,epleng,maxfreqbins,para)
 % calculates bispectrum  from data in general for event-related measurement
-% as univariate measures, i.e. always within each sensor. 
+% as univariate measures, i.e., always within each sensor or within a fixed sensor combination. 
 %
 % usage: [cs,csnr,nave]=data2bs_univar(data,segleng,segshift,epleng,maxfreqbins,para);
 %
@@ -17,14 +17,11 @@ function [cs,csnr,nave]=data2bs_univar(data,segleng,segshift,epleng,maxfreqbins,
 %             segment, say T. Then df=1/T. E.g. if T=2 seconds, the maxfreqbins=101
 %             means that the maximum physical frequency is 50 Hertz.
 %
-% if para.chancomb = [i,j,k], then the bispectrum is computed for the
+% if para.chancomb = [i,j,k], the bispectrum is computed for the
 %   respective channel combination. For example, if para.chancomb = [1,2,1],
-%   then the output will be cs([1,2,1], f1, f2) = <x(f1)_1*x(f2)_2*conj(x(f1+f2-1)_1)>
+%   the output will be cs([1,2,1], f1, f2) = <x(f1)_1*x(f2)_2*conj(x(f1+f2-1)_1)>
 %   (for a comparison, check the default output). In this example, at least two channels 
 %   are required.
-% 
-% if para.freqresolution != 0 -> Desired frequency resolution (in number of frequencies). 
-%       If specified, the signal is zero padded accordingly.
 %
 % output: 
 % cs: nchan  by nf by nf tensor for nf frequencies (i.e. nf=maxfreqbins)   
