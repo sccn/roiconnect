@@ -127,20 +127,34 @@ function conn = shuffle_BS(data, npcs, output, nshuf, varargin)
         %[CS, ~, wPLI, ~] = data2cs_event_shuf(data(:, :)', data_shuf(:, :)', ndat, floor(ndat/2), ndat, [], CSpara); 
         % CS = fp_tsdata_to_cpsd(data, fres, 'WELCH', 1:nchan, 1:nchan,1:nepo,shuf_inds);
 
+    % Define bispectrum parameters
     fcomb = g.fcomb;
-
     if isstruct(fcomb)
         fcomb = [fcomb.low, fcomb.high];
     else
         fcomb = fcomb;
     end
-    [BS, ~] =fp_data2bs_event_uni(data(:, :)', ndat, floor(ndat/2), ndat, fcomb, nshuf); % nchan, nchan, nchan, npeaks, nshuf
-    % bs_up = BS(:, :, :, 1, :)
-    % bs_low = BS(:, :, :, 2, :)
-
+    
+    % Compute bispectrum % nchan by nchan by nchan by number_of_peaks by number_of_shuffles 
+    [BS, RTP] = fp_data2bs_event_uni(data(:, :)', ndat, floor(ndat/2), ndat, fcomb, nshuf); 
+    
+    % Initialize variables to store the PAC results
+    PAC_orig = zeros(nROI, nROI, nshuf);
+    PAC_anti = zeros(nROI, nROI, nshuf);
+    PAC_orig_norm = zeros(nROI, nROI, nshuf);
+    PAC_anti_norm = zeros(nROI, nROI, nshuf);
+    
+    % Iterate over ROI pairs
     for proi = 1:nROI
         for aroi = proi:nROI
-            % do your stuff
+            % Call bs2pac function
+            [biv_orig, biv_anti, biv_orig_norm, biv_anti_norm] = calc_pac(BS(proi, aroi, :, :), RTP(proi, aroi, :, :));
+    
+            % Store PAC results
+            PAC_orig(proi, aroi, :) = biv_orig;
+            PAC_anti(proi, aroi, :) = biv_anti;
+            PAC_orig_norm(proi, aroi, :) = biv_orig_norm;
+            PAC_anti_norm(proi, aroi, :) = biv_anti_norm;
         end
     end
 
@@ -159,6 +173,12 @@ function conn = shuffle_BS(data, npcs, output, nshuf, varargin)
     % for iout = 1:length(output)
     %     eval(['conn.' output{iout} ' = ' output{iout} '_s;'])
     % end
+
+    % Save PAC results in the output structure
+    conn.PAC_orig = PAC_orig;
+    conn.PAC_anti = PAC_anti;
+    conn.PAC_orig_norm = PAC_orig_norm;
+    conn.PAC_anti_norm = PAC_anti_norm;
 
 
     % shut down current parallel pool only if the toolbox is available
