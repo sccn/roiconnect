@@ -31,8 +31,8 @@ fcomb.high = high;
 
 
 %EEG1 = pop_roi_connect(EEG, 'methods', {'PAC', 'MIM', 'COH'}, 'fcomb', fcomb); % test all 3 connectivity functions (data2spwctrgc, data2strgcmim, roi_pac)
-EEG2 = pop_roi_connect(EEG, 'methods', {'PAC'}, 'fcomb', fcomb, 'bs_outopts', 5, 'conn_stats', 'off', 'nshuf', 4); % compute only b_orig, b_orig_norm
-%EEG3 = pop_roi_connect(EEG, 'methods', {'PAC'}, 'fcomb', fcomb, 'bs_outopts', 5); % compute only b_anti, b_anti_norm
+EEG2 = pop_roi_connect(EEG, 'methods', {'PAC'}, 'fcomb', fcomb, 'bs_outopts', 5, 'conn_stats', 'on', 'nshuf', 4); % compute only b_orig, b_orig_norm
+EEG3 = pop_roi_connect(EEG, 'methods', {'PAC'}, 'fcomb', fcomb, 'bs_outopts', 5); % compute only b_anti, b_anti_norm
 
 %% Test bispectrum for frequency band inputs
 low = [4 8];
