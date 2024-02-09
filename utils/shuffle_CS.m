@@ -147,6 +147,7 @@ function conn = shuffle_CS(data, npcs, output, nshuf, varargin)
         iCOH_s(:, :, :, ishuf) = rm_components(permute(iCOH, [3 1 2 4]), npcs(1));
         wPLI_s(:, :, :, ishuf) = rm_components(wPLI, npcs(1));
     end
+    fprintf('\n');
 
     % save methods in a struct
     clear out
@@ -162,5 +163,4 @@ function conn = shuffle_CS(data, npcs, output, nshuf, varargin)
             delete(poolobj);
         end
     end
-    fprintf('\n');
 end

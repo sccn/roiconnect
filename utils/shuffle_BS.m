@@ -1,13 +1,19 @@
 % Wrapper function to compute surrogate FC metrics that are based on the bispectrum, incl. PAC.
 %
 % Usage: 
-%   conn = shuffle_BS(data, npcs, output, nshuf, 'freqresolution', <freqresolution>, 'roi_selection', <roi_selection>); 
-%...............
+%   conn = shuffle_BS(data, npcs, output, nshuf, fs); (without optional inputs) 
+%   conn = shuffle_BS(data, npcs, output, nshuf, fs, 'freqresolution', <freqresolution>, 'roi_selection', <roi_selection>, 'poolsize', <poolsize>); 
+%
 % Inputs:
 %   data             - (nchan x len_epoch x ntrials) source ROI data
 %   npcs             - (1 x nROIs) vector, each entry contains the number of principal components (PCs)
 %   output           - [cell array of string] Cell array of methods e.g. {'CS' 'MIM' 'wPLI' 'cCOH' 'aCOH' 'iCOH'}
 %   nshuf            - [integer] number of shuffles
+%   fs               - [integer] sampling rate in Hz
+%   fcomb            - [struct] Frequency combination for which PAC is computed (in Hz). Must have fields 'low' and 
+%                      'high' with fcomb.low < fcomb.high. For example, fcomb.low = 10 and fcomb.high = 50 if single 
+%                      frequencies are used. fcomb.low = [4 8] and fcomb.high = [48 50] if frequency bands are used 
+%                      (might take a long time to compute, so use with caution). Default is {} (this will cause an error).
 % 
 % Optional inputs:
 %   'freqresolution' - [integer] Desired frequency resolution (in number of frequencies). If
@@ -23,35 +29,35 @@
 %   Zixuan Liu, zixuan.liu@campus.tu-berlin.de
 %   Tien Dung Nguyen, tien-dung.nguyen@charite.de 
 
-function conn = shuffle_BS(data, npcs, output, nshuf, fs, varargin)
-    % Copyright (c) 2022 Franziska Pellegrini and Stefan Haufe
+function conn = shuffle_BS(data, npcs, output, nshuf, fs, fcomb, varargin)
 
     % decode input parameters
     g = finputcheck(varargin, { ...
         'freqresolution'  'integer'  { }    0;
         'roi_selection'   'cell'     { }    { }; ...
-        'poolsize'        'integer'  { }     1 ;...
-        'fcomb'           'struct'   { }    struct;
+        'poolsize'        'integer'  { }     1 ;
         }, 'shuffle_BS'); 
     if ischar(g), error(g); end
+
+    if ~isfield(fcomb, 'low') || ~isfield(fcomb, 'high')
+        help roi_pac;
+        error('Frequency pair cannot be found - check the documentation for the "fcomb" input parameter in shuffle_BS.')
+    end
+
+    if fcomb.high < fcomb.low
+        help roi_pac;
+        error('fcomb.high must be smaller than fcomb.low - check the documentation for the "fcomb" input parameter in "shuffle_BS".')
+    end
     
     [nchan, ndat, nepo] = size(data);
 
 %     [inds, PCA_inds] = fp_npcs2inds(npcs);
-%     ninds = length(inds);
-    inds = {}; ninds = 0;
     if isempty(g.roi_selection)
         nROI = nchan/npcs(1);
     else
         nROI = length(g.roi_selection);
     end
     nPCA = npcs(1);
-    for iroi = 1:nROI
-        for jroi = (iroi+1):nROI
-            inds{ninds+1} = {(iroi-1)*nPCA + [1:nPCA], (jroi-1)*nPCA + [1:nPCA]};
-            ninds = ninds + 1;
-        end
-    end
 
     % choose ROIs if desired, take number of PCs into account
     if ~isempty(g.roi_selection)
@@ -89,20 +95,13 @@ function conn = shuffle_BS(data, npcs, output, nshuf, fs, varargin)
             currentPool = gcp('nocreate');
             if isempty(currentPool)
                 parpool(g.poolsize);
-            else
-                % Optionally, adjust current pool size to g.poolsize
-                % If this is needed, delete the currentPool and then initiate a new one
-                % delete(currentPool);
-                % parpool(g.poolsize);
             end
         end
     else
         disp('Parallel Processing Toolbox is not installed or licensed.');
     end
     
-
     % Define bispectrum parameters
-    fcomb = g.fcomb;
     fres = fs;
     frqs = sfreqs(fres, fs);
     
@@ -143,11 +142,11 @@ function conn = shuffle_BS(data, npcs, output, nshuf, fs, varargin)
     for proi = 1:nROI
         for aroi = proi:nROI
             % Compute bispectrum % nchan by nchan by nchan by number_of_peaks by number_of_shuffles 
-            X = data([proi aroi],:,:); % number of regions X epoch length X trails
+            X = data([proi aroi],:,:); % number of regions x epoch length x trials
             [BS, ~] = fp_data2bs_event_uni(X(:, :)', ndat, floor(ndat/2), ndat, freqinds_up, nshuf); % pass (f1,f2) through freqinds_up
             BS_low = BS(:,:,:,1,:);
             BS_up = BS(:,:,:,2,:);
-            % Call bs2pac function
+
             [RTP_low,~] = data2bs_threenorm(X(:, :)', ndat, floor(ndat/2), ndat, freqinds_low);
             [RTP_up,~] = data2bs_threenorm(X(:, :)', ndat, floor(ndat/2), ndat, freqinds_up);
             

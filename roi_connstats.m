@@ -22,6 +22,11 @@
 %                       specified, the signal is zero padded accordingly.
 %                       Default is 0 (means no padding).
 %   'poolsize'        - [integer] Number of workers in the parallel pool (check parpool documentation) for parallel computing
+%   'fcomb'           - [struct] Frequency combination for which PAC is computed (in Hz). Must have fields 'low' and 
+%                       'high' with fcomb.low < fcomb.high. For example, fcomb.low = 10 and fcomb.high = 50 if single 
+%                       frequencies are used. fcomb.low = [4 8] and fcomb.high = [48 50] if frequency bands are used 
+%                       (might take a long time to compute, so use with caution). Default is {} (this will cause an error).
+%
 % Authors: 
 %   Tien Dung Nguyen, tien-dung.nguyen@charite.de
 %   Zixuan Liu, zixuan.liu@campus.tu-berlin.de
@@ -74,12 +79,11 @@ function EEG = roi_connstats(EEG, varargin)
             end
         end
     end
-    %
     if ~isempty(tmpMethods2)
         npcs = repmat(EEG.roi.nPCA, 1, EEG.roi.nROI);
         
         fs = EEG.roi.srate;
-        conn = shuffle_BS(data, npcs, tmpMethods2, g.nshuf, fs, 'freqresolution', g.freqresolution, 'roi_selection', g.roi_selection, 'poolsize', g.poolsize, 'fcomb', g.fcomb);
+        conn = shuffle_BS(data, npcs, tmpMethods2, g.nshuf, fs, g.fcomb, 'freqresolution', g.freqresolution, 'roi_selection', g.roi_selection, 'poolsize', g.poolsize);
         for iMethod = 1:length(tmpMethods2)
             EEG.roi.(tmpMethods2{iMethod}) = conn.(tmpMethods2{iMethod});
         end
