@@ -34,7 +34,9 @@ fcomb.high = high;
 
 %EEG1 = pop_roi_connect(EEG, 'methods', {'PAC', 'MIM', 'COH'}, 'fcomb', fcomb); % test all 3 connectivity functions (data2spwctrgc, data2strgcmim, roi_pac)
 EEG2 = pop_roi_connect(EEG, 'methods', {'PAC'}, 'fcomb', fcomb, 'bs_outopts', 5, 'conn_stats', 'on', 'nshuf', 4); % compute only b_anti, b_anti_norm
+tic
 EEG3 = pop_roi_connect(EEG, 'methods', {'PAC'}, 'fcomb', fcomb, 'bs_outopts', 5); % compute only b_anti, b_anti_norm
+toc
 
 %% Test bispectrum for frequency band inputs
 low = [4 8];
@@ -46,7 +48,9 @@ fcomb.high = high;
 tic
 EEG4 = pop_roi_connect(EEG, 'methods', {'PAC', 'MIM', 'COH'}, 'fcomb', fcomb); % test all 3 connectivity functions (data2spwctrgc, data2strgcmim, roi_pac)toc
 toc
-EEG5 = pop_roi_connect(EEG, 'methods', {'PAC'}, 'fcomb', fcomb, 'conn_stats', 'off', 'nshuf', 2); 
+tic
+EEG5 = pop_roi_connect(EEG, 'methods', {'PAC'}, 'fcomb', fcomb, 'conn_stats', 'off', 'nshuf', 2, 'bs_outopts', 5); 
+toc
 
 %% Test PAC plotting
 % Test for single frequency inputs

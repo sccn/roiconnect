@@ -150,36 +150,30 @@ function conn = shuffle_BS(data, npcs, output, nshuf, fs, fcomb, varargin)
             [RTP_low,~] = data2bs_threenorm(X(:, :)', ndat, floor(ndat/2), ndat, freqinds_low);
             [RTP_up,~] = data2bs_threenorm(X(:, :)', ndat, floor(ndat/2), ndat, freqinds_up);
             
-            [biv_orig_low, biv_anti_low, biv_orig_low_norm, biv_anti_low_norm] = calc_pac(BS_low, RTP_low); % add dimension
+            [biv_orig_low, biv_anti_low, biv_orig_low_norm, biv_anti_low_norm] = calc_pac(BS_low, RTP_low); 
             [biv_orig_up, biv_anti_up, biv_orig_up_norm, biv_anti_up_norm] = calc_pac(BS_up, RTP_up);
             
             % PAC_km(f1, f2) = 0.5 * |Bkmm(f1, f2-f1)| + 0.5 * |Bkmm(f1, f2)|
-            b_orig(aroi,proi) = mean([biv_orig_up(1) biv_orig_low(1)]); 
-            b_orig(proi,aroi) = mean([biv_orig_up(2) biv_orig_low(2)]);
-            b_anti(aroi,proi) = mean([biv_anti_up(1) biv_anti_low(1)]);  
-            b_anti(proi,aroi) = mean([biv_anti_up(2) biv_anti_low(2)]); 
+            b_orig(aroi, proi, :) = mean(vertcat(biv_orig_up(1, :), biv_orig_low(1, :)), 1); 
+            b_orig(proi, aroi, :) = mean(vertcat(biv_orig_up(2, :), biv_orig_low(2, :)), 1);
+            b_anti(aroi, proi, :) = mean(vertcat(biv_anti_up(1, :), biv_anti_low(1, :)), 1);  
+            b_anti(proi, aroi, :) = mean(vertcat(biv_anti_up(2, :), biv_anti_low(2, :)), 1); 
             
-            % normalized versions
-            b_orig_norm(aroi,proi) = mean([biv_orig_up_norm(1) biv_orig_low_norm(1)]);
-            b_orig_norm(proi,aroi) = mean([biv_orig_up_norm(2) biv_orig_low_norm(2)]);
-            b_anti_norm(aroi,proi) = mean([biv_anti_up_norm(1) biv_anti_low_norm(1)]);  
-            b_anti_norm(proi,aroi) = mean([biv_anti_up_norm(2) biv_anti_low_norm(2)]);
-    
-            % Store PAC results
-            PAC_orig = b_orig;
-            PAC_anti = b_anti;
-            PAC_orig_norm = b_orig_norm;
-            PAC_anti_norm = b_anti_norm;
+            % normalized versions (for bicoherence)
+            b_orig_norm(aroi, proi, :) = mean(vertcat(biv_orig_up_norm(1, :), biv_orig_low_norm(1, :)), 1);
+            b_orig_norm(proi, aroi, :) = mean(vertcat(biv_orig_up_norm(2, :), biv_orig_low_norm(2, :)), 1);
+            b_anti_norm(aroi, proi, :) = mean(vertcat(biv_anti_up_norm(1, :), biv_anti_low_norm(1, :)), 1);  
+            b_anti_norm(proi, aroi, :) = mean(vertcat(biv_anti_up_norm(2, :), biv_anti_low_norm(2, :)), 1);
         end
     end
 
     clear out
 
     % Save PAC results in the output structure
-    conn.PAC.b_orig = PAC_orig;
-    conn.PAC.b_anti = PAC_anti;
-    conn.PAC.b_orig_norm = PAC_orig_norm;
-    conn.PAC.b_anti_norm = PAC_anti_norm;
+    conn.PAC.b_orig = b_orig;
+    conn.PAC.b_anti = b_anti;
+    conn.PAC.b_orig_norm = b_orig_norm;
+    conn.PAC.b_anti_norm = b_anti_norm;
 
     % shut down current parallel pool only if the toolbox is available
     if license('test', 'Distrib_Computing_Toolbox') && ~isempty(ver('parallel'))
