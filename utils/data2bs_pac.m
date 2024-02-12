@@ -13,6 +13,7 @@
 %   b_anti_norm - ROI x ROI antisymmetrized bicoherence (normalized by threenorm)
 %
 % Copyright (C) Franziska Pellegrini, franziska.pellegrini@charite.de,
+%               Stefan Haufe, haufe@tu-berlin.de,
 %               Tien Dung Nguyen, tien-dung.nguyen@charite.de
 %               Zixuan Liu, zixuan.liu@campus.tu-berlin.de
 
@@ -61,17 +62,17 @@ for proi = 1:nroi
         X = data([proi aroi],:,:); % number of regions X epoch length X trails
 
         % upper freqs
-        [BS_up,~] = data2bs_event(X(:,:)', segleng, segshift, epleng, freqinds_up); % BS_up size: 2X2X2
-        % normalized by threenorm
+        [BS_up,~] = data2bs_event(X(:,:)', segleng, segshift, epleng, freqinds_up); % BS_up size: 2x2x2
+        % calculate threenorm
         [RTP_up,~] = data2bs_threenorm(X(:,:)', segleng, segshift, epleng, freqinds_up);
-        % calculate PAC
+        % compute absolute values of the bispectral tensors
         [biv_orig_up, biv_anti_up, biv_orig_up_norm, biv_anti_up_norm] = calc_pac(BS_up, RTP_up);
 
         % lower freqs
         [BS_low,~] = data2bs_event(X(:,:)', segleng, segshift, epleng, freqinds_low);
-        % normalized by threenorm
+        % calculate threenorm
         [RTP_low,~] = data2bs_threenorm(X(:,:)', segleng, segshift, epleng, freqinds_low);
-        % calculate PAC
+        % compute absolute values of the bispectral tensors
         [biv_orig_low, biv_anti_low, biv_orig_low_norm, biv_anti_low_norm] = calc_pac(BS_low, RTP_low);
 
         % PAC_km(f1, f2) = 0.5 * |Bkmm(f1, f2-f1)| + 0.5 * |Bkmm(f1, f2)|
