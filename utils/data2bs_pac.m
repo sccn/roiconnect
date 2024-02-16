@@ -13,7 +13,9 @@
 %   b_anti_norm - ROI x ROI antisymmetrized bicoherence (normalized by threenorm)
 %
 % Copyright (C) Franziska Pellegrini, franziska.pellegrini@charite.de,
+%               Stefan Haufe, haufe@tu-berlin.de,
 %               Tien Dung Nguyen, tien-dung.nguyen@charite.de
+%               Zixuan Liu, zixuan.liu@campus.tu-berlin.de
 
 function [b_orig, b_anti, b_orig_norm,b_anti_norm] = data2bs_pac(data, params)
 
@@ -57,48 +59,21 @@ end
 
 for proi = 1:nroi 
     for aroi = proi:nroi
-        X = data([proi aroi],:,:); 
-        % upper freqs
-        [bs_up,~] = data2bs_event(X(:,:)', segleng, segshift, epleng, freqinds_up);         
-        biv_orig_up = squeeze(([mean(abs(bs_up(1, 2, 2, :))) mean(abs(bs_up(2, 1, 1, :)))])); % [Bkmm, Bmkk], average over frequency bands
-        xx = bs_up - permute(bs_up, [2 1 3 4]); %Bkmm - Bmkm
-        biv_anti_up = squeeze(([abs(xx(1, 2, 2, :)) abs(xx(2, 1, 1, :))]));
-        
-        % normalized by threenorm
-        [RTP_up,~] = data2bs_threenorm(X(:,:)', segleng, segshift, epleng, freqinds_up); 
-        bicoh_up = bs_up ./ RTP_up;
-        bicoh_up = mean(bicoh_up, 4); % average over frequency bands
-        biv_orig_up_norm = ([abs(bicoh_up(1, 2, 2)) abs(bicoh_up(2, 1, 1))]);
-        xx = bicoh_up-permute(bicoh_up, [2 1 3]);
-        biv_anti_up_norm = ([abs(xx(1, 2, 2)) abs(xx(2, 1, 1))]);
+        X = data([proi aroi],:,:); % number of regions X epoch length X trails
 
-%         % upper freqs
-%         [BS_up,~] = data2bs_event(X(:,:)', segleng, segshift, epleng, freqinds_up);
-%         % normalized by threenorm
-%         [RTP_up,~] = data2bs_threenorm(X(:,:)', segleng, segshift, epleng, freqinds_up);
-%         % calculate PAC
-%         [biv_orig_up, biv_anti_up, biv_orig_up_norm, biv_anti_up_norm] = calc_pac(BS_up, RTP_up);
+        % upper freqs
+        [BS_up,~] = data2bs_event(X(:,:)', segleng, segshift, epleng, freqinds_up); % BS_up size: 2x2x2
+        % calculate threenorm
+        [RTP_up,~] = data2bs_threenorm(X(:,:)', segleng, segshift, epleng, freqinds_up);
+        % compute absolute values of the bispectral tensors
+        [biv_orig_up, biv_anti_up, biv_orig_up_norm, biv_anti_up_norm] = calc_pac(BS_up, RTP_up);
 
         % lower freqs
-        [bs_low,~] = data2bs_event(X(:,:)', segleng, segshift, epleng, freqinds_low);
-        biv_orig_low = squeeze(([mean(abs(bs_low(1, 2, 2, :))) mean(abs(bs_low(2, 1, 1, :)))]));
-        xx = bs_low - permute(bs_low, [2 1 3, 4]);
-        biv_anti_low = squeeze(([abs(xx(1, 2, 2, :)) abs(xx(2, 1, 1, :))]));
-        
-        % normalized by threenorm
+        [BS_low,~] = data2bs_event(X(:,:)', segleng, segshift, epleng, freqinds_low);
+        % calculate threenorm
         [RTP_low,~] = data2bs_threenorm(X(:,:)', segleng, segshift, epleng, freqinds_low);
-        bicoh_low = bs_low ./ RTP_low;
-        bicoh_low = mean(bicoh_low, 4); % average over frequency bands
-        biv_orig_low_norm = ([abs(bicoh_low(1, 2, 2)) abs(bicoh_low(2, 1, 1))]);
-        xx = bicoh_low-permute(bicoh_low, [2 1 3]);
-        biv_anti_low_norm = ([abs(xx(1, 2, 2)) abs(xx(2, 1, 1))]);
-
-%         % lower freqs
-%         [BS_low,~] = data2bs_event(X(:,:)', segleng, segshift, epleng, freqinds_low);
-%         % normalized by threenorm
-%         [RTP_low,~] = data2bs_threenorm(X(:,:)', segleng, segshift, epleng, freqinds_low);
-%         % calculate PAC
-%         [biv_orig_low, biv_anti_low, biv_orig_low_norm, biv_anti_low_norm] = calc_pac(BS_low, RTP_low)
+        % compute absolute values of the bispectral tensors
+        [biv_orig_low, biv_anti_low, biv_orig_low_norm, biv_anti_low_norm] = calc_pac(BS_low, RTP_low);
 
         % PAC_km(f1, f2) = 0.5 * |Bkmm(f1, f2-f1)| + 0.5 * |Bkmm(f1, f2)|
         b_orig(aroi,proi) = mean([biv_orig_up(1) biv_orig_low(1)]); 

@@ -20,7 +20,8 @@
 %  'freqrange' - [min max] frequency range or [integer] single frequency in Hz. Default is to plot broadband power.
 %  'alpha'     - [integer] Significance level. Default is 0.05.
 %
-%   Author: Tien Dung Nguyen, tien-dung.nguyen@charite.de
+%   Author: Franziska Pellegrini, franziska.pellegrini@charite.de
+%           Tien Dung Nguyen, tien-dung.nguyen@charite.de
 
 function EEG = pop_roi_statsplot(EEG, varargin)
 

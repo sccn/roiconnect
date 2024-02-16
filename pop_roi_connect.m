@@ -335,17 +335,18 @@ if strcmpi(g.snippet, 'on') && strcmpi(g.conn_stats, 'off')
     end
 end
 
-% TO-DO: add snippet option for stats mode
-if strcmpi(g.conn_stats, 'on')
-    EEG = roi_connstats(EEG, 'methods', g.methods, 'nshuf', g.nshuf, 'roi_selection', g.roi_selection, 'freqresolution', g.freqresolution, 'poolsize', g.poolsize, 'fcomb', g.fcomb);
-    %EEG = roi_connstats(EEG, 'methods', g.methods, 'nshuf', g.nshuf, 'roi_selection', g.roi_selection, 'freqresolution', g.freqresolution, 'poolsize', g.poolsize);
-end
-if strcmpi(g.snippet, 'off')
+if strcmpi(g.snippet, 'off') && strcmpi(g.conn_stats, 'off')
     EEG = roi_connect(EEG, 'morder', g.morder, 'naccu', g.naccu, 'methods', g.methods,'freqresolution', g.freqresolution, 'roi_selection', g.roi_selection);
     if strcmpi(g.snippet, 'off') && ~isempty(intersect(g.methods, {'PAC'}))
         EEG = roi_pac(EEG, g.fcomb, g.bs_outopts, g.roi_selection);
     end
 end
+
+% TO-DO: add snippet option for stats mode
+if strcmpi(g.conn_stats, 'on')
+    EEG = roi_connstats(EEG, 'methods', g.methods, 'nshuf', g.nshuf, 'roi_selection', g.roi_selection, 'freqresolution', g.freqresolution, 'poolsize', g.poolsize, 'fcomb', g.fcomb);
+end
+
 if nargout > 1
     com = sprintf( 'EEG = pop_roi_connect(EEG, %s);', vararg2str( options ));
 end

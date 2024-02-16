@@ -25,7 +25,7 @@
 
 function EEG = roi_pac(EEG, fcomb, bs_outopts, roi_selection)
 
-    if nargin < 2
+    if nargin < 4
         help roi_pac;
         return
     end
@@ -38,12 +38,12 @@ function EEG = roi_pac(EEG, fcomb, bs_outopts, roi_selection)
 
     if ~isfield(fcomb, 'low') || ~isfield(fcomb, 'high')
         help roi_pac;
-        error('Frequency pair cannot be found - check the documentation for the fcomb input parameter')
+        error('Frequency pair cannot be found - check the documentation for the "fcomb" input parameter in "roi_pac".')
     end
 
     if fcomb.high < fcomb.low
         help roi_pac;
-        error('fcomb.high must be smaller than fcomb.low - check the documentation for the fcomb input parameter')
+        error('fcomb.high must be smaller than fcomb.low - check the documentation for the fcomb input parameter in "roi_pac".')
     end
 
     [~, ndat, ~] = size(data);
@@ -80,7 +80,7 @@ function EEG = roi_pac(EEG, fcomb, bs_outopts, roi_selection)
         params.nROI = nROI;
         EEG.roi.PAC.roi_selection = roi_selection;
     end
-    [b_orig, b_anti, b_orig_norm, b_anti_norm] = data2bs_pac(data, params);
+    [b_orig, b_anti, b_orig_norm, b_anti_norm] = data2bs_pac(data, params); 
     
     % options which bispectral tensors to store
     switch bs_outopts
