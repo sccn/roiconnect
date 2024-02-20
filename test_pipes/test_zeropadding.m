@@ -23,7 +23,7 @@ EEG = pop_leadfield(EEG, 'sourcemodel',fullfile(eeglabp,'plugins','dipfit','LORE
 
 %% Test zero padding in roi_activity and plot results
 % sanity check with default frequency resolution (freqresolution = 0)
-EEG = pop_roi_activity(EEG, 'leadfield',EEG.dipfit.sourcemodel,'model','LCMV','modelparams',{0.05},'atlas','LORETA-Talairach-BAs','nPCA',3);
+EEG = pop_roi_activity(EEG, 'leadfield',EEG.dipfit.sourcemodel,'model','LCMV','modelparams',{0.05},'atlas','LORETA-Talairach-BAs','nPCA',3, 'chansel', EEG.dipfit.chansel);
 
 % subplot(2,1,1)
 % for j = 1:size(EEG.roi.source_roi_power,2)
