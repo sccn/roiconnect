@@ -36,7 +36,7 @@ Next, clone the repository
 ```
 git clone https://github.com/sccn/roiconnect.git
 ```
-That's it! If you want to run the plugin, please start [EEGLAB](https://github.com/sccn/eeglab#to-use-eeglab) first. You may need to add EEGLAB to the [MATLAB path](https://de.mathworks.com/help/matlab/ref/addpath.html).  
+That's it! If you want to run the plugin, please start [EEGLAB](https://github.com/sccn/eeglab#to-use-eeglab) first. You may need to add EEGLAB to the [MATLAB path](https://de.mathworks.com/help/matlab/ref/addpath.html). Some functions may require the additional installation of  [FieldTrip (lite or normal)](https://www.fieldtriptoolbox.org) and [Brainmovie](https://github.com/arnodelorme/brainmovie).
 
 Why is this EEGLAB plugin not in the EEGLAB plugin manager? The plugin is beta. Once it is completed, it will be added to the EEGLAB plugin manager. 
 
