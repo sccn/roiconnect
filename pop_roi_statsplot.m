@@ -68,7 +68,7 @@ function EEG = pop_roi_statsplot(EEG, varargin)
         matrix = squeeze(S.(g.measure)(frq_inds, :, :, :));
     end
     
-    % generate p-values by comparing the true FC (first shuffle) to null distribution
+    % average over one dimension to obtain net FC, then generate p-values by comparing the true FC (first shuffle) to null distribution
     netFC = squeeze(mean(matrix, 2));
     FC_pn = sum(netFC(:, 1) < netFC(:, 2:end), 2)./(size(matrix, 3) - 1);
 

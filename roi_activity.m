@@ -41,7 +41,8 @@
 %  'freqresolution'   - [integer] Desired frequency resolution (in number of frequencies). If
 %                       specified, the signal is zero padded accordingly.
 %                       Default is 0 (means no padding).
-%  'lowmemory'        - ['on'|'off'] options to run the code with low memory, though, it might take significantly longer to complete.
+%  'lowmemory'        - ['on'|'off'] Option to run the code with low memory, though, it might take significantly longer to complete. When turned on, the estimation of voxel-wise spectral power 
+%                       will require less memory.
 %
 % Output:
 %  EEG - EEGLAB dataset with field 'roi' containing connectivity info.
