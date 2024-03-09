@@ -49,6 +49,6 @@ for iMeasure = 1:length(measures)
     EEG = pop_roi_connect(EEG, 'methods', measures(iMeasure));
     t(iMeasure) = toc;
 end
-pop_roi_connectplot(EEG, 'measure', 'MIM', 'plotcortex', 'on', 'plotmatrix', 'off');  
+pop_roi_connectplot(EEG, 'measure', 'MIM', 'plotcortex', 'on', 'plotmatrix', 'on');  
 pop_roi_connectplot(EEG, 'measure', 'MIM', 'plot3d', 'on',  'plotcortex', 'off', 'plot3dparams', {'thresholdper', 0.05, 'brainmovieopt' {'nodeColorDataRange', [], 'nodeSizeLimits', [0 0.2]}});
 
