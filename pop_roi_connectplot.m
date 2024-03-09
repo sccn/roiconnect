@@ -14,12 +14,15 @@
 %  'measure'              - ['psd'|'roipsd'|'trgc'|'crossspecimag'|'crossspecpow'|'mic'|'mim']
 %                           'psd'   : Source power spectrum
 %                           'psdroi': ROI based power spectrum
-%                           'trgc'  : Time-reversed granger causality
-%                           'gc'    : Granger causality
+%                           'TRGC'  : Time-reversed granger causality
+%                           'GC'    : Granger causality
 %                           'crossspecimag': Imaginary part of coherence from cross-spectrum
 %                           'crossspecpow' : Average cross-spectrum power for each ROI
-%                           'mic' : Maximized Imaginary Coherency for each ROI
-%                           'mim' : Multivariate Interaction Measure for each ROI
+%                           'aCOH': Coherence 
+%                           'cCOH': (Complex-valued) Coherency
+%                           'iCOH': Absolute value of the imaginary part of Coherency
+%                           'MIC' : Maximized Imaginary Coherency for each ROI
+%                           'MIM' : Multivariate Interaction Measure for each ROI
 %                           'pac' : Phase-amplitude coupling for a certain frequency (band) combination based on bicoherence
 %                           'pac_anti': Phase-amplitude coupling for a certain frequency (band) combination based on the antisymmetrized bicoherence
 %  'freqrange'            - [min max] frequency range or [integer] single frequency in Hz. Default is to plot broadband power.
