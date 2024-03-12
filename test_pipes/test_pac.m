@@ -32,11 +32,20 @@ fcomb.low = low;
 fcomb.high = high;
 
 
-%EEG1 = pop_roi_connect(EEG, 'methods', {'PAC', 'MIM', 'COH'}, 'fcomb', fcomb); % test all 3 connectivity functions (data2spwctrgc, data2strgcmim, roi_pac)
-EEG2 = pop_roi_connect(EEG, 'methods', {'PAC'}, 'fcomb', fcomb, 'bs_outopts', 5, 'conn_stats', 'on', 'nshuf', 4); % compute only b_anti, b_anti_norm
+EEG1 = pop_roi_connect(EEG, 'methods', {'PAC', 'MIM', 'COH'}, 'fcomb', fcomb); % test all 3 connectivity functions (data2spwctrgc, data2strgcmim, roi_pac)
 tic
-EEG3 = pop_roi_connect(EEG, 'methods', {'PAC'}, 'fcomb', fcomb, 'bs_outopts', 5); % compute only b_anti, b_anti_norm
+EEG2 = pop_roi_connect(EEG, 'methods', {'PAC'}, 'fcomb', fcomb, 'bs_outopts', 1, 'conn_stats', 'on', 'nshuf', 3, 'poolsize', 12); % compute only b_anti, b_anti_norm
 toc
+EEG3 = pop_roi_connect(EEG, 'methods', {'PAC'}, 'fcomb', fcomb, 'bs_outopts', 1); % compute only b_anti, b_anti_norm
+
+if ~isequal(squeeze(EEG2.roi.PAC.b_orig(:, :, 1)), EEG3.roi.PAC.b_orig) 
+    error 'The first shuffle in the surrogate connectivity array is not the true matrix.'
+end
+
+if ~isequal(squeeze(EEG2.roi.PAC.b_anti(:, :, 1)), EEG3.roi.PAC.b_anti) 
+    error 'The first shuffle in the surrogate connectivity array is not the true matrix.'
+end
+
 
 %% Test bispectrum for frequency band inputs
 low = [4 8];
@@ -49,21 +58,25 @@ tic
 EEG4 = pop_roi_connect(EEG, 'methods', {'PAC', 'MIM', 'COH'}, 'fcomb', fcomb); % test all 3 connectivity functions (data2spwctrgc, data2strgcmim, roi_pac)toc
 toc
 tic
-EEG5 = pop_roi_connect(EEG, 'methods', {'PAC'}, 'fcomb', fcomb, 'conn_stats', 'off', 'nshuf', 2, 'bs_outopts', 5); 
+EEG5 = pop_roi_connect(EEG, 'methods', {'PAC'}, 'fcomb', fcomb, 'conn_stats', 'off', 'nshuf', 3, 'bs_outopts', 1); 
 toc
+
+if ~isequal(squeeze(EEG5.roi.PAC.b_anti(:, :, 1)), EEG4.roi.PAC.b_anti) 
+    error 'The first shuffle in the surrogate connectivity array is not the true matrix.'
+end
 
 %% Test PAC plotting
 % Test for single frequency inputs
-pop_roi_connectplot(EEG1, 'measure', 'pac', 'plotmatrix', 'on');
-pop_roi_connectplot(EEG1, 'measure', 'pac_anti', 'plotmatrix', 'on');
+pop_roi_connectplot(EEG3, 'measure', 'pac', 'plotmatrix', 'on');
+pop_roi_connectplot(EEG3, 'measure', 'pac_anti', 'plotmatrix', 'on');
 
 % Provoke errors by plotting bispectral tensors that do not exist
-pop_roi_connectplot(EEG2, 'measure', 'pac_anti', 'plotmatrix', 'on'); % bs_outopts 4 means only original bispectra are computed, so cannot plot anti
+pop_roi_connectplot(EEG3, 'measure', 'pac_anti', 'plotmatrix', 'on'); % bs_outopts 4 means only original bispectra are computed, so cannot plot anti
 pop_roi_connectplot(EEG3, 'measure', 'pac', 'plotmatrix', 'on'); % bs_outopts 5 means only antisymm. bispectra are computed, so cannot plot normal bispectrum
 
 % Test for frequency bands
-pop_roi_connectplot(EEG4, 'measure', 'pac', 'plotmatrix', 'on');
-pop_roi_connectplot(EEG4, 'measure', 'pac_anti', 'plotmatrix', 'on');
+pop_roi_connectplot(EEG5, 'measure', 'pac', 'plotmatrix', 'on');
+pop_roi_connectplot(EEG5, 'measure', 'pac_anti', 'plotmatrix', 'on');
 
 % plot MIM and COH as a sanity check
 pop_roi_connectplot(EEG1, 'measure', 'mim', 'plotmatrix', 'on');
