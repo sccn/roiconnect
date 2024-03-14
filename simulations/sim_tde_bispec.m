@@ -56,7 +56,7 @@ para_yxx.chancomb = [2, 1, 1];
 [T, I] = bispectral_TD_est(B2_xxx, B2_xyx, B2_yyy, method, [], 1);
 [aT, aI] = bispectral_TD_est(B2_xxx, B2_xyx - B2_yxx, B2_yyy, method, [], 1);
 
-% test band
+% TDE on frequency bands
 band = [20 30];
 fmask = true(1, length(frqs));
 fmask(frqs < band(1) | frqs > band(2)) = 0;
@@ -65,7 +65,7 @@ fmask(frqs < band(1) | frqs > band(2)) = 0;
 
 %% Plotting
 delay_scale = (-seglen+1:seglen-1) / srate;
-[peak_val, peak_idx] = max(aT); % compute estimated delay/peak
+[peak_val, peak_idx] = max(aT); % extract estimated delay/peak
 est_delay = delay_scale(peak_idx);
 
 figure; plot(delay_scale, aT)
