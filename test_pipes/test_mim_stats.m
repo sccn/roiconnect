@@ -22,8 +22,10 @@ EEG = pop_leadfield(EEG, 'sourcemodel',fullfile(eeglabp,'functions','supportfile
 EEG = pop_roi_activity(EEG, 'leadfield',EEG.dipfit.sourcemodel,'model','LCMV','modelparams',{0.05},'atlas','LORETA-Talairach-BAs','nPCA',3, 'chansel', EEG.dipfit.chansel);
 
 %% Create null distribution
-EEG1 = pop_roi_connect(EEG, 'methods', {'CS' 'cCOH', 'wPLI' 'MIM'}, 'freqresolution', 200, 'roi_selection', {1, 3, 7}, 'conn_stats', 'on', 'nshuf', 1001); % takes very long!
-pop_roi_statsplot(EEG1, 'measure', 'MIM', 'freqrange', [8 13]);
+EEG1_MIM = pop_roi_connect(EEG, 'methods', {'CS' 'cCOH', 'wPLI' 'MIM'}, 'freqresolution', 200, 'roi_selection', {1, 3, 7}, 'conn_stats', 'on', 'nshuf', 1000, 'poolsize', 12); 
+EEG2_MIM = pop_roi_connect(EEG, 'methods', {'CS' 'cCOH', 'wPLI' 'MIM'}, 'conn_stats', 'on', 'nshuf', 1000); % takes very long!
+% load('test_pipes/MIM_shuf.mat')
+pop_roi_statsplot(EEG1_MIM, 'measure', 'MIM', 'freqrange', [8 13]);
 
 %% Unit test
 % Test if the first shuffle of the surrogate connectivity matrix in EEG1 is in fact the true matrix
