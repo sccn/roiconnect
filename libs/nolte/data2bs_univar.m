@@ -21,7 +21,7 @@ function [cs,csnr,nave]=data2bs_univar(data,segleng,segshift,epleng,maxfreqbins,
 %   respective channel combination. For example, if para.chancomb = [1,2,1],
 %   the output will be cs([1,2,1], f1, f2) = <x(f1)_1*x(f2)_2*conj(x(f1+f2-1)_1)>
 %   (for a comparison, check the default output). In this example, at least two channels 
-%   are required.
+%   are required. Throws an error if there are not enough channels.
 %
 % output: 
 % cs: nchan  by nf by nf tensor for nf frequencies (i.e. nf=maxfreqbins)   

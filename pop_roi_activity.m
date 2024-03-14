@@ -31,8 +31,8 @@
 %                       specified, the signal is zero padded accordingly.
 %                       Default is 0 (means no padding).
 %  'chansel'          - [cell array of string] channel selection. Default is all.
-%  'lowmemory'        - ['on'|'off'] options to run the code with low memory, though, it might take significantly longer to complete.
-%
+%  'lowmemory'        - ['on'|'off'] Option to run the code with low memory, though, it might take significantly longer to complete. When turned on, the estimation of voxel-wise spectral power 
+%                       will require less memory.
 %
 % Other optional inputs:
 %  All ROI_ACTIVITY parameters are accepted as input and passed on.
@@ -207,7 +207,7 @@ if nargin < 2
         {} { 'style' 'text' 'string' 'Model parameters:' } { 'style' 'edit' 'string' '0.05'  'tag' 'modelparams' } {}  ...
         {} ...
         { 'style' 'text' 'string' 'Other parameters' 'fontweight' 'bold'} ...
-        {} { 'style' 'text' 'string' 'Number of dimentions per ROI:'  } { 'style' 'edit' 'string' '3' 'tag' 'pca' } {}  ...
+        {} { 'style' 'text' 'string' 'Number of dimensions per ROI:'  } { 'style' 'edit' 'string' '3' 'tag' 'pca' } {}  ...
         };
     
     [result,usrdat,~,out] = inputgui('geometry', uigeom, 'uilist', uilist, 'helpcom', 'pophelp(''pop_roi_activity'')', ...
