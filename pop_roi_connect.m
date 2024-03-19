@@ -51,11 +51,11 @@
 %                          5 - only store: b_anti, b_anti_norm
 %  'roi_selection'  - [cell array of integers] Cell array of ROI indices {1, 2, 3, ...} indicating for which regions (ROIs) connectivity should be computed. 
 %                     Default is empty (in this case, connectivity will be computed for all ROIs).
+%  'tde_method'     - [integer] TDE method, must be between 1:4, open bispectral_TD_est.m for details. Default is 1.
 %  'tde_regions'    - [seed target] Array containing the seed and target region for time-delay estimation. Regions need to be passed as region *indices*, 
 %                     e.g., [2 10] will compute time-delays from region 2 -> 10 and 10 -> 2, corresponding to the information flow in both directions separately. 
 %                     Default is [] (will throw an error).
 %  'tde_freqbands'  - [f1 f2] Array containing the frequency band for which bispectral time-delays will be estimated. Default is [] (broadband).
-%  'tde_method'     - [integer] TDE method, must be between 1:4, open bispectral_TD_est.m for details. Default is 1.
 %  'conn_stats'     - ['on'|'off'] Run statistics on connectivity metrics. Default is 'off'.
 %  'nshuf'          - [integer] number of shuffles for statistical significance testing. The first shuffle is the true value. Default is 1001. 
 %  'freqrange'      - [min max] frequency range in Hz. This is used to compute and plot p-values. Default is to plot broadband power.
@@ -187,9 +187,9 @@ g = finputcheck(options, ...
       'fcomb'          'struct'   { }                           struct; 
       'bs_outopts'     'integer'  { }                           1; 
       'roi_selection'  'cell'     { }                           { }; 
+      'tde_method'     'integer'  { 1:4 }                         1;
       'tde_regions'    'integer'  { }                           [ ];
       'tde_freqbands'  'integer'  { }                           [ ];
-      'tde_method'     'integer'  { 1:4 }                         1;
       'conn_stats'     'string'   { }                           'off'; ...
       'nshuf'          'integer'  { }                           1001; ...
       'poolsize'       'integer'  { }                           1}, 'pop_roi_connect');

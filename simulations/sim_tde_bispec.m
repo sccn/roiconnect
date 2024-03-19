@@ -44,14 +44,14 @@ epleng = ndat;
 fres = srate;
 frqs = sfreqs(2 * fres, srate);
 
-[B2_xxx] = squeeze(data2bs_univar(Xlong', 2 * seglen, segshift, epleng, length(frqs)-1));
+[B2_xxx] = squeeze(data2bs_univar(Xlong', ndat, segshift, epleng, length(frqs)-1));
 para_xyx.chancomb = [1, 2, 1]; 
-[B2_xyx] = data2bs_univar([Xlong', Ylong'], 2 * seglen, segshift, epleng, length(frqs)-1, para_xyx);
-[B2_yyy] = squeeze(data2bs_univar(Ylong', 2 * seglen, segshift, epleng, length(frqs)-1));
+[B2_xyx] = data2bs_univar([Xlong', Ylong'], ndat, segshift, epleng, length(frqs)-1, para_xyx);
+[B2_yyy] = squeeze(data2bs_univar(Ylong', ndat, segshift, epleng, length(frqs)-1));
 
 % required for antisymmetrization
 para_yxx.chancomb = [2, 1, 1]; 
-[B2_yxx] = data2bs_univar([Xlong', Ylong'], 2 * seglen, segshift, epleng, length(frqs)-1, para_yxx);
+[B2_yxx] = data2bs_univar([Xlong', Ylong'], ndat, segshift, epleng, length(frqs)-1, para_yxx);
 
 [T, I] = bispectral_TD_est(B2_xxx, B2_xyx, B2_yyy, method, [], 1);
 [aT, aI] = bispectral_TD_est(B2_xxx, B2_xyx - B2_yxx, B2_yyy, method, [], 1);
@@ -64,9 +64,10 @@ fmask(frqs < band(1) | frqs > band(2)) = 0;
 
 
 %% Plotting
+% extract estimated delay/peak
 delay_scale = (-seglen+1:seglen-1) / srate;
-[peak_val, peak_idx] = max(aT); % extract estimated delay/peak
-est_delay = delay_scale(peak_idx);
+[peak_val, peak_idx] = max(T); 
+est_delay = delay_scale(peak_idx); % in Hz
 
 figure; plot(delay_scale, aT, 'black')
 xline(est_delay, '--r')
@@ -77,8 +78,8 @@ subtitle("\tau = " + num2str(est_delay) + " (s)")
 grid on
 
 %% Check if the estimated delay is in fact the true simulated delay
-if ~est_delay == delay
-    error('The estimated delay does not match the true simulated delay')
-else
+if est_delay == (delay / srate)
     disp('The estimated delay matches the true simulated delay.')
+else
+    error('The estimated delay does not match the true simulated delay')
 end
