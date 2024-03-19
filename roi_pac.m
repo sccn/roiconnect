@@ -1,4 +1,4 @@
-% roi_pac() - Compute phase-amplitude coupling (PAC) between ROIs  (cf. Zandvoort and Nolte, 2021). 
+% roi_pac() - Computes phase-amplitude coupling (PAC) between ROIs  (cf. Zandvoort and Nolte, 2021). 
 % Wrapper function for pac_bispec().
 %
 % Usage:

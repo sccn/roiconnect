@@ -68,9 +68,10 @@ delay_scale = (-seglen+1:seglen-1) / srate;
 [peak_val, peak_idx] = max(aT); % extract estimated delay/peak
 est_delay = delay_scale(peak_idx);
 
-figure; plot(delay_scale, aT)
+figure; plot(delay_scale, aT, 'black')
 xline(est_delay, '--r')
 xlabel('Time (s)')
+ylabel('a.u.')
 title(sprintf('TDE | Method %d', method))
 subtitle("\tau = " + num2str(est_delay) + " (s)")
 grid on
