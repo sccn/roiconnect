@@ -38,7 +38,7 @@ function EEG = roi_pac(EEG, fcomb, bs_outopts, roi_selection)
 
     if ~isfield(fcomb, 'low') || ~isfield(fcomb, 'high')
         help roi_pac;
-        error('Frequency pair cannot be found - check the documentation for the "fcomb" input parameter in "roi_pac".')
+        error('Frequency pair cannot be found - check the documentation for the "fcomb" input parameter in "roi_pac.m".')
     end
 
     if fcomb.high < fcomb.low
