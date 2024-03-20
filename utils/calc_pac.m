@@ -19,14 +19,14 @@
 function [biv_orig, biv_anti, biv_orig_norm, biv_anti_norm] = calc_pac(BS, RTP)              
 
     % Calculate absolute values of the cross-bispectrum
-    biv_orig = squeeze(([abs(mean(BS(1, 2, 2, :), 4)) abs(mean(BS(2, 1, 1, :), 4))])); % [Bkmm, Bmkk], average over frequency bands (4th dimension)
-    xx = BS - permute(BS, [2 1 3 4 5]); 
-    biv_anti = squeeze(([abs(mean(xx(1, 2, 2, :), 4)) abs(mean(xx(2, 1, 1, :), 4))]));
+    biv_orig = squeeze(([mean(abs(BS(1, 2, 2, :)), 4) mean(abs(BS(2, 1, 1, :)), 4)])); % [Bkmm, Bmkk], average over frequency bands (4th dimension)
+    xx = BS - permute(BS, [2 1 3 4]); 
+    biv_anti = squeeze(([mean(abs(xx(1, 2, 2, :)), 4) mean(abs(xx(2, 1, 1, :)), 4)]));
 
     % Calculate absolute values of the cross-bicoherence
     bicoh = BS ./ RTP;
-    biv_orig_norm = squeeze(([abs(mean(bicoh(1, 2, 2, :), 4)) abs(mean(bicoh(2, 1, 1, :), 4))])); % [Bkmm, Bmkk], average over frequency bands
-    xx = bicoh - permute(bicoh, [2 1 3 4 5]);
-    biv_anti_norm = squeeze(([abs(mean(xx(1, 2, 2, :), 4)) abs(mean(xx(2, 1, 1,:), 4))]));
+    biv_orig_norm = squeeze(([mean(abs(bicoh(1, 2, 2, :)), 4) mean(abs(bicoh(2, 1, 1, :)), 4)])); % [Bkmm, Bmkk], average over frequency bands
+    xx = bicoh - permute(bicoh, [2 1 3 4]);
+    biv_anti_norm = squeeze(([mean(abs(xx(1, 2, 2, :)), 4) mean(abs(xx(2, 1, 1,:)), 4)]));
 
 end
