@@ -22,8 +22,10 @@
 %                           'iCOH': Absolute value of the imaginary part of Coherency
 %                           'MIC' : Maximized Imaginary Coherency for each ROI
 %                           'MIM' : Multivariate Interaction Measure for each ROI
-%                           'pac' : Phase-amplitude coupling for a certain frequency (band) combination based on bicoherence
-%                           'pac_anti': Phase-amplitude coupling for a certain frequency (band) combination based on the antisymmetrized bicoherence
+%                           'PAC' : Phase-amplitude coupling for a certain frequency (band) combination based on bicoherence
+%                           'PAC_anti': Phase-amplitude coupling for a certain frequency (band) combination based on the antisymmetrized bicoherence
+%                           'TDE': Bispectral time-delay estimation
+%                           'TDE_anti': Antisymmetrized bispectral time-delay estimation
 %  'freqrange'            - [min max] frequency range or [integer] single frequency in Hz. Default is to plot broadband power.
 %  'smooth'               - [float] smoothing factor for cortex surface plotting
 %  'plotcortex'           - ['on'|'off'] plot results on smooth cortex. Default is 'on'
@@ -156,7 +158,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         splot(end  ).unit   = 'aCOH';
         splot(end  ).cortex = cortexFlag;
         splot(end  ).matrix = 1;
-        splot(end  ).psd    = -1;
+        splot(end  ).psd    = 0;
         splot(end  ).plot3d = plot3dFlag;
     end
 
@@ -167,7 +169,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         splot(end  ).unit   = 'cCOH';
         splot(end  ).cortex = cortexFlag;
         splot(end  ).matrix = 1;
-        splot(end  ).psd    = -1;
+        splot(end  ).psd    = 0;
         splot(end  ).plot3d = plot3dFlag;
         end
 
@@ -178,7 +180,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         splot(end  ).unit   = 'iCOH';
         splot(end  ).cortex = cortexFlag;
         splot(end  ).matrix = 1;
-        splot(end  ).psd    = -1;
+        splot(end  ).psd    = 0;
         splot(end  ).plot3d = plot3dFlag;
     end
 
@@ -189,7 +191,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         splot(end  ).unit   = 'GC';
         splot(end  ).cortex = cortexFlag;
         splot(end  ).matrix = 1;
-        splot(end  ).psd    = -1;
+        splot(end  ).psd    = 0;
         splot(end  ).plot3d = plot3dFlag;
     end
 
@@ -200,7 +202,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         splot(end  ).unit   = 'TRGC'; % not used yet
         splot(end  ).cortex = cortexFlag;
         splot(end  ).matrix = 1;
-        splot(end  ).psd    = -1;
+        splot(end  ).psd    = 0;
         splot(end  ).plot3d = plot3dFlag;
     end
 
@@ -245,6 +247,28 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         splot(end  ).cortex = cortexFlag;
         splot(end  ).matrix = 1;
         splot(end  ).psd    = 0;
+        splot(end  ).plot3d = plot3dFlag;
+    end
+
+    if isfield(EEG.roi, 'TDE')
+        splot(end+1).label    = 'ROI to ROI Time-delay estimation';
+        splot(end  ).labelshort = 'Time-delay estimation';
+        splot(end  ).acronym  = 'TDE'; % TDE based on bispectrum
+        splot(end  ).unit   = 'TDE'; % not used yet
+        splot(end  ).cortex = cortexFlag;
+        splot(end  ).matrix = 1;
+        splot(end  ).psd    = -1;
+        splot(end  ).plot3d = plot3dFlag;
+    end
+
+    if isfield(EEG.roi, 'TDE')
+        splot(end+1).label    = 'ROI to ROI Time-delay estimation';
+        splot(end  ).labelshort = 'Time-delay estimation';
+        splot(end  ).acronym  = 'TDE_anti'; % TDE based on antisymmetrized bispectrum
+        splot(end  ).unit   = 'TDE'; % not used yet
+        splot(end  ).cortex = cortexFlag;
+        splot(end  ).matrix = 1;
+        splot(end  ).psd    = -1;
         splot(end  ).plot3d = plot3dFlag;
     end
    
@@ -495,6 +519,19 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
                 end
                 cortexPlot = mean(matrix, 2);
                 
+            case {'tde' 'tde_anti'}
+                if strcmpi(g.measure, 'tde')
+                    t_xy = S.TDE.T_XY;
+                    t_yx = S.TDE.T_YX;
+                else
+                    t_xy = S.TDE.aT_XY;
+                    t_yx = S.TDE.aT_YX;
+                end
+                plot_tde(t_xy, S.TDE.shift, S.TDE.region_X, S.TDE.region_Y, S.TDE.method)
+                plot_tde(t_yx, S.TDE.shift, S.TDE.region_Y, S.TDE.region_X, S.TDE.method)
+
+                % disable cortex plot
+                g.plotcortex = 'off';
         end
 
         % get seed
@@ -927,4 +964,18 @@ function roi_largeplot(EEG, mim, trgc, roipsd, titleStr)
         lgd.FontSize = 10;
         set(lgd, 'Position', [0.44 0.06 0.25 0.25]);
     end
+end
+
+function plot_tde(T, shift, region_X, region_Y, method)
+    [~, peak_idx] = max(T); 
+    est_delay = shift(peak_idx); % in Hz
+    
+    figure; plot(shift, T, 'LineWidth', 1)
+    xline(est_delay, '--r')
+    xlabel('Time (s)')
+    ylabel('a.u.')
+    h = title(sprintf('%s -> %s TDE | Method %d', region_X, region_Y, method));
+    set(h, 'fontsize', 16);
+    subtitle("\tau = " + num2str(est_delay) + " (s)")
+    grid on
 end
