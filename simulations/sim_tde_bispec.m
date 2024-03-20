@@ -66,11 +66,11 @@ fmask(frqs < band(1) | frqs > band(2)) = 0;
 
 %% Plotting
 % extract estimated delay/peak
-delay_scale = (-seglen+1:seglen-1) / srate;
+shift = (-seglen+1:seglen-1) / srate;
 [peak_val, peak_idx] = max(aT); 
-est_delay = delay_scale(peak_idx); % in Hz
+est_delay = shift(peak_idx); % in Hz
 
-figure; plot(delay_scale, aT, 'black')
+figure; plot(shift, aT, 'black')
 xline(est_delay, '--r')
 xlabel('Time (s)')
 ylabel('a.u.')

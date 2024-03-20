@@ -572,27 +572,27 @@ function [coordinate, seed_idx] = get_seedregion_coordinate(scouts, seed_idx, vc
     end
 end
 
-function labels = get_labels(EEG)
-    % retrieve labels from atlas
-    labels = strings(1,length(EEG.roi.atlas.Scouts));
-    for i = 1:length(labels)
-        scout = struct2cell(EEG.roi.atlas.Scouts(i));
-        labels(i) = char(scout(1));
-    end
-    labels = cellstr(labels);
-
-    % remove region labels that were not selected
-    if isfield(EEG.roi, 'roi_selection')
-        if ~isempty(EEG.roi.roi_selection)
-            labels = labels(cell2mat(EEG.roi.roi_selection));
-        end
-    end
-end
-
-function new_labels = replace_underscores(labels)
-    % remove underscores in label names to avoid bug
-    new_labels = strrep(labels, '_', ' ');
-end
+% function labels = get_labels(EEG)
+%     % retrieve labels from atlas
+%     labels = strings(1,length(EEG.roi.atlas.Scouts));
+%     for i = 1:length(labels)
+%         scout = struct2cell(EEG.roi.atlas.Scouts(i));
+%         labels(i) = char(scout(1));
+%     end
+%     labels = cellstr(labels);
+% 
+%     % remove region labels that were not selected
+%     if isfield(EEG.roi, 'roi_selection')
+%         if ~isempty(EEG.roi.roi_selection)
+%             labels = labels(cell2mat(EEG.roi.roi_selection));
+%         end
+%     end
+% end
+% 
+% function new_labels = replace_underscores(labels)
+%     % remove underscores in label names to avoid bug
+%     new_labels = strrep(labels, '_', ' ');
+% end
 
 function [colors, color_idxx, roi_idxx, labels_sorted, roi_loc] = get_colored_labels(EEG)
     labels = get_labels(EEG);
@@ -832,6 +832,7 @@ function roi_plotcoloredlobes( EEG, matrix, titleStr, measure, hemisphere, group
     else
         set(gca,'ytick',1:n_roi_labels,'yticklabel',labels(hem_idx{1}:hem_idx{2}:n_roi_labels), 'fontsize', 7, 'TickLength',[0.015, 0.02], 'LineWidth',0.75);
     end
+    set(gca, 'YDir','normal')
     h = title([ 'ROI to ROI ' upper(replace_underscores(measure)) ' (' titleStr ')' ]);
     set(h, 'fontsize', 16);
     xtickangle(90)
