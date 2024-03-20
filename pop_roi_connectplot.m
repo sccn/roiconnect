@@ -14,12 +14,14 @@
 %  'measure'              - ['psd'|'roipsd'|'trgc'|'crossspecimag'|'crossspecpow'|'mic'|'mim']
 %                           'psd'   : Source power spectrum
 %                           'psdroi': ROI based power spectrum
-%                           'trgc'  : Time-reversed granger causality
-%                           'gc'    : Granger causality
+%                           'TRGC'  : Time-reversed granger causality
+%                           'GC'    : Granger causality
 %                           'crossspecimag': Imaginary part of coherence from cross-spectrum
 %                           'crossspecpow' : Average cross-spectrum power for each ROI
-%                           'mic' : Maximized Imaginary Coherency for each ROI
-%                           'mim' : Multivariate Interaction Measure for each ROI
+%                           'aCOH': Coherence 
+%                           'iCOH': Absolute value of the imaginary part of Coherency
+%                           'MIC' : Maximized Imaginary Coherency for each ROI
+%                           'MIM' : Multivariate Interaction Measure for each ROI
 %                           'pac' : Phase-amplitude coupling for a certain frequency (band) combination based on bicoherence
 %                           'pac_anti': Phase-amplitude coupling for a certain frequency (band) combination based on the antisymmetrized bicoherence
 %  'freqrange'            - [min max] frequency range or [integer] single frequency in Hz. Default is to plot broadband power.
@@ -146,11 +148,33 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         splot(end  ).plot3d = plot3dFlag;
     end
 
-    if isfield(EEG.roi, 'COH')
+    if isfield(EEG.roi, 'aCOH')
         splot(end+1).label    = 'ROI to ROI coherence';
         splot(end  ).labelshort = 'Coherence';
-        splot(end  ).acronym  = 'Coh';
-        splot(end  ).unit   = 'Coh';
+        splot(end  ).acronym  = 'aCOH';
+        splot(end  ).unit   = 'aCOH';
+        splot(end  ).cortex = cortexFlag;
+        splot(end  ).matrix = 1;
+        splot(end  ).psd    = -1;
+        splot(end  ).plot3d = plot3dFlag;
+    end
+
+    if isfield(EEG.roi, 'cCOH')
+        splot(end+1).label    = 'ROI to ROI coherency';
+        splot(end  ).labelshort = 'Coherency';
+        splot(end  ).acronym  = 'cCoh';
+        splot(end  ).unit   = 'cCOH';
+        splot(end  ).cortex = cortexFlag;
+        splot(end  ).matrix = 1;
+        splot(end  ).psd    = -1;
+        splot(end  ).plot3d = plot3dFlag;
+        end
+
+    if isfield(EEG.roi, 'iCOH')
+        splot(end+1).label    = 'ROI to ROI absolute value of the imaginary part of coherency';
+        splot(end  ).labelshort = 'Img. part of Coherency';
+        splot(end  ).acronym  = 'iCOH';
+        splot(end  ).unit   = 'iCOH';
         splot(end  ).cortex = cortexFlag;
         splot(end  ).matrix = 1;
         splot(end  ).psd    = -1;
@@ -410,6 +434,17 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
                     MI = S.MIM;
                 end
                 matrix = squeeze(mean(MI(frq_inds, :, :),1));
+                cortexPlot = mean(matrix, 2);
+            
+            case { 'acoh' 'ccoh' 'icoh'}
+                if strcmpi(g.measure, 'aCOH')
+                    matrix = squeeze(mean(S.aCOH(frq_inds, :, :), 1));
+                elseif strcmpi(g.measure, 'cCOH')
+                    error(['Complex values are not supported. To plot the absolute values, compute "aCOH", ' ...
+                        'to plot the imaginary part, compute "iCOH".'])
+                else
+                    matrix = squeeze(mean(S.iCOH(frq_inds, :, :), 1));
+                end
                 cortexPlot = mean(matrix, 2);
 
             case { 'crossspecpow' 'coh' 'crossspecimag' }
