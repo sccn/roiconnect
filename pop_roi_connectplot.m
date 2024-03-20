@@ -32,6 +32,7 @@
 %  'plot3d'               - ['on'|'off'] ... Default is 'off'
 %  'plot3dparams'         - [cell] optional parameters for the generation of brain movies. Check the related documentation in roi_plotbrainmovie.m
 %  'plotmatrix'           - ['on'|'off'] plot results as ROI to ROI matrix. Default is 'off'
+%  'plotbutterfly'        - ['on'|'off'] plot results as a frequency x connectivity plot (butterfly plot). Default is 'off'
 %  'plotbarplot'          - ['on'|'off'] plot ROI based power spectrum as barplot. Default is 'off'
 %  'hemisphere'           - ['all'|'left'|'right'] hemisphere options for ROI to ROI matrix. Default is 'all'
 %  'grouphemispheres'      - ['on'|'off'] group ROIs by hemispheres (left hemisphere, then right hemisphere). Default is 'off'
@@ -162,7 +163,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
     if isfield(EEG.roi, 'cCOH')
         splot(end+1).label    = 'ROI to ROI coherency';
         splot(end  ).labelshort = 'Coherency';
-        splot(end  ).acronym  = 'cCoh';
+        splot(end  ).acronym  = 'cCOH';
         splot(end  ).unit   = 'cCOH';
         splot(end  ).cortex = cortexFlag;
         splot(end  ).matrix = 1;
@@ -327,6 +328,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         'plot3d'                'string'   { 'on' 'off' }          'off';
         'plot3dparams'          'cell'     { }                     {};
         'plotmatrix'            'string'   { 'on' 'off' }          'off';
+        'plotbutterfly'         'string'   { 'on' 'off' }          'off';
         'noplot'                'string'   { 'on' 'off' }          'off';
         'plotbarplot'           'string'   { 'on' 'off'}           'off';
         'hemisphere'            'string'   {'all' 'left' 'right'}  'all';
@@ -402,7 +404,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
                     error('This option is obsolete');
                 end
 
-                if strcmpi(g.plotcortex, 'on') && strcmpi(lower(g.measure), 'roipsd')
+                if strcmpi(g.plotcortex, 'on') && strcmpi(g.measure, 'roipsd')
                     cortexPlot = 10*log10( mean(EEG.roi.source_roi_power(frq_inds,:)) );
                 end
 
@@ -421,9 +423,10 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
 %                     TRGCnet = S.TRGC(:, :, 1) - S.TRGC(:, :, 2);
                     TRGC = S.TRGC;
                 end
-                matrix = squeeze(mean(TRGC(frq_inds, :, :)));
+                butterflyplot = squeeze(mean(TRGC, 2));
+                matrix = squeeze(mean(TRGC(frq_inds, :, :), 1));
                 cortexPlot  = mean(matrix, 2);
-                cortexTitle = [ upper(g.measure) ' (' titleStr '); Red = net sender; Blue = net receiver' ];
+                cortexTitle = [ g.measure ' (' titleStr '); Red = net sender; Blue = net receiver' ];
 
             case { 'mim' 'mic' }
                 if strcmpi(g.measure, 'MIC')
@@ -433,16 +436,19 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
 %                     MI = S.MIM(:, :);
                     MI = S.MIM;
                 end
-                matrix = squeeze(mean(MI(frq_inds, :, :),1));
+                butterflyplot = squeeze(mean(MI, 2));
+                matrix = squeeze(mean(MI(frq_inds, :, :), 1));
                 cortexPlot = mean(matrix, 2);
             
             case { 'acoh' 'ccoh' 'icoh'}
                 if strcmpi(g.measure, 'aCOH')
+                    butterflyplot = squeeze(mean(S.aCOH, 2));
                     matrix = squeeze(mean(S.aCOH(frq_inds, :, :), 1));
                 elseif strcmpi(g.measure, 'cCOH')
                     error(['Complex values are not supported. To plot the absolute values, compute "aCOH", ' ...
                         'to plot the imaginary part, compute "iCOH".'])
                 else
+                    butterflyplot = squeeze(mean(S.iCOH, 2));
                     matrix = squeeze(mean(S.iCOH(frq_inds, :, :), 1));
                 end
                 cortexPlot = mean(matrix, 2);
@@ -450,14 +456,17 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
             case { 'crossspecpow' 'coh' 'crossspecimag' }
                 if strcmpi(g.measure, 'coh')
                     PS = abs(S.COH); % do not know what to do here
+                    butterflyplot = squeeze(mean(PS, 2));
                     PSarea2area = squeeze(mean(PS(frq_inds, :, :)));
                     cortexPlot = mean(PSarea2area, 2);
                 elseif strcmpi(g.measure, 'crossspecimag')
                     PS = abs(imag(cs2coh(S.CS)));
+                    butterflyplot = squeeze(mean(PS, 2));
                     PSarea2area = squeeze(mean(PS(frq_inds, :, :)));
                     cortexPlot = mean(PSarea2area, 2);
                 else
                     PS = cs2psd(S.CS);
+                    butterflyplot = squeeze(mean(PS, 2));
                     apow = squeeze(sum(sum(reshape(PS(frq_inds, :), [], S.nROI), 1), 2)).*S.source_roi_power_norm';
                     cortexPlot = 10*log10(apow);
                     PSarea2area = [];
@@ -519,15 +528,17 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
 
         % plot on cortical surface
         if strcmpi(g.plotcortex, 'on') && cortexFlag ~= -1
-            cortexTitle = [ plotOpt.labelshort ' (' titleStr ')' ];
+            if ~strcmpi(g.measure, 'gc') || ~strcmpi(g.measure, 'trgc')
+                cortexTitle = [ plotOpt.labelshort ' (' titleStr ')' ];
+            end
             if isempty(g.plotcortexseedregion)
-                allplots_cortex_BS(cortex_highres, cortexPlot, [min(cortexPlot) max(cortexPlot)], cm17a, upper(g.measure), g.smooth);
+                allplots_cortex_BS(cortex_highres, cortexPlot, [min(cortexPlot) max(cortexPlot)], cm17a, g.measure, g.smooth);
 %                 allplots_cortex_BS(cortex_highres, cortexPlot, [min(cortexPlot) max(cortexPlot)], cm17a, upper(splot.unit), g.smooth);
 %                 allplots_cortex_BS(S.cortex, cortexPlot, [min(cortexPlot) max(cortexPlot)], cm17a, plotOpt.unit, g.smooth);
             else
                 cortexTitle = [ cortexTitle ' for area ' int2str(seed_idx)];
                 cortexPlot = squeeze(matrix(seed_idx,:));
-                allplots_cortex_BS(S.cortex, cortexPlot, [min(cortexPlot) max(cortexPlot)], cm17a, upper(g.measure), g.smooth, [], {coordinate});
+                allplots_cortex_BS(S.cortex, cortexPlot, [min(cortexPlot) max(cortexPlot)], cm17a, g.measure, g.smooth, [], {coordinate});
 %                 allplots_cortex_BS(cortex_highres, cortexPlot, [min(cortexPlot) max(cortexPlot)], cm17a, upper(g.measure), g.smooth, [], {coordinate});
 %                 allplots_cortex_BS(S.cortex, cortexPlot, [min(cortexPlot) max(cortexPlot)], cm17a, plotOpt.unit, g.smooth, [], {coordinate});
             end
@@ -535,6 +546,21 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
             set(h, 'fontsize', 20);
         elseif strcmpi(g.plotcortex, 'on') && cortexFlag == -1
             warning('EEG.roi.cortex does not contain the field "Faces" required to plot surface topographies.')
+        end
+
+        % make butterfly plot
+        if strcmpi(g.plotbutterfly, 'on') && ~isempty(matrix)
+            if strcmpi(g.measure, 'pac') || strcmpi(g.measure, 'pac_anti')
+                warning('Butterfly plots (frequency x connectivity) cannot be computed for PAC because frequencies have already been specified for the computation.')
+            else
+                figure; plot(EEG.roi.freqs, butterflyplot, 'LineWidth', 1)
+                h = title([ 'ROI to ROI ' replace_underscores(g.measure) ' (' titleStr ')' ]);
+                set(h, 'fontsize', 16);
+                xlabel('Frequency (Hz)')
+                ylabel([replace_underscores(g.measure) ' (a.u.)'])
+                grid on
+            end
+
         end
 
         % plot 3D
@@ -833,7 +859,7 @@ function roi_plotcoloredlobes( EEG, matrix, titleStr, measure, hemisphere, group
         set(gca,'ytick',1:n_roi_labels,'yticklabel',labels(hem_idx{1}:hem_idx{2}:n_roi_labels), 'fontsize', 7, 'TickLength',[0.015, 0.02], 'LineWidth',0.75);
     end
     set(gca, 'YDir','normal')
-    h = title([ 'ROI to ROI ' upper(replace_underscores(measure)) ' (' titleStr ')' ]);
+    h = title([ 'ROI to ROI ' replace_underscores(measure) ' (' titleStr ')' ]);
     set(h, 'fontsize', 16);
     xtickangle(90)
 end 
