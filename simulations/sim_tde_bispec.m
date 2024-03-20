@@ -27,7 +27,7 @@ method = 1; % 1:4, chose which bispectral TDE should be displayed, check documen
 eeglab
 Xraw = mk_series(t+abs(delay), signal_type, 0.7,0);
 noiseX = mk_series(t, noise_type, 0.7, 0);
-noiseY = mk_series(t, noise_type, 0.7, 0);
+noiseY = mk_series(t, nois50e_type, 0.7, 0);
 
 % Combine and segment
 [Xlong, Ylong] = combine_sn(Xraw, noiseX, noiseY, delay, srate, snr, theta, beta);
@@ -43,6 +43,7 @@ segshift = floor(ndat/2);
 epleng = ndat;
 fres = srate;
 frqs = sfreqs(2 * fres, srate);
+maxfreqbins = floor(ndat/2);
 
 [B2_xxx] = squeeze(data2bs_univar(Xlong', ndat, segshift, epleng, length(frqs)-1));
 para_xyx.chancomb = [1, 2, 1]; 
@@ -66,7 +67,7 @@ fmask(frqs < band(1) | frqs > band(2)) = 0;
 %% Plotting
 % extract estimated delay/peak
 delay_scale = (-seglen+1:seglen-1) / srate;
-[peak_val, peak_idx] = max(T); 
+[peak_val, peak_idx] = max(aT); 
 est_delay = delay_scale(peak_idx); % in Hz
 
 figure; plot(delay_scale, aT, 'black')
