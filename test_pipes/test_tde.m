@@ -40,13 +40,14 @@ roi2_idx = find(ismember(labels, roi2));
 EEG1 = pop_roi_connect(EEG, 'methods', {'TDE'}, 'tde_regions', [roi1_idx roi2_idx], 'tde_method', 1);
 
 %% Test TDE on frequency bands
-EEG2 = pop_roi_connect(EEG, 'methods', {'TDE'}, 'tde_regions', [roi1_idx roi2_idx], 'tde_method', 1, 'tde_freqbands', [11 13]);
+% not fully implemented yet, needs further testing
+% EEG2 = pop_roi_connect(EEG, 'methods', {'TDE'}, 'tde_regions', [roi1_idx roi2_idx], 'tde_method', 1, 'tde_freqbands', [11 13]);
 
 %% Plotting
 % broadband
 pop_roi_connectplot(EEG1, 'measure', 'tde');
 pop_roi_connectplot(EEG1, 'measure', 'tde_anti');
 
-% frequency band
-pop_roi_connectplot(EEG2, 'measure', 'tde');
-pop_roi_connectplot(EEG2, 'measure', 'tde_anti');
+% % frequency band
+% pop_roi_connectplot(EEG2, 'measure', 'tde');
+% pop_roi_connectplot(EEG2, 'measure', 'tde_anti');

@@ -44,7 +44,7 @@ function EEG = roi_tde(EEG, tde_method, tde_regions, tde_freqbands)
     segleng = ndat;
     epleng = ndat;
     fres = EEG.srate;
-    frqs = sfreqs(2 * fres, EEG.srate);
+    frqs = sfreqs(fres, EEG.srate);
     maxfreqbins = floor(segleng/2);
     
     % only keeep first PC
@@ -90,9 +90,12 @@ function [T, I, aT, aI] = compute_TDE(X, Y, tde_method, tde_freqbands, segleng, 
         [T, I] = bispectral_TD_est(B2_xxx, B2_xyx, B2_yyy, tde_method, [], 1);
         [aT, aI] = bispectral_TD_est(B2_xxx, B2_xyx - B2_yxx, B2_yyy, tde_method, [], 1); % antisymmetrization
     else
-        fmask = true(1, length(frqs));
-        fmask(frqs < tde_freqbands(1) | frqs > tde_freqbands(2)) = 0;
-        [T, I] = bispectral_TD_est(B2_xxx, B2_xyx, B2_yyy, tde_method, fmask(1:end-1), 1);
-        [aT, aI] = bispectral_TD_est(B2_xxx, B2_xyx - B2_yxx, B2_yyy, tde_method, fmask(1:end-1), 1); % antisymmetrization
+        error('TDE on frequency bands is not implemented yet.')
+%         neg_frqs = cat(1, -flip(frqs(2:end)), frqs(1:end-1)); % create new freq vector with negative frequencies
+%         fmask = false(1, maxfreqbins);
+%         fmask(find(neg_frqs == tde_freqbands(1)):find(neg_frqs == tde_freqbands(2))) = 1; 
+% %         fmask(find(neg_frqs == -tde_freqbands(2)):find(neg_frqs == -tde_freqbands(1))) = 1;
+%         [T, I] = bispectral_TD_est(B2_xxx, B2_xyx, B2_yyy, tde_method, fmask(1:end-1), 1);
+%         [aT, aI] = bispectral_TD_est(B2_xxx, B2_xyx - B2_yxx, B2_yyy, tde_method, fmask(1:end-1), 1); % antisymmetrization
     end
 end

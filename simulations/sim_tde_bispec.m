@@ -27,7 +27,7 @@ method = 1; % 1:4, chose which bispectral TDE should be displayed, check documen
 eeglab
 Xraw = mk_series(t+abs(delay), signal_type, 0.7,0);
 noiseX = mk_series(t, noise_type, 0.7, 0);
-noiseY = mk_series(t, nois50e_type, 0.7, 0);
+noiseY = mk_series(t, noise_type, 0.7, 0);
 
 % Combine and segment
 [Xlong, Ylong] = combine_sn(Xraw, noiseX, noiseY, delay, srate, snr, theta, beta);
@@ -42,35 +42,36 @@ ndat = seglen * 2;
 segshift = floor(ndat/2);
 epleng = ndat;
 fres = srate;
-frqs = sfreqs(2 * fres, srate);
 maxfreqbins = floor(ndat/2);
 
-[B2_xxx] = squeeze(data2bs_univar(Xlong', ndat, segshift, epleng, length(frqs)-1));
+[B2_xxx] = squeeze(data2bs_univar(Xlong', ndat, segshift, epleng, maxfreqbins));
 para_xyx.chancomb = [1, 2, 1]; 
-[B2_xyx] = data2bs_univar([Xlong', Ylong'], ndat, segshift, epleng, length(frqs)-1, para_xyx);
-[B2_yyy] = squeeze(data2bs_univar(Ylong', ndat, segshift, epleng, length(frqs)-1));
+[B2_xyx] = data2bs_univar([Xlong', Ylong'], ndat, segshift, epleng, maxfreqbins, para_xyx);
+[B2_yyy] = squeeze(data2bs_univar(Ylong', ndat, segshift, epleng, maxfreqbins));
 
 % required for antisymmetrization
 para_yxx.chancomb = [2, 1, 1]; 
-[B2_yxx] = data2bs_univar([Xlong', Ylong'], ndat, segshift, epleng, length(frqs)-1, para_yxx);
+[B2_yxx] = data2bs_univar([Xlong', Ylong'], ndat, segshift, epleng, maxfreqbins, para_yxx);
 
 [T, I] = bispectral_TD_est(B2_xxx, B2_xyx, B2_yyy, method, [], 1);
 [aT, aI] = bispectral_TD_est(B2_xxx, B2_xyx - B2_yxx, B2_yyy, method, [], 1);
 
-% TDE on frequency bands
-band = [20 30];
-fmask = true(1, length(frqs));
-fmask(frqs < band(1) | frqs > band(2)) = 0;
-[T_, I_] = bispectral_TD_est(B2_xxx, B2_xyx, B2_yyy, method, fmask(1:end-1), 1);
+% % TDE on frequency bands
+% frqs = sfreqs(fres, srate);
+% neg_frqs = cat(1, -flip(frqs(2:end)), frqs(1:end-1)); % create new freq vector with negative frequencies
+% band = [20 30];
+% fmask = false(1, maxfreqbins);
+% fmask(find(neg_frqs == band(1)):find(neg_frqs == band(2))) = 1; fmask(find(neg_frqs == -band(2)):find(neg_frqs == -band(1))) = 1;
+% [T_, I_] = bispectral_TD_est(B2_xxx, B2_xyx, B2_yyy, method, fmask(1:end-1), 1);
 
 
 %% Plotting
 % extract estimated delay/peak
 shift = (-seglen+1:seglen-1) / srate;
-[peak_val, peak_idx] = max(aT); 
+[peak_val, peak_idx] = max(T); 
 est_delay = shift(peak_idx); % in Hz
 
-figure; plot(shift, aT, 'black')
+figure; plot(shift, T, 'black')
 xline(est_delay, '--r')
 xlabel('Time (s)')
 ylabel('a.u.')
