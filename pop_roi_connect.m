@@ -17,9 +17,9 @@
 %  'naccu'          - [integer]  Number of accumulation for stats. Default is 0.
 %  'methods'        - [cell] Cell of strings corresponding to methods.
 %                       'CS'    : Cross spectrum
-%                       'aCOH'  : Coherence
-%                       'cCOH'  : (complex-valued) coherency
-%                       'iCOH'  : absolute value of the imaginary part of coherency
+%                       'aCOH'  : Coherence 
+%                       'cCOH'  : (Complex-valued) Coherency
+%                       'iCOH'  : Absolute value of the imaginary part of Coherency
 %                       'GC'    : Granger Causality
 %                       'TRGC'  : Time-reversed Granger Causality
 %                       'wPLI'  : Weighted Phase Lag Index
@@ -29,7 +29,8 @@
 %                       'TRDTF' : Time-reversed directed transfer entropy
 %                       'MIM'   : Multivariate Interaction Measure for each ROI
 %                       'MIC'   : Maximized Imaginary Coherency for each ROI
-%                       'PAC'   : Phase-amplitude coupling between ROIs
+%                       'PAC'   : Phase-amplitude coupling between ROIs (see the 'fcomb' and 'bs_outopts' input parameters)
+%                       'TDE'   : Time-delay estimation between two selected ROIs (see the 'tde_regions' and 'tde_freqbands' input parameters)
 %  'snippet'        - ['on'|off]  Option to compute connectivity over snippets. Default is 'off'. 
 %  'firstsnippet'   - ['on'|off]  Only use the first snippet (useful for fast computation). Default is 'off'. 
 %  'snip_length'    - ['on'|'off'] Length of the snippets. Default is 60 seconds.
@@ -50,6 +51,11 @@
 %                          5 - only store: b_anti, b_anti_norm
 %  'roi_selection'  - [cell array of integers] Cell array of ROI indices {1, 2, 3, ...} indicating for which regions (ROIs) connectivity should be computed. 
 %                     Default is empty (in this case, connectivity will be computed for all ROIs).
+%  'tde_method'     - [integer] TDE method, must be between 1:4, open bispectral_TD_est.m for details. Default is 1.
+%  'tde_regions'    - [seed target] Array containing the seed and target region for time-delay estimation. Regions need to be passed as region *indices*, 
+%                     e.g., [2 10] will compute time-delays from region 2 -> 10 and 10 -> 2, corresponding to the information flow in both directions separately. 
+%                     Default is [] (will throw an error).
+%  'tde_freqbands'  - [f1 f2] Array containing the frequency band for which bispectral time-delays will be estimated. Default is [] (broadband).
 %  'conn_stats'     - ['on'|'off'] Run statistics on connectivity metrics. Default is 'off'.
 %  'nshuf'          - [integer] number of shuffles for statistical significance testing. The first shuffle is the true value. Default is 1001. 
 %  'freqrange'      - [min max] frequency range in Hz. This is used to compute and plot p-values. Default is to plot broadband power.
@@ -181,6 +187,9 @@ g = finputcheck(options, ...
       'fcomb'          'struct'   { }                           struct; 
       'bs_outopts'     'integer'  { }                           1; 
       'roi_selection'  'cell'     { }                           { }; 
+      'tde_method'     'integer'  { 1:4 }                         1;
+      'tde_regions'    'integer'  { }                           [ ];
+      'tde_freqbands'  'integer'  { }                           [ ];
       'conn_stats'     'string'   { }                           'off'; ...
       'nshuf'          'integer'  { }                           1001; ...
       'poolsize'       'integer'  { }                           1}, 'pop_roi_connect');
@@ -195,6 +204,11 @@ if length(EEG) > 1
         [ EEG, com ] = eeg_eval( 'pop_roi_connect', EEG, 'params', options );
     end
     return
+end
+
+tmpMethods = setdiff(g.methods, {  'CS' 'COH' 'cCOH' 'aCOH' 'iCOH' 'GC' 'TRGC' 'wPLI' 'PDC' 'TRPDC' 'DTF' 'TRDTF' 'MIM' 'MIC' 'PAC' 'TDE'}); 
+if ~isempty(tmpMethods)
+    error('Unknown methods %s', vararg2str(tmpMethods))
 end
 
 % compute connectivity over snippets
@@ -339,6 +353,9 @@ if strcmpi(g.snippet, 'off') && strcmpi(g.conn_stats, 'off')
     EEG = roi_connect(EEG, 'morder', g.morder, 'naccu', g.naccu, 'methods', g.methods,'freqresolution', g.freqresolution, 'roi_selection', g.roi_selection);
     if strcmpi(g.snippet, 'off') && ~isempty(intersect(g.methods, {'PAC'}))
         EEG = roi_pac(EEG, g.fcomb, g.bs_outopts, g.roi_selection);
+    end
+    if strcmpi(g.snippet, 'off') && ~isempty(intersect(g.methods, {'TDE'}))
+        EEG = roi_tde(EEG, g.tde_method, g.tde_regions, g.tde_freqbands);
     end
 end
 
