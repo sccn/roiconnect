@@ -49,9 +49,9 @@ function conn = shuffle_BS(data, npcs, output, nshuf, fs, fcomb, varargin)
         error('fcomb.high must be smaller than fcomb.low - check the documentation for the "fcomb" input parameter in "shuffle_BS".')
     end
     
-    [nchan, ndat, nepo] = size(data);
+    [nchan, ndat, ~] = size(data);
 
-%     [inds, PCA_inds] = fp_npcs2inds(npcs);
+    % [inds, PCA_inds] = fp_npcs2inds(npcs);
     if isempty(g.roi_selection)
         nROI = nchan/npcs(1);
     else
@@ -86,21 +86,6 @@ function conn = shuffle_BS(data, npcs, output, nshuf, fs, fcomb, varargin)
     fprintf('Generating null distribution using %d shuffles...\n', nshuf)
     fprintf('Progress of %d:\n', nshuf);
     
-    
-    % Check if Parallel Processing Toolbox is available and licensed
-    if license('test', 'Distrib_Computing_Toolbox') && ~isempty(ver('parallel'))
-        % If g.poolsize is defined, create a parallel pool of that size
-        if isfield(g, 'poolsize') && isnumeric(g.poolsize) && g.poolsize > 0
-            % Check if there's already an existing parallel pool
-            currentPool = gcp('nocreate');
-            if isempty(currentPool)
-                parpool(g.poolsize);
-            end
-        end
-    else
-        disp('Parallel Processing Toolbox is not installed or licensed.');
-    end
-    
     % Define bispectrum parameters
     fres = fs;
     frqs = sfreqs(fres, fs);
@@ -132,48 +117,77 @@ function conn = shuffle_BS(data, npcs, output, nshuf, fs, fcomb, varargin)
         freqinds_up(i,:) = [find(frqs == low) find(frqs == high)];
     end
 
-    % Initialize variables to store the PAC results
-    PAC_orig = zeros(nROI, nROI, nshuf);
-    PAC_anti = zeros(nROI, nROI, nshuf);
-    PAC_orig_norm = zeros(nROI, nROI, nshuf);
-    PAC_anti_norm = zeros(nROI, nROI, nshuf);
-
-    % Iterate over ROI pairs
-    for proi = 1:nROI
-        for aroi = proi:nROI
-            % Compute bispectrum % nchan by nchan by nchan by number_of_peaks by number_of_shuffles 
-            X = data([proi aroi],:,:); % number of regions x epoch length x trials
-            [BS, ~] = fp_data2bs_event_uni(X(:, :)', ndat, floor(ndat/2), ndat, freqinds_up, nshuf); % pass (f1,f2) through freqinds_up
-            BS_low = BS(:,:,:,1,:);
-            BS_up = BS(:,:,:,2,:);
-
-            [RTP_low,~] = data2bs_threenorm(X(:, :)', ndat, floor(ndat/2), ndat, freqinds_low);
-            [RTP_up,~] = data2bs_threenorm(X(:, :)', ndat, floor(ndat/2), ndat, freqinds_up);
-            
-            [biv_orig_low, biv_anti_low, biv_orig_low_norm, biv_anti_low_norm] = calc_pac(BS_low, RTP_low); 
-            [biv_orig_up, biv_anti_up, biv_orig_up_norm, biv_anti_up_norm] = calc_pac(BS_up, RTP_up);
-            
-            % PAC_km(f1, f2) = 0.5 * |Bkmm(f1, f2-f1)| + 0.5 * |Bkmm(f1, f2)|
-            b_orig(aroi, proi, :) = mean(vertcat(biv_orig_up(1, :), biv_orig_low(1, :)), 1); 
-            b_orig(proi, aroi, :) = mean(vertcat(biv_orig_up(2, :), biv_orig_low(2, :)), 1);
-            b_anti(aroi, proi, :) = mean(vertcat(biv_anti_up(1, :), biv_anti_low(1, :)), 1);  
-            b_anti(proi, aroi, :) = mean(vertcat(biv_anti_up(2, :), biv_anti_low(2, :)), 1); 
-            
-            % normalized versions (for bicoherence)
-            b_orig_norm(aroi, proi, :) = mean(vertcat(biv_orig_up_norm(1, :), biv_orig_low_norm(1, :)), 1);
-            b_orig_norm(proi, aroi, :) = mean(vertcat(biv_orig_up_norm(2, :), biv_orig_low_norm(2, :)), 1);
-            b_anti_norm(aroi, proi, :) = mean(vertcat(biv_anti_up_norm(1, :), biv_anti_low_norm(1, :)), 1);  
-            b_anti_norm(proi, aroi, :) = mean(vertcat(biv_anti_up_norm(2, :), biv_anti_low_norm(2, :)), 1);
+    % check if Parallel Processing Toolbox is available and licensed
+    if license('test', 'Distrib_Computing_Toolbox') && ~isempty(ver('parallel'))
+        if isfield(g, 'poolsize') && isnumeric(g.poolsize) && g.poolsize > 0
+            % check if there's already an existing parallel pool
+            currentPool = gcp('nocreate');
+            if isempty(currentPool)
+                parpool(g.poolsize);
+            end
         end
+    else
+        disp('Parallel Processing Toolbox is not installed or licensed.');
     end
+
+    % Pre-allocate variables outside the parfor loop
+    b_orig = zeros(nROI, nROI, nshuf);
+    b_anti = zeros(nROI, nROI, nshuf);  
+    % b_orig_norm = zeros(nROI, nROI, nshuf);
+    % b_anti_norm = zeros(nROI, nROI, nshuf);
+
+    parfor ishuf = 1:nshuf
+        b_orig_ishuf = zeros(nROI, nROI);
+        b_anti_ishuf = zeros(nROI, nROI);
+        % b_orig_norm_ishuf = zeros(nROI, nROI);
+        % b_anti_norm_ishuf = zeros(nROI, nROI);
+
+        % Iterate over ROI pairs
+        for proi = 1:nROI
+            for aroi = proi:nROI
+                % Compute bispectrum % nchan by nchan by nchan by number_of_peaks by number_of_shuffles 
+                X = data([proi aroi],:,:); % number of regions x epoch length x ishuf
+                [BS, ~] = fp_data2bs_event_uni(X(:, :)', ndat, floor(ndat/2), ndat, freqinds_up, ishuf); % pass (f1,f2) through freqinds_up
+                BS_low = BS(:,:,:,1);
+                BS_up = BS(:,:,:,2);
+    
+                [RTP_low,~] = data2bs_threenorm(X(:, :)', ndat, floor(ndat/2), ndat, freqinds_low);
+                [RTP_up,~] = data2bs_threenorm(X(:, :)', ndat, floor(ndat/2), ndat, freqinds_up);
+    
+                [biv_orig_low, biv_anti_low] = calc_pac(BS_low, RTP_low); 
+                [biv_orig_up, biv_anti_up] = calc_pac(BS_up, RTP_up);
+    
+                % PAC_km(f1, f2) = 0.5 * |Bkmm(f1, f2-f1)| + 0.5 * |Bkmm(f1, f2)|
+                b_orig_ishuf(aroi,proi) = mean([biv_orig_up(1) biv_orig_low(1)]); 
+                b_orig_ishuf(proi,aroi) = mean([biv_orig_up(2) biv_orig_low(2)]);
+                b_anti_ishuf(aroi,proi) = mean([biv_anti_up(1) biv_anti_low(1)]);  
+                b_anti_ishuf(proi,aroi) = mean([biv_anti_up(2) biv_anti_low(2)]); 
+    
+                % % normalized versions (for bicoherence)
+                % b_orig_norm(aroi,proi) = mean([biv_orig_up_norm(1) biv_orig_low_norm(1)]);
+                % b_orig_norm(proi,aroi) = mean([biv_orig_up_norm(2) biv_orig_low_norm(2)]);
+                % b_anti_norm(aroi,proi) = mean([biv_anti_up_norm(1) biv_anti_low_norm(1)]);  
+                % b_anti_norm(proi,aroi) = mean([biv_anti_up_norm(2) biv_anti_low_norm(2)]);
+            end
+            
+        end
+
+        % Store the shuffle information
+        b_orig(:,:, ishuf) = b_orig_ishuf;
+        b_anti(:,:, ishuf) = b_anti_ishuf;
+        % b_orig_norm(:,:, ishuf) = b_orig_norm_ishuf;
+        % b_anti_norm(:,:, ishuf) = b_anti_norm_ishuf;
+
+    end
+
 
     clear out
 
     % Save PAC results in the output structure
     conn.PAC.b_orig = b_orig;
     conn.PAC.b_anti = b_anti;
-    conn.PAC.b_orig_norm = b_orig_norm;
-    conn.PAC.b_anti_norm = b_anti_norm;
+    % conn.PAC.b_orig_norm = b_orig_norm;
+    % conn.PAC.b_anti_norm = b_anti_norm;
 
     % shut down current parallel pool only if the toolbox is available
     if license('test', 'Distrib_Computing_Toolbox') && ~isempty(ver('parallel'))

@@ -1,4 +1,4 @@
-function [cs,nave]=fp_data2bs_event_uni(data,segleng,segshift,epleng,freqpairs,nshuf)
+function [cs,nave]=fp_data2bs_event_uni(data,segleng,segshift,epleng,freqpairs,ishuf)
 % Calculates bispectral-tensors  from data for event-related measurement
 % and their null distributions using a shuffling approach. 
 %
@@ -15,7 +15,7 @@ function [cs,nave]=fp_data2bs_event_uni(data,segleng,segshift,epleng,freqpairs,n
 %           e.g. segshift=segleng/2 makes overlapping segments
 % epleng: leng of each epoch
 % freqpairs: pairs of  frequency in bins
-% nshuf: required number of samples (shuffles) in the null distribution 
+% ishuf: one shuffle in the null distribution 
 % para: structure which is eventually used later
 %
 % output:
@@ -41,54 +41,52 @@ nep=floor(ndat/epleng);
 nseg=floor((epleng-segleng)/segshift)+1; %total number of segments
 assert(nseg==1,'only possible with 1 segment')
 
-cs=zeros(nchan,nchan,nchan,2,nshuf);
+cs=zeros(nchan,nchan,nchan,2);
 
 %get Fourier coefficients
 coeffs = fp_fft_coeffs(data,segleng,segshift,epleng,freqpairs);
 
-for ishuf = 1:nshuf
-    nave=0;
-    csloc1=zeros(nchan,nchan,nchan);
-    csloc2=zeros(nchan,nchan,nchan);
-    cs1=zeros(nchan,nchan,nchan);
-    cs2=zeros(nchan,nchan,nchan);
+%pre-allocation
+nave=0;
+csloc1=zeros(nchan,nchan,nchan);
+csloc2=zeros(nchan,nchan,nchan);
+cs1=zeros(nchan,nchan,nchan);
+cs2=zeros(nchan,nchan,nchan);
 
-    if ishuf == 1 %the first shuffle contains the true order
-        inds = 1:nep;
-    else
-        inds = randperm(nep,nep); %indices for shuffling of epochs for channel 2 
-    end
-    
-    for j=1:nep %loop over epochs 
-        
-        %bispec of f1 (low peak), f2-f1 (left side lobe), f2 (high peak)
-        csloc1(1,1,1)=transpose(coeffs(1,1,j))        *coeffs(2,1,j)      *conj(coeffs(3,1,j));
-        csloc1(2,1,1)=transpose(coeffs(1,2,inds(j)))  *coeffs(2,1,j)      *conj(coeffs(3,1,j));
-        csloc1(1,2,1)=transpose(coeffs(1,1,j))        *coeffs(2,2,inds(j))*conj(coeffs(3,1,j));
-        csloc1(1,1,2)=transpose(coeffs(1,1,j))        *coeffs(2,1,j)      *conj(coeffs(3,2,inds(j)));
-        csloc1(2,2,1)=transpose(coeffs(1,2,inds(j)))  *coeffs(2,2,inds(j))*conj(coeffs(3,1,j));
-        csloc1(1,2,2)=transpose(coeffs(1,1,j))        *coeffs(2,2,inds(j))*conj(coeffs(3,2,inds(j)));
-        csloc1(2,2,2)=transpose(coeffs(1,2,inds(j)))  *coeffs(2,2,inds(j))*conj(coeffs(3,2,inds(j)));
-        csloc1(2,1,2)=transpose(coeffs(1,2,inds(j)))  *coeffs(2,1,j)      *conj(coeffs(3,2,inds(j)));
-        
-        %bispec of f1 (low peak), f2 high peak), f1+f2 (right side lobe)
-        csloc2(1,1,1)=transpose(coeffs(1,1,j))          *coeffs(3,1,j)      *conj(coeffs(4,1,j));
-        csloc2(2,1,1)=transpose(coeffs(1,2,inds(j)))    *coeffs(3,1,j)      *conj(coeffs(4,1,j));
-        csloc2(1,2,1)=transpose(coeffs(1,1,j))          *coeffs(3,2,inds(j))*conj(coeffs(4,1,j));
-        csloc2(1,1,2)=transpose(coeffs(1,1,j))          *coeffs(3,1,j)      *conj(coeffs(4,2,inds(j)));
-        csloc2(2,2,1)=transpose(coeffs(1,2,inds(j)))    *coeffs(3,2,inds(j))*conj(coeffs(4,1,j));
-        csloc2(1,2,2)=transpose(coeffs(1,1,j))          *coeffs(3,2,inds(j))*conj(coeffs(4,2,inds(j)));
-        csloc2(2,2,2)=transpose(coeffs(1,2,inds(j)))    *coeffs(3,2,inds(j))*conj(coeffs(4,2,inds(j)));
-        csloc2(2,1,2)=transpose(coeffs(1,2,inds(j)))    *coeffs(3,1,j)      *conj(coeffs(4,2,inds(j)));
-        
-        cs1=cs1+csloc1;
-        cs2=cs2+csloc2;
-        
-        nave=nave+1;
-    end
-    
-    %shape cs: chan x chan x chan x peak_combination x shuffles 
-    cs(:,:,:,1,ishuf) = cs1./nave; 
-    cs(:,:,:,2,ishuf) = cs2./nave; 
-    
+if ishuf == 1 %the first shuffle contains the true order
+    inds = 1:nep;
+else
+    inds = randperm(nep,nep); %indices for shuffling of epochs for channel 2 
 end
+
+for j=1:nep %loop over epochs 
+    
+    %bispec of f1 (low peak), f2-f1 (left side lobe), f2 (high peak)
+    csloc1(1,1,1)=transpose(coeffs(1,1,j))        *coeffs(2,1,j)      *conj(coeffs(3,1,j));
+    csloc1(2,1,1)=transpose(coeffs(1,2,inds(j)))  *coeffs(2,1,j)      *conj(coeffs(3,1,j));
+    csloc1(1,2,1)=transpose(coeffs(1,1,j))        *coeffs(2,2,inds(j))*conj(coeffs(3,1,j));
+    csloc1(1,1,2)=transpose(coeffs(1,1,j))        *coeffs(2,1,j)      *conj(coeffs(3,2,inds(j)));
+    csloc1(2,2,1)=transpose(coeffs(1,2,inds(j)))  *coeffs(2,2,inds(j))*conj(coeffs(3,1,j));
+    csloc1(1,2,2)=transpose(coeffs(1,1,j))        *coeffs(2,2,inds(j))*conj(coeffs(3,2,inds(j)));
+    csloc1(2,2,2)=transpose(coeffs(1,2,inds(j)))  *coeffs(2,2,inds(j))*conj(coeffs(3,2,inds(j)));
+    csloc1(2,1,2)=transpose(coeffs(1,2,inds(j)))  *coeffs(2,1,j)      *conj(coeffs(3,2,inds(j)));
+    
+    %bispec of f1 (low peak), f2 high peak), f1+f2 (right side lobe)
+    csloc2(1,1,1)=transpose(coeffs(1,1,j))          *coeffs(3,1,j)      *conj(coeffs(4,1,j));
+    csloc2(2,1,1)=transpose(coeffs(1,2,inds(j)))    *coeffs(3,1,j)      *conj(coeffs(4,1,j));
+    csloc2(1,2,1)=transpose(coeffs(1,1,j))          *coeffs(3,2,inds(j))*conj(coeffs(4,1,j));
+    csloc2(1,1,2)=transpose(coeffs(1,1,j))          *coeffs(3,1,j)      *conj(coeffs(4,2,inds(j)));
+    csloc2(2,2,1)=transpose(coeffs(1,2,inds(j)))    *coeffs(3,2,inds(j))*conj(coeffs(4,1,j));
+    csloc2(1,2,2)=transpose(coeffs(1,1,j))          *coeffs(3,2,inds(j))*conj(coeffs(4,2,inds(j)));
+    csloc2(2,2,2)=transpose(coeffs(1,2,inds(j)))    *coeffs(3,2,inds(j))*conj(coeffs(4,2,inds(j)));
+    csloc2(2,1,2)=transpose(coeffs(1,2,inds(j)))    *coeffs(3,1,j)      *conj(coeffs(4,2,inds(j)));
+    
+    cs1=cs1+csloc1;
+    cs2=cs2+csloc2;
+    
+    nave=nave+1;
+end
+
+%shape cs: chan x chan x chan x peak_combination x shuffle
+cs(:,:,:,1) = cs1./nave; 
+cs(:,:,:,2) = cs2./nave; 
