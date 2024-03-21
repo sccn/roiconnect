@@ -34,7 +34,7 @@ fcomb.high = high;
 
 EEG1 = pop_roi_connect(EEG, 'methods', {'PAC', 'MIM', 'COH'}, 'fcomb', fcomb); % test all 3 connectivity functions (data2spwctrgc, data2strgcmim, roi_pac)
 tic
-EEG2 = pop_roi_connect(EEG, 'methods', {'PAC'}, 'fcomb', fcomb, 'bs_outopts', 1, 'conn_stats', 'on', 'nshuf', 3, 'poolsize', 12); % compute only b_anti, b_anti_norm
+EEG2 = pop_roi_connect(EEG, 'methods', {'PAC'}, 'fcomb', fcomb, 'conn_stats', 'on', 'nshuf', 3, 'poolsize', 12); % compute only b_anti, b_anti_norm
 toc
 EEG3 = pop_roi_connect(EEG, 'methods', {'PAC'}, 'fcomb', fcomb, 'bs_outopts', 1); % compute only b_anti, b_anti_norm
 
