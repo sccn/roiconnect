@@ -48,6 +48,7 @@ if ~exist('cs2coh')
     addpath(fullfile(p, 'libs/Daniele_ARMA'));
     addpath(fullfile(p, 'libs/export_fig'));
     addpath(fullfile(p, 'libs/haufe'));
+    addpath(fullfile(p, 'libs/jurhar'));
     addpath(fullfile(p, 'libs/mvgc_v1.0'));
     addpath(fullfile(p, 'libs/mvgc_v1.0/core'));
     addpath(fullfile(p, 'libs/mvgc_v1.0/stats'));

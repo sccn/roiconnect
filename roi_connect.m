@@ -80,10 +80,10 @@ function EEG = roi_connect(EEG, varargin)
         'roi_selection'   'cell'     { }            { }  }, 'roi_connect');    
     if ischar(g), error(g); end
     if isempty(g.naccu), g.naccu = 0; end
-    tmpMethods = setdiff(g.methods, {  'CS' 'COH' 'cCOH' 'aCOH' 'iCOH' 'GC' 'TRGC' 'wPLI' 'PDC' 'TRPDC' 'DTF' 'TRDTF' 'MIM' 'MIC' 'PAC'});
-    if ~isempty(tmpMethods)
-        error('Unknown methods %s', vararg2str(tmpMethods))
-    end
+%     tmpMethods = setdiff(g.methods, {  'CS' 'COH' 'cCOH' 'aCOH' 'iCOH' 'GC' 'TRGC' 'wPLI' 'PDC' 'TRPDC' 'DTF' 'TRDTF' 'MIM' 'MIC' 'PAC'}); 
+%     if ~isempty(tmpMethods)
+%         error('Unknown methods %s', vararg2str(tmpMethods))
+%     end
 
     inds = {}; ninds = 0;
     if isempty(g.roi_selection)
