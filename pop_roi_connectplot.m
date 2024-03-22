@@ -591,7 +591,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
                 warning('Butterfly plots (frequency x connectivity) cannot be computed for PAC because frequencies have already been specified for the computation.')
             else
                 figure; plot(EEG.roi.freqs, butterflyplot, 'LineWidth', 1)
-                h = title([ 'ROI to ROI ' replace_underscores(g.measure) ' (' titleStr ')' ]);
+                h = title([ 'ROI to ROI ' replace_underscores(g.measure)]);
                 set(h, 'fontsize', 16);
                 xlabel('Frequency (Hz)')
                 ylabel([replace_underscores(g.measure) ' (a.u.)'])
