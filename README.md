@@ -147,12 +147,12 @@ pop_roi_connectplot(EEG, 'measure', 'mim', 'plotcortex', 'on', 'freqrange', [8 1
 
 ### Group analysis
 
-The ROIconnect plugin is compatible EEGLAB STUDY. This means that if you have a STUDY for group analysis, you can select ROIconnect menus to compute connectivity on a group of datasets. Once connectivity has been computed, there are two ways to aggregate results for ROIconnect at the group level. At this stage, both ways involve command line code. The simplest way is to run ROIconnect on all datasets and then gather the matrices and run stats on them. 
+The ROIconnect plugin is compatible with EEGLAB STUDY framework. This means that if you have created a STUDY for group analysis, you can select ROIconnect menus to compute connectivity on a group of datasets. Once connectivity has been computed, there are two ways to aggregate results for ROIconnect at the group level. At this stage, both ways involve command line code. The simplest way is to run ROIconnect on all datasets and then gather the matrices and run statistics on them. 
 
-Assuming that you have computed connectivity (for example the multivariate interaction measure) for all datasets and that for each subject, you have a dataset for condition 1 and dataset for condition 2 (so in sequence the first dataset is subject 1 condition 1, the second subject 1 condition 2, the third is subject 2 condition 1 etc, you could use the code (not tested)
+Assuming that you have computed connectivity (for example, the multivariate interaction measure) for all datasets and that for each subject, you have a dataset for condition 1 and a dataset for condition 2 (so in sequence, the first dataset is subject 1 condition 1, the second subject 1 condition 2, the third is subject 2 condition 1, etc, you could use the code:
 
 ```matlab
-% agregate all subject for each condition in one matrix
+% aggregate all subjects for each condition in one matrix
 numSubject = length(ALLEEG)/2; % number os subjects
 cond1 = zeros( [ size(ALLEEG(1).roi.MIM) numSubject] ); % dimensions are frequency x roi x roi x subject
 cond2 = zeros( [ size(ALLEEG(1).roi.MIM) numSubject] );
@@ -177,7 +177,7 @@ Alternatively, to get ROIconnect data from an arbitrary study design (including 
 [~,condsMat] = std_readdata(STUDY, ALLEEG, 'customread', 'std_readeegfield', 'customparams', {{ 'roi', 'MIM' }}, 'ndim', 4, 'singletrials', 'on’);
 ```
 
-Then proceed to use the  compute statistics and plot as above (in this case condsMat = { cond1 cond2 }). For more information on how to create a STUDY and STUDY design, refer to the [EEGLAB documentation](https://eeglab.org/tutorials/10_Group_analysis/study_creation.html).
+Then, proceed to use the  compute statistics and plot as above (in this case *condsMat = { cond1 cond2 }*). For more information on how to create a STUDY and STUDY design, refer to the [EEGLAB documentation](https://eeglab.org/tutorials/10_Group_analysis/study_creation.html).
 
 # References
 <a id="1">[1]</a> 
