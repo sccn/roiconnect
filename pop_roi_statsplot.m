@@ -17,11 +17,14 @@
 %                       'TRDTF' : Time-reversed directed transfer entropy
 %                       'MIM'   : Multivariate Interaction Measure for each ROI
 %                       'MIC'   : Maximized Imaginary Coherency for each ROI
+%                       'PAC'   : Phase Amplitude Coupling for each ROI
 %  'freqrange' - [min max] frequency range or [integer] single frequency in Hz. Default is to plot broadband power.
 %  'alpha'     - [integer] Significance level. Default is 0.05.
+%  'bispec'    - ['b_anti'|'b_orig']  Option to compute antisymmetric or original bispectrum.
 %
 %   Author: Franziska Pellegrini, franziska.pellegrini@charite.de
 %           Tien Dung Nguyen, tien-dung.nguyen@charite.de
+%           Zixuan Liu, zixuan.liu@campus.tu-berlin.de
 
 function EEG = pop_roi_statsplot(EEG, varargin)
 
@@ -39,36 +42,51 @@ function EEG = pop_roi_statsplot(EEG, varargin)
     g = finputcheck(varargin,  { 
         'measure'        'string'   { }    '';
         'freqrange'      'real'     { }    []; ...
-        'alpha'          'integer'  { }    0.05}, 'pop_roi_statsplot');
+        'alpha'          'integer'  { }    0.05; ...
+        'bispec'         'string'   {'b_orig', 'b_anti'}    'b_anti'}, 'pop_roi_statsplot');
     if ischar(g), error(g); end
-    S = EEG.roi;
 
+    % check if measure is defined.
     if isempty(g.measure)
         error('You must define a measure to plot');
     end
-    
-    % extract frequency indices
-    if ~isempty(g.freqrange)
-        if length(g.freqrange) == 1
-            frq_inds = find(S.freqs == g.freqrange(1)); 
-            title = sprintf('%1.1f Hz', g.freqrange(1));
+
+    % adjust based on measure, PAC has one less dimension.
+    if strcmp(g.measure, 'PAC')  % check if measure is PAC
+        % for PAC, check the bispectrum parameter
+        if isfield(EEG.roi.(g.measure), g.bispec)
+            matrix = EEG.roi.(g.measure).(g.bispec);  % use specified bispectrum field
         else
-            frq_inds = find(S.freqs >= g.freqrange(1) & S.freqs < g.freqrange(2));
-            title = sprintf('%1.1f-%1.1f Hz frequency band', g.freqrange(1), g.freqrange(2));
+            error(['The specified bispectrum field (' g.bispec ') does not exist in EEG.roi.']);
         end
+
     else
-        frq_inds = 1:length(S.freqs);
-        title = 'broadband';
-    end
+        % if measure is not PAC, use the EEG.roi
+        S = EEG.roi;
+
+        % extract frequency indices
+        if ~isempty(g.freqrange)
+            if length(g.freqrange) == 1
+                frq_inds = find(S.freqs == g.freqrange(1)); 
+                title = sprintf('%1.1f Hz', g.freqrange(1));
+            else
+                frq_inds = find(S.freqs >= g.freqrange(1) & S.freqs < g.freqrange(2));
+                title = sprintf('%1.1f-%1.1f Hz frequency band', g.freqrange(1), g.freqrange(2));
+            end
+        else
+            frq_inds = 1:length(S.freqs);
+            title = 'broadband';
+        end
     
-    % select frequency or frequency band
-    if length(frq_inds) > 1
-        matrix = squeeze(mean(S.(g.measure)(frq_inds, :, :, :)));
-    else
-        matrix = squeeze(S.(g.measure)(frq_inds, :, :, :));
-    end
-    
-    % average over one dimension to obtain net FC, then generate p-values by comparing the true FC (first shuffle) to null distribution
+        % select frequency or frequency band
+        if length(frq_inds) > 1
+            matrix = squeeze(mean(S.(g.measure)(frq_inds, :, :, :)));
+        else
+            matrix = squeeze(S.(g.measure)(frq_inds, :, :, :));
+        end
+    end   
+
+    % generate p-values by comparing the true FC (first shuffle) to null distribution
     netFC = squeeze(mean(matrix, 2));
     FC_pn = sum(netFC(:, 1) < netFC(:, 2:end), 2)./(size(matrix, 3) - 1);
 
