@@ -158,7 +158,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         splot(end  ).unit   = 'aCOH';
         splot(end  ).cortex = cortexFlag;
         splot(end  ).matrix = 1;
-        splot(end  ).psd    = 0;
+        splot(end  ).psd    = -1;
         splot(end  ).plot3d = plot3dFlag;
     end
 
@@ -169,7 +169,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         splot(end  ).unit   = 'cCOH';
         splot(end  ).cortex = cortexFlag;
         splot(end  ).matrix = 1;
-        splot(end  ).psd    = 0;
+        splot(end  ).psd    = -1;
         splot(end  ).plot3d = plot3dFlag;
         end
 
@@ -180,7 +180,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         splot(end  ).unit   = 'iCOH';
         splot(end  ).cortex = cortexFlag;
         splot(end  ).matrix = 1;
-        splot(end  ).psd    = 0;
+        splot(end  ).psd    = -1;
         splot(end  ).plot3d = plot3dFlag;
     end
 
@@ -191,7 +191,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         splot(end  ).unit   = 'GC';
         splot(end  ).cortex = cortexFlag;
         splot(end  ).matrix = 1;
-        splot(end  ).psd    = 0;
+        splot(end  ).psd    = -1;
         splot(end  ).plot3d = plot3dFlag;
     end
 
@@ -202,7 +202,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         splot(end  ).unit   = 'TRGC'; % not used yet
         splot(end  ).cortex = cortexFlag;
         splot(end  ).matrix = 1;
-        splot(end  ).psd    = 0;
+        splot(end  ).psd    = -1;
         splot(end  ).plot3d = plot3dFlag;
     end
 
@@ -213,7 +213,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         splot(end  ).unit   = 'MIC'; % not used yet
         splot(end  ).cortex = cortexFlag;
         splot(end  ).matrix = -1;
-        splot(end  ).psd    = 0;
+        splot(end  ).psd    = -1;
         splot(end  ).plot3d = plot3dFlag;
     end
 
@@ -224,7 +224,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         splot(end  ).unit   = 'MIM'; % not used yet
         splot(end  ).cortex = cortexFlag;
         splot(end  ).matrix = 1;
-        splot(end  ).psd    = 0;
+        splot(end  ).psd    = -1;
         splot(end  ).plot3d = plot3dFlag;
     end
 
@@ -235,18 +235,18 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
         splot(end  ).unit   = 'PAC'; % not used yet
         splot(end  ).cortex = cortexFlag;
         splot(end  ).matrix = 1;
-        splot(end  ).psd    = 0;
+        splot(end  ).psd    = -1;
         splot(end  ).plot3d = plot3dFlag;
     end
 
     if isfield(EEG.roi, 'PAC')
-        splot(end+1).label    = 'ROI to ROI Phase-amplitude coupling';
+        splot(end+1).label    = 'ROI to ROI Phase-amplitude coupling (antisymmetrized)';
         splot(end  ).labelshort = 'Phase-amplitude coupling';
         splot(end  ).acronym  = 'PAC_anti'; % PAC based on antisymmetrized bicoherence
         splot(end  ).unit   = 'PAC'; % not used yet
         splot(end  ).cortex = cortexFlag;
         splot(end  ).matrix = 1;
-        splot(end  ).psd    = 0;
+        splot(end  ).psd    = -1;
         splot(end  ).plot3d = plot3dFlag;
     end
 
@@ -262,7 +262,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
     end
 
     if isfield(EEG.roi, 'TDE')
-        splot(end+1).label    = 'ROI to ROI Time-delay estimation';
+        splot(end+1).label    = 'ROI to ROI Time-delay estimation (antisymmetrized)';
         splot(end  ).labelshort = 'Time-delay estimation';
         splot(end  ).acronym  = 'TDE_anti'; % TDE based on antisymmetrized bispectrum
         splot(end  ).unit   = 'TDE'; % not used yet
@@ -508,6 +508,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
                     error('PAC (original bicoherence) cannot be plotted, field is missing.')
                 end
                 cortexPlot = mean(matrix, 2);
+                titleStr = sprintf('f1 = %1.1f Hz, f2 = %1.1f Hz', S.PAC.fcomb.low, S.PAC.fcomb.high);
 
             case {'pac_anti'}
                 if isfield(S.PAC, 'b_anti_norm')
@@ -518,6 +519,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
                     error('PAC (antisymmetrized bicoherence) cannot be plotted, field is missing.')
                 end
                 cortexPlot = mean(matrix, 2);
+                titleStr = sprintf('f1 = %1.1f Hz, f2 = %1.1f Hz', S.PAC.fcomb.low, S.PAC.fcomb.high);
                 
             case {'tde' 'tde_anti'}
                 if strcmpi(g.measure, 'tde')
@@ -591,7 +593,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
                 warning('Butterfly plots (frequency x connectivity) cannot be computed for PAC because frequencies have already been specified for the computation.')
             else
                 figure; plot(EEG.roi.freqs, butterflyplot, 'LineWidth', 1)
-                h = title([ 'ROI to ROI ' replace_underscores(g.measure) ' (' titleStr ')' ]);
+                h = title([ 'ROI to ROI ' replace_underscores(g.measure)]);
                 set(h, 'fontsize', 16);
                 xlabel('Frequency (Hz)')
                 ylabel([replace_underscores(g.measure) ' (a.u.)'])
@@ -970,8 +972,8 @@ function plot_tde(T, shift, region_X, region_Y, method)
     [~, peak_idx] = max(T); 
     est_delay = shift(peak_idx); % in Hz
     
-    figure; plot(shift, T, 'LineWidth', 1)
-    xline(est_delay, '--r')
+    figure; plot(shift, T, 'black', 'LineWidth', 1)
+    xline(est_delay, '--r', 'LineWidth', 1)
     xlabel('Time (s)')
     ylabel('a.u.')
     h = title(sprintf('%s -> %s TDE | Method %d', region_X, region_Y, method));

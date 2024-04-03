@@ -84,6 +84,7 @@ function EEG = roi_pac(EEG, fcomb, bs_outopts, roi_selection)
     [b_orig, b_anti, b_orig_norm, b_anti_norm] = data2bs_pac(data, params); 
     
     % options which bispectral tensors to store
+    EEG.roi.PAC.fcomb = fcomb;
     switch bs_outopts
         case 2
             EEG.roi.PAC.b_orig = b_orig;
