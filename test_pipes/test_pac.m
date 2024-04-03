@@ -85,3 +85,5 @@ pop_roi_connectplot(EEG4, 'measure', 'PAC_anti', 'plotmatrix', 'on');
 pop_roi_connectplot(EEG1, 'measure', 'MIM', 'plotmatrix', 'on');
 pop_roi_connectplot(EEG1, 'measure', 'aCOH', 'plotmatrix', 'on');
 
+% Statistic test plot
+pop_roi_statsplot(EEG2, 'measure', 'PAC', 'bispec', 'b_anti');
