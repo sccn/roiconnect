@@ -70,7 +70,7 @@ function EEG = pop_roi_statsplot(EEG, varargin)
                 frq_inds = find(S.freqs == g.freqrange(1)); 
                 title = sprintf('%1.1f Hz', g.freqrange(1));
             else
-                frq_inds = find(S.freqs >= g.freqrange(1) & S.freqs < g.freqrange(2));
+                frq_inds = find(S.freqs >= g.freqrange(1) & S.freqs <= g.freqrange(2));
                 title = sprintf('%1.1f-%1.1f Hz frequency band', g.freqrange(1), g.freqrange(2));
             end
         else
