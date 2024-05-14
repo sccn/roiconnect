@@ -392,7 +392,7 @@ function [matrix, com] = pop_roi_connectplot(EEG, varargin)
             frq_inds = find(S.freqs == g.freqrange(1)); 
             titleStr = sprintf('%1.1f Hz', g.freqrange(1));
         else
-            frq_inds = find(S.freqs >= g.freqrange(1) & S.freqs < g.freqrange(2));
+            frq_inds = find(S.freqs >= g.freqrange(1) & S.freqs <= g.freqrange(2));
             titleStr = sprintf('%1.1f-%1.1f Hz frequency band', g.freqrange(1), g.freqrange(2));
         end
     else
