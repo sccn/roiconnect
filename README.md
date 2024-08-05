@@ -178,9 +178,11 @@ figure; subplot(1,2,2); imagesc(-log10(pAlpha)); title('p-value (0 for p=1; 1 fo
 
 Alternatively, to get ROIconnect data from an arbitrary study design (including 2-way ANOVA), you can use the powerful std_readdata function as outlined in the documentation of the [eegstats plugin](https://github.com/sccn/eegstats). 
 
+{% raw %}
 ```matlab
 [~,condsMat] = std_readdata(STUDY, ALLEEG, 'customread', 'std_readeegfield', 'customparams', {{ 'roi', 'MIM' }}, 'ndim', 4, 'singletrials', 'on’);
 ```
+{% endraw %}
 
 Then, proceed to use the  compute statistics and plot as above (in this case *condsMat = { cond1 cond2 }*). For more information on how to create a STUDY and STUDY design, refer to the [EEGLAB documentation](https://eeglab.org/tutorials/10_Group_analysis/study_creation.html).
 
